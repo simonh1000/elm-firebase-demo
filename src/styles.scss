@@ -1,0 +1,55 @@
+body {
+    background-color: #eee;
+    padding: 30px;
+    height: 100vh;
+}
+.app {
+    height: 100%;
+    overflow: hidden;
+}
+header {
+    display: flex;
+    justify-content: space-between;
+}
+.login, .register {
+    flex-direction: column;
+    width: 400px;
+    margin: 0 auto;
+}
+.flex-h {
+    display: flex;
+    align-items: center;
+    &.spread {
+        justify-content: space-between;
+    }
+}
+.main {
+    display: flex;
+    align-items: stretch;
+    .others, .mine {
+        flex: 0 0 50%;
+    }
+}
+.warning {
+    color: #ee3333;
+}
+
+ul {
+    list-style: none;
+    padding-left: 0;
+    li.present {
+        justify-content: space-between;
+        background-color: white;
+        border-radius: 3px;
+        border: 1px solid #ddd;
+        margin-bottom: 3px;
+        padding: 3px 10px;
+        span {
+            font-size: 14px;
+        }
+    }
+}
+
+.clickable {
+    cursor: pointer;
+}
