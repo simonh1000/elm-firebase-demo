@@ -32,16 +32,18 @@ type Msg
     | Submit
     | SwitchToRegister
     | SubmitRegistration
-    | Signout
       --
+    | Signout
     | Claim String String
     | Unclaim String String
       -- Editor
     | UpdateNewPresent String
     | UpdateNewPresentLink String
     | SubmitNewPresent
+    | CancelEditor
+      -- My presents list
     | EditPresent Present
-      --
+      -- Subscriptions
     | OnAuthStateChange Value
     | OnSnapshot Value
 
@@ -81,9 +83,6 @@ update message model =
         Unclaim otherRef presentRef ->
             model ! [ unclaim otherRef presentRef ]
 
-        EditPresent newPresent ->
-            updateEditor (\_ -> newPresent) model ! []
-
         UpdateNewPresent description ->
             updateEditor (\ed -> { ed | description = description }) model ! []
 
@@ -91,9 +90,13 @@ update message model =
             updateEditor (\ed -> { ed | link = Just link }) model ! []
 
         SubmitNewPresent ->
-            ( { model | editor = blankPresent }
-            , savePresent model
-            )
+            { model | editor = blankPresent } ! [ savePresent model ]
+
+        CancelEditor ->
+            { model | editor = blankPresent } ! []
+
+        EditPresent newPresent ->
+            updateEditor (\_ -> newPresent) model ! []
 
         OnAuthStateChange val ->
             case Json.decodeValue decodeAuthState val |> Result.andThen identity of
@@ -160,9 +163,9 @@ viewPicker ({ user } as model) =
                 |> Dict.toList
                 |> L.partition (Tuple.first >> ((==) user.uid))
     in
-        div []
+        div [ id "picker" ]
             [ header []
-                [ text model.name
+                [ span [] [ text model.name ]
                 , button [ class "btn btn-default", onClick Signout ] [ text "Signout" ]
                 ]
             , h1 [] [ text "Choose presents" ]
@@ -175,9 +178,9 @@ viewPicker ({ user } as model) =
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
 viewOthers model others =
-    others
-        |> L.map (viewOther model)
-        |> div [ class "others col-sm-6" ]
+    div [ class "others col-sm-6" ] <|
+        h2 [] [ text "Xmas wishes" ]
+            :: L.map (viewOther model) others
 
 
 viewOther : Model -> ( String, UserData ) -> Html Msg
@@ -198,20 +201,29 @@ viewOther model ( userRef, { meta, presents } ) =
                             ]
 
                 Nothing ->
-                    li [ onClick <| Claim userRef presentRef, class "present flex-h clickable" ]
+                    li [ class "present flex-h clickable" ]
                         [ text description
+                        , button
+                            [ class "btn btn-primary btn-sm"
+                            , onClick <| Claim userRef presentRef
+                            ]
+                            [ text "Claim" ]
                         ]
 
         ps =
             presents
                 |> Dict.toList
                 |> L.map viewPresent
-                |> ul []
     in
-        div [ class "person other" ]
-            [ h3 [] [ text <| meta.name ]
-            , ps
-            ]
+        case ps of
+            [] ->
+                text ""
+
+            _ ->
+                div [ class "person other" ]
+                    [ h4 [] [ text meta.name ]
+                    , ul [] ps
+                    ]
 
 
 badge cl t =
@@ -240,7 +252,7 @@ viewMine model lst =
                     text <| "error" ++ toString lst
     in
         div [ class "mine col-sm-6" ]
-            [ h3 [] [ text "My suggestions" ]
+            [ h2 [] [ text "My suggestions" ]
             , viewSuggestionEditor model
             , mypresents
             ]
@@ -249,7 +261,7 @@ viewMine model lst =
 viewSuggestionEditor : Model -> Html Msg
 viewSuggestionEditor { editor } =
     div [ class "new-present section" ]
-        [ h3 []
+        [ h4 []
             [ case editor.uid of
                 Just _ ->
                     text "Editor"
@@ -257,17 +269,21 @@ viewSuggestionEditor { editor } =
                 Nothing ->
                     text "New suggestion"
             ]
-        , B.inputWithLabel UpdateNewPresent "newpresent" "Description" editor.description
+        , B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
         , editor.link
             |> Maybe.withDefault ""
-            |> B.inputWithLabel UpdateNewPresentLink "newpresentlink" "Link"
+            |> B.inputWithLabel UpdateNewPresentLink "Link" "newpresentlink"
         , div [ class "flex-h spread" ]
             [ button
                 [ class "btn btn-primary"
                 , onClick SubmitNewPresent
                 ]
                 [ text "Save" ]
-            , button [ class "btn btn-primary", disabled True ] [ text "Cancel" ]
+            , button
+                [ class "btn btn-primary"
+                , onClick CancelEditor
+                ]
+                [ text "Cancel" ]
             ]
         ]
 
@@ -285,15 +301,15 @@ viewMyPresentIdea present =
 
 
 viewLogin model =
-    div [ class "login flex-h" ]
+    div [ id "login", class "flex-h" ]
         [ h1 [] [ text "Login" ]
         , Html.form
             [ onSubmit Submit ]
             [ B.inputWithLabel UpdateEmail "Email" "email" model.email
-            , B.inputWithLabel UpdatePassword "Password" "password" model.password
+            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
             , div [ class "flex-h spread" ]
                 [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                , button [ type_ "button", onClick SwitchToRegister, class "btn btn-default" ] [ text "new user" ]
+                , button [ type_ "button", class "btn btn-default", onClick SwitchToRegister ] [ text "New? Register yourself" ]
                 ]
             ]
         ]
@@ -301,14 +317,14 @@ viewLogin model =
 
 viewRegister : Model -> Html Msg
 viewRegister model =
-    div [ class "register flex-h" ]
+    div [ id "register", class "flex-h" ]
         [ h1 [] [ text "Register" ]
         , Html.form
             [ onSubmit SubmitRegistration ]
             [ B.inputWithLabel UpdateUsername "Your Name" "name" model.name
             , B.inputWithLabel UpdateEmail "Email" "email" model.email
-            , B.inputWithLabel UpdatePassword "Password" "password" model.password
-            , B.inputWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
+            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+            , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
             , button
                 [ type_ "submit"
                 , disabled <| model.password == "" || model.password /= model.password2

@@ -55,3 +55,18 @@ inputWithLabel msg lab id_ val =
             ]
             []
         ]
+
+
+passwordWithLabel : (String -> msg) -> String -> String -> String -> Html msg
+passwordWithLabel msg lab id_ val =
+    div [ class "form-group" ]
+        [ label [ for id_ ] [ text lab ]
+        , input
+            [ onInput msg
+            , type_ "password"
+            , class "form-control"
+            , id id_
+            , value val
+            ]
+            []
+        ]
