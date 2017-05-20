@@ -71,8 +71,8 @@ update message model =
         UpdatePassword2 password2 ->
             { model | password2 = password2 } ! []
 
-        UpdateUsername name ->
-            { model | name = name } ! []
+        UpdateUsername displayName ->
+            setDisplayName displayName model ! []
 
         -- Main page
         Signout ->
@@ -113,11 +113,21 @@ update message model =
             case Json.decodeValue decoderXmas res of
                 Ok xmas ->
                     case Dict.get model.user.uid xmas of
+                        -- If there is data for this user, then copy of the Name field
                         Just userData ->
-                            { model | xmas = xmas, name = userData.meta.name } ! []
+                            ( { model | xmas = xmas }
+                                |> setDisplayName userData.meta.name
+                            , Cmd.none
+                            )
 
+                        -- If no data, then we should set the Name field using local data
                         Nothing ->
-                            { model | xmas = xmas } ! [ setMeta model.user.uid model.name ]
+                            case model.user.displayName of
+                                Just displayName ->
+                                    { model | xmas = xmas } ! [ setMeta model.user.uid displayName ]
+
+                                Nothing ->
+                                    { model | xmas = xmas } ! []
 
                 Err err ->
                     { model | userMessage = err } ! []
@@ -125,11 +135,16 @@ update message model =
 
 updateEditor : (Present -> Present) -> Model -> Model
 updateEditor fn model =
+    { model | editor = fn model.editor }
+
+
+setDisplayName : String -> Model -> Model
+setDisplayName displayName model =
     let
-        ed =
-            model.editor
+        user =
+            model.user
     in
-        { model | editor = fn model.editor }
+        { model | user = { user | displayName = Just displayName } }
 
 
 
@@ -165,24 +180,7 @@ viewPicker ({ user } as model) =
                 |> L.partition (Tuple.first >> ((==) user.uid))
     in
         div [ id "picker" ]
-            [ header [ class "flex-h" ]
-                [ div [ class "container flex-h spread" ]
-                    [ div []
-                        [ case model.user.photoURL of
-                            Just photoURL ->
-                                img [ src photoURL, class "avatar" ] []
-
-                            Nothing ->
-                                text ""
-                        , strong []
-                            [ model.user.displayName
-                                |> Maybe.withDefault model.name
-                                |> text
-                            ]
-                        ]
-                    , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
-                    ]
-                ]
+            [ viewHeader model
             , div [ class "container" ]
                 [ div [ class "main row" ]
                     [ viewOthers model others
@@ -190,6 +188,26 @@ viewPicker ({ user } as model) =
                     ]
                 ]
             ]
+
+
+viewHeader : Model -> Html Msg
+viewHeader model =
+    header [ class "flex-h" ]
+        [ div [ class "container flex-h spread" ]
+            [ div []
+                [ case model.user.photoURL of
+                    Just photoURL ->
+                        img [ src photoURL, class "avatar" ] []
+
+                    Nothing ->
+                        text ""
+                , model.user.displayName
+                    |> Maybe.map (text >> L.singleton >> strong [])
+                    |> Maybe.withDefault (text "")
+                ]
+            , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
+            ]
+        ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -242,12 +260,13 @@ viewOther model ( userRef, { meta, presents } ) =
                     ]
 
 
+badge : String -> String -> Html msg
 badge cl t =
     span [ class cl ] [ text t ]
 
 
 
---
+-- RHS
 
 
 viewMine : Model -> List ( String, UserData ) -> Html Msg
@@ -267,7 +286,7 @@ viewMine model lst =
                 _ ->
                     text <| "error" ++ toString lst
     in
-        div [ class "mine col-sm-6 hidden-xs-down" ]
+        div [ class "mine col-sm-6" ]
             [ h2 [] [ text "My suggestions" ]
             , viewSuggestionEditor model
             , mypresents
@@ -276,34 +295,33 @@ viewMine model lst =
 
 viewSuggestionEditor : Model -> Html Msg
 viewSuggestionEditor { editor } =
-    div [ class "new-present section" ]
-        [ h4 []
-            [ case editor.uid of
-                Just _ ->
-                    text "Editor"
+    let
+        btn msg txt =
+            button
+                [ class "btn btn-primary"
+                , onClick msg
+                , disabled <| editor.description == ""
+                ]
+                [ text txt ]
+    in
+        div [ class "new-present section" ]
+            [ h4 []
+                [ case editor.uid of
+                    Just _ ->
+                        text "Editor"
 
-                Nothing ->
-                    text "New suggestion"
-            ]
-        , B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
-        , editor.link
-            |> Maybe.withDefault ""
-            |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
-        , div [ class "flex-h spread" ]
-            [ button
-                [ class "btn btn-primary"
-                , onClick SubmitNewPresent
-                , disabled <| editor.description == ""
+                    Nothing ->
+                        text "New suggestion"
                 ]
-                [ text "Save" ]
-            , button
-                [ class "btn btn-primary"
-                , onClick CancelEditor
-                , disabled <| editor.description == ""
+            , B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
+            , editor.link
+                |> Maybe.withDefault ""
+                |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
+            , div [ class "flex-h spread" ]
+                [ btn SubmitNewPresent "Save"
+                , btn CancelEditor "Cancel"
                 ]
-                [ text "Cancel" ]
             ]
-        ]
 
 
 viewMyPresentIdea : Present -> Html Msg
@@ -350,8 +368,6 @@ viewLogin model =
                 , button [ type_ "button", class "btn btn-default", onClick SwitchToRegister ] [ text "New? Register yourself" ]
                 ]
             ]
-
-        -- , button [ onClick GoogleSignin ] [ text "Google" ]
         ]
 
 
@@ -361,14 +377,14 @@ viewRegister model =
         [ h1 [] [ text "Register" ]
         , Html.form
             [ onSubmit SubmitRegistration ]
-            [ B.inputWithLabel UpdateUsername "Your Name" "name" model.name
+            [ B.inputWithLabel UpdateUsername "Your Name" "name" (Maybe.withDefault "" model.user.displayName)
             , B.inputWithLabel UpdateEmail "Email" "email" model.email
             , B.passwordWithLabel UpdatePassword "Password" "password" model.password
             , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
             , button
                 [ type_ "submit"
-                , disabled <| model.password == "" || model.password /= model.password2
                 , class "btn btn-primary"
+                , disabled <| model.password == "" || model.password /= model.password2
                 ]
                 [ text "Login" ]
             ]

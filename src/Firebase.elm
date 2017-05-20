@@ -31,6 +31,7 @@ type alias FBUser =
     }
 
 
+init : FBUser
 init =
     { email = ""
     , uid = ""
@@ -48,6 +49,7 @@ decodeAuthState =
         ]
 
 
+userDecoder : Decoder FBUser
 userDecoder =
     map4 FBUser
         (field "email" string)
@@ -74,6 +76,7 @@ signinGoogle =
     jsmessage <| FBMsg "signinGoogle" E.null
 
 
+signout : Cmd msg
 signout =
     jsmessage <| FBMsg "signout" E.null
 
@@ -87,6 +90,7 @@ register email password =
 -- DATABASE
 
 
+subscribe : String -> Cmd msg
 subscribe ref =
     jsmessage <| FBMsg "subscribe" <| E.string ref
 

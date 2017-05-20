@@ -18,7 +18,6 @@ type alias Model =
     , email : String
     , password : String
     , password2 : String
-    , name : String
     , user : FB.FBUser
     , xmas : Dict String UserData
     , userMessage : String
@@ -32,7 +31,6 @@ blank =
     , email = ""
     , password = ""
     , password2 = ""
-    , name = ""
     , user = FB.init
     , xmas = Dict.empty
     , userMessage = ""
