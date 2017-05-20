@@ -4,9 +4,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Json exposing (Value)
+import Json.Encode as E
 import Dict exposing (Dict)
 import List as L
-import Ports
 import Model as M exposing (..)
 import Bootstrap as B
 import Firebase as FB
@@ -72,7 +72,7 @@ update message model =
 
         -- Main page
         Signout ->
-            blank ! [ FB.simpleMsg "signout" ]
+            blank ! [ FB.signout ]
 
         Claim otherRef presentRef ->
             model ! [ claim model.user.uid otherRef presentRef ]
@@ -113,7 +113,7 @@ update message model =
                             { model | xmas = xmas, name = userData.meta.name } ! []
 
                         Nothing ->
-                            { model | xmas = xmas } ! [ FB.setMeta model.user.uid model.name ]
+                            { model | xmas = xmas } ! [ setMeta model.user.uid model.name ]
 
                 Err err ->
                     { model | userMessage = err } ! []
@@ -192,7 +192,7 @@ viewOther model ( userRef, { meta, presents } ) =
                     if model.user.uid == id then
                         li [ onClick <| Unclaim userRef presentRef, class "present flex-h" ]
                             [ makeDescription present
-                            , badge "text-success" "Claimed"
+                            , badge "text-success clickable" "Claimed"
                             ]
                     else
                         li [ class "present flex-h" ]
@@ -352,23 +352,34 @@ viewRegister model =
 
 
 
---
+-- CMDs
 
 
 claim uid otherRef presentRef =
-    FB.set <| FB.makeClaimRef uid otherRef presentRef
+    FB.set
+        (makeTakenByRef otherRef presentRef)
+        (E.string uid)
 
 
 unclaim otherRef presentRef =
-    FB.remove <| FB.makeTakenByRef otherRef presentRef
+    FB.remove <| makeTakenByRef otherRef presentRef
 
 
 savePresent : Model -> Cmd Msg
 savePresent model =
     case model.editor.uid of
         Just uid_ ->
-            -- update exisiting present
-            FB.set_ ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.editor)
+            -- update existing present
+            FB.set ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.editor)
 
         Nothing ->
-            FB.push_ ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
+            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
+
+
+setMeta uid name =
+    FB.set (uid ++ "/meta") (E.object [ ( "name", E.string name ) ])
+
+
+makeTakenByRef : String -> String -> String
+makeTakenByRef otherRef presentRef =
+    otherRef ++ "/presents/" ++ presentRef ++ "/takenBy"

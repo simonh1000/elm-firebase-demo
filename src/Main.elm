@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Html
-import Ports
+import Firebase
 import App exposing (..)
 
 
@@ -16,6 +16,6 @@ main =
 
 subscriptions model =
     Sub.batch
-        [ Ports.authStateChange OnAuthStateChange
-        , Ports.onSnapshot OnSnapshot
+        [ Firebase.authStateChange OnAuthStateChange
+        , Firebase.onSnapshot OnSnapshot
         ]
