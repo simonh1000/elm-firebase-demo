@@ -1,6 +1,5 @@
 body {
     background-color: #eee;
-    padding: 30px;
     height: 100vh;
 }
 .app {
@@ -9,27 +8,32 @@ body {
 }
 header {
     display: flex;
-    justify-content: space-between;
+    height: 60px;
+    background-color: #444;
+    color: white;
+    padding: 5px 0;
+    margin-bottom: 15px;
+    .container {
+        flex: 1 1;
+    }
+    @media (min-width: 576px) {
+        .container {
+            flex: initial;
+        }
+    }
 }
-h1 {
+h1, h2 {
     margin-bottom: 15px;
 }
 #login, #register {
-    flex-direction: column;
-    width: 500px;
-    margin: 0 auto;
+    width: 300px;
+    margin: 50px auto 0;
 }
 #picker {
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    .main {
-        flex: 1 1;
-        display: flex;
-        align-items: stretch;
-        .others, .mine {
-            overflow-y: auto;
-        }
+    .others, .mine {
+        height: 100%;
+        overflow-y: auto;
     }
 }
 
@@ -60,6 +64,8 @@ ul {
         }
     }
 }
+
+
 
 // ....
 

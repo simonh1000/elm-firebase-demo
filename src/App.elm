@@ -18,9 +18,6 @@ init =
 
 
 
--- ( { blank | email = "sim@sim.be", password = "test11" }
--- , Cmd.none
--- )
 -- UPDATE
 
 
@@ -75,7 +72,7 @@ update message model =
 
         -- Main page
         Signout ->
-            model ! [ FB.simpleMsg "signout" ]
+            blank ! [ FB.simpleMsg "signout" ]
 
         Claim otherRef presentRef ->
             model ! [ claim model.user.uid otherRef presentRef ]
@@ -137,7 +134,7 @@ updateEditor fn model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "app container" ]
+    div [ class "app" ]
         [ case model.page of
             Login ->
                 viewLogin model
@@ -164,21 +161,24 @@ viewPicker ({ user } as model) =
                 |> L.partition (Tuple.first >> ((==) user.uid))
     in
         div [ id "picker" ]
-            [ header []
-                [ span [] [ text model.name ]
-                , button [ class "btn btn-default", onClick Signout ] [ text "Signout" ]
+            [ header [ class "flex-h" ]
+                [ div [ class "container flex-h spread" ]
+                    [ strong [] [ text model.name ]
+                    , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
+                    ]
                 ]
-            , h1 [] [ text "Choose presents" ]
-            , div [ class "main row" ]
-                [ viewOthers model others
-                , viewMine model mine
+            , div [ class "container" ]
+                [ div [ class "main row" ]
+                    [ viewOthers model others
+                    , viewMine model mine
+                    ]
                 ]
             ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
 viewOthers model others =
-    div [ class "others col-sm-6" ] <|
+    div [ class "others col-12 col-sm-6" ] <|
         h2 [] [ text "Xmas wishes" ]
             :: L.map (viewOther model) others
 
@@ -186,23 +186,23 @@ viewOthers model others =
 viewOther : Model -> ( String, UserData ) -> Html Msg
 viewOther model ( userRef, { meta, presents } ) =
     let
-        viewPresent ( presentRef, { description, takenBy } ) =
-            case takenBy of
+        viewPresent ( presentRef, present ) =
+            case present.takenBy of
                 Just id ->
                     if model.user.uid == id then
-                        li [ onClick <| Unclaim userRef presentRef, class "present flex-h clickable" ]
-                            [ text description
+                        li [ onClick <| Unclaim userRef presentRef, class "present flex-h" ]
+                            [ makeDescription present
                             , badge "text-success" "Claimed"
                             ]
                     else
                         li [ class "present flex-h" ]
-                            [ text description
+                            [ makeDescription present
                             , badge "text-warning" "Taken"
                             ]
 
                 Nothing ->
-                    li [ class "present flex-h clickable" ]
-                        [ text description
+                    li [ class "present flex-h" ]
+                        [ makeDescription present
                         , button
                             [ class "btn btn-primary btn-sm"
                             , onClick <| Claim userRef presentRef
@@ -251,7 +251,7 @@ viewMine model lst =
                 _ ->
                     text <| "error" ++ toString lst
     in
-        div [ class "mine col-sm-6" ]
+        div [ class "mine col-sm-6 hidden-xs-down" ]
             [ h2 [] [ text "My suggestions" ]
             , viewSuggestionEditor model
             , mypresents
@@ -272,16 +272,18 @@ viewSuggestionEditor { editor } =
         , B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
         , editor.link
             |> Maybe.withDefault ""
-            |> B.inputWithLabel UpdateNewPresentLink "Link" "newpresentlink"
+            |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
         , div [ class "flex-h spread" ]
             [ button
                 [ class "btn btn-primary"
                 , onClick SubmitNewPresent
+                , disabled <| editor.description == ""
                 ]
                 [ text "Save" ]
             , button
                 [ class "btn btn-primary"
                 , onClick CancelEditor
+                , disabled <| editor.description == ""
                 ]
                 [ text "Cancel" ]
             ]
@@ -291,9 +293,23 @@ viewSuggestionEditor { editor } =
 viewMyPresentIdea : Present -> Html Msg
 viewMyPresentIdea present =
     li [ class "present flex-h spread" ]
-        [ text present.description
+        [ makeDescription present
         , span [ class "material-icons clickable", onClick (EditPresent present) ] [ text "mode_edit" ]
         ]
+
+
+makeDescription : Present -> Html Msg
+makeDescription { description, link } =
+    case link of
+        Just link_ ->
+            a
+                [ href link_
+                , target "_blank"
+                ]
+                [ text description ]
+
+        Nothing ->
+            text description
 
 
 
@@ -301,7 +317,7 @@ viewMyPresentIdea present =
 
 
 viewLogin model =
-    div [ id "login", class "flex-h" ]
+    div [ id "login" ]
         [ h1 [] [ text "Login" ]
         , Html.form
             [ onSubmit Submit ]
@@ -317,7 +333,7 @@ viewLogin model =
 
 viewRegister : Model -> Html Msg
 viewRegister model =
-    div [ id "register", class "flex-h" ]
+    div [ id "register" ]
         [ h1 [] [ text "Register" ]
         , Html.form
             [ onSubmit SubmitRegistration ]
