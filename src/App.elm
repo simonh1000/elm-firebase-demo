@@ -29,6 +29,7 @@ type Msg
     | Submit
     | SwitchToRegister
     | SubmitRegistration
+    | GoogleSignin
       --
     | Signout
     | Claim String String
@@ -56,6 +57,9 @@ update message model =
 
         Submit ->
             model ! [ FB.signin model.email model.password ]
+
+        GoogleSignin ->
+            model ! [ FB.signinGoogle ]
 
         -- Registration page
         SwitchToRegister ->
@@ -96,14 +100,14 @@ update message model =
             updateEditor (\_ -> newPresent) model ! []
 
         OnAuthStateChange val ->
-            case Json.decodeValue decodeAuthState val |> Result.andThen identity of
+            case Json.decodeValue FB.decodeAuthState val |> Result.andThen identity of
                 Ok user ->
                     ( { model | user = user, page = Picker }
                     , FB.subscribe "/"
                     )
 
                 Err err ->
-                    { model | user = blankUser, page = Login, userMessage = err } ! []
+                    { model | user = FB.init, page = Login, userMessage = err } ! []
 
         OnSnapshot res ->
             case Json.decodeValue decoderXmas res of
@@ -163,7 +167,19 @@ viewPicker ({ user } as model) =
         div [ id "picker" ]
             [ header [ class "flex-h" ]
                 [ div [ class "container flex-h spread" ]
-                    [ strong [] [ text model.name ]
+                    [ div []
+                        [ case model.user.photoURL of
+                            Just photoURL ->
+                                img [ src photoURL, class "avatar" ] []
+
+                            Nothing ->
+                                text ""
+                        , strong []
+                            [ model.user.displayName
+                                |> Maybe.withDefault model.name
+                                |> text
+                            ]
+                        ]
                     , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
                     ]
                 ]
@@ -319,8 +335,14 @@ makeDescription { description, link } =
 viewLogin model =
     div [ id "login" ]
         [ h1 [] [ text "Login" ]
+        , p [] [ text "Login with Google or register your email address" ]
+        , img
+            [ src "assets/btn_google_signin_light_normal_web.png"
+            , onClick GoogleSignin
+            ]
+            []
         , Html.form
-            [ onSubmit Submit ]
+            [ onSubmit Submit, class "section" ]
             [ B.inputWithLabel UpdateEmail "Email" "email" model.email
             , B.passwordWithLabel UpdatePassword "Password" "password" model.password
             , div [ class "flex-h spread" ]
@@ -328,6 +350,8 @@ viewLogin model =
                 , button [ type_ "button", class "btn btn-default", onClick SwitchToRegister ] [ text "New? Register yourself" ]
                 ]
             ]
+
+        -- , button [ onClick GoogleSignin ] [ text "Google" ]
         ]
 
 

@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 var path = require('path');
 
 var elmSource = __dirname + '/src';
@@ -19,7 +20,11 @@ module.exports = {
         extensions: ['.js', '.elm', '.scss']
     },
     plugins: [
-        new webpack.NoEmitOnErrorsPlugin()
+        new webpack.NoEmitOnErrorsPlugin(),
+        new CopyWebpackPlugin([{
+            from: 'src/assets/',
+            to: 'assets/'
+        }])
     ],
     module: {
         rules: [{
@@ -60,11 +65,11 @@ module.exports = {
                 exclude: [/elm-stuff/, /node_modules/],
                 loaders: ["style-loader", "css-loader"]
             },
-            {
-                test: /\.(jpg|png|gif|svg|ico)$/,
-                exclude: [/elm-stuff/, /node_modules/],
-                loaders: ["url-loader"]
-            },
+            // {
+            //     test: /\.(jpg|png|gif|svg|ico)$/,
+            //     exclude: [/elm-stuff/, /node_modules/],
+            //     loaders: ["url-loader"]
+            // },
             {
                 test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                 exclude: [/elm-stuff/, /node_modules/],

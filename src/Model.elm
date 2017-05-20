@@ -4,6 +4,7 @@ import Json.Decode as Json exposing (..)
 import Json.Encode as E
 import Dict exposing (Dict)
 import List as L
+import Firebase as FB
 
 
 type Page
@@ -18,7 +19,7 @@ type alias Model =
     , password : String
     , password2 : String
     , name : String
-    , user : AuthData
+    , user : FB.FBUser
     , xmas : Dict String UserData
     , userMessage : String
     , editor : Present
@@ -32,7 +33,7 @@ blank =
     , password = ""
     , password2 = ""
     , name = ""
-    , user = blankUser
+    , user = FB.init
     , xmas = Dict.empty
     , userMessage = ""
     , editor = blankPresent
@@ -66,34 +67,8 @@ type alias UserMeta =
     }
 
 
-type alias AuthData =
-    { email : String
-    , uid : String
-    }
-
-
-blankUser =
-    { email = ""
-    , uid = ""
-    }
-
-
 
 -- DECODER
-
-
-decodeAuthState : Decoder (Result String AuthData)
-decodeAuthState =
-    oneOf
-        [ map Err <| field "error" string
-        , map Ok decodeUser
-        ]
-
-
-decodeUser =
-    map2 AuthData
-        (field "email" string)
-        (field "uid" string)
 
 
 decoderXmas =

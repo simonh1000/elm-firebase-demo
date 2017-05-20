@@ -1,6 +1,7 @@
 port module Firebase exposing (..)
 
-import Json.Encode as E exposing (..)
+import Json.Encode as E
+import Json.Decode as Json exposing (..)
 
 
 type alias FBMsg =
@@ -18,10 +19,48 @@ port authStateChange : (Value -> msg) -> Sub msg
 port onSnapshot : (Value -> msg) -> Sub msg
 
 
+
+-- AUTHENTICATION
+
+
+type alias FBUser =
+    { email : String
+    , uid : String
+    , displayName : Maybe String
+    , photoURL : Maybe String
+    }
+
+
+init =
+    { email = ""
+    , uid = ""
+    , displayName = Nothing
+    , photoURL = Nothing
+    }
+
+
+decodeAuthState : Decoder (Result String FBUser)
+decodeAuthState =
+    oneOf
+        [ map Err <| field "error" string
+        , map Ok userDecoder
+        , succeed <| Err ""
+        ]
+
+
+userDecoder =
+    map4 FBUser
+        (field "email" string)
+        (field "uid" string)
+        (maybe <| field "displayName" string)
+        (maybe <| field "photoURL" string)
+
+
+encodeCredentials : String -> String -> Value
 encodeCredentials email password =
-    object
-        [ ( "email", string email )
-        , ( "password", string password )
+    E.object
+        [ ( "email", E.string email )
+        , ( "password", E.string password )
         ]
 
 
@@ -30,8 +69,13 @@ signin email password =
     jsmessage <| FBMsg "signin" (encodeCredentials email password)
 
 
+signinGoogle : Cmd msg
+signinGoogle =
+    jsmessage <| FBMsg "signinGoogle" E.null
+
+
 signout =
-    jsmessage <| FBMsg "signout" null
+    jsmessage <| FBMsg "signout" E.null
 
 
 register : String -> String -> Cmd msg
@@ -39,8 +83,12 @@ register email password =
     jsmessage <| FBMsg "register" (encodeCredentials email password)
 
 
+
+-- DATABASE
+
+
 subscribe ref =
-    jsmessage <| FBMsg "subscribe" <| string ref
+    jsmessage <| FBMsg "subscribe" <| E.string ref
 
 
 push : String -> E.Value -> Cmd msg

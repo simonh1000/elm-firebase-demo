@@ -21,6 +21,11 @@ header {
             flex: initial;
         }
     }
+    .avatar {
+        height: 30px;
+        border-radius: 100%;
+        margin-right: 15px;
+    }
 }
 h1, h2 {
     margin-bottom: 15px;
@@ -28,6 +33,9 @@ h1, h2 {
 #login, #register {
     width: 300px;
     margin: 50px auto 0;
+    form {
+        margin-top: 15px;
+    }
 }
 #picker {
     height: 100%;
