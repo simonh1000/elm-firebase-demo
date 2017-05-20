@@ -12,3 +12,11 @@ $ npm run dev
 Open http://localhost:3000 and start modifying the code in /src.
 
 See also my [Gulp-based dev environment](https://github.com/simonh1000/elm-fullstack-starter).
+
+
+## Deploy to Firebase
+
+```sh
+npm run build
+firebase deploy
+```

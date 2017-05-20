@@ -14,12 +14,13 @@ import Firebase as FB
 
 init : ( Model, Cmd Msg )
 init =
-    ( { blank | email = "sim@sim.be", password = "test11" }
-    , Cmd.none
-    )
+    blank ! []
 
 
 
+-- ( { blank | email = "sim@sim.be", password = "test11" }
+-- , Cmd.none
+-- )
 -- UPDATE
 
 
@@ -54,21 +55,23 @@ update message model =
         UpdatePassword password ->
             { model | password = password } ! []
 
-        UpdatePassword2 password2 ->
-            { model | password2 = password2 } ! []
-
-        UpdateUsername name ->
-            { model | name = name } ! []
-
         Submit ->
             model ! [ FB.signin model.email model.password ]
 
+        -- Registration page
         SwitchToRegister ->
             { model | page = Register } ! []
 
         SubmitRegistration ->
             model ! [ FB.register model.email model.password ]
 
+        UpdatePassword2 password2 ->
+            { model | password2 = password2 } ! []
+
+        UpdateUsername name ->
+            { model | name = name } ! []
+
+        -- Main page
         Signout ->
             model ! [ FB.simpleMsg "signout" ]
 
@@ -286,11 +289,11 @@ viewLogin model =
         [ h1 [] [ text "Login" ]
         , Html.form
             [ onSubmit Submit ]
-            [ B.formGroup UpdateEmail "Email" "email" model.email
-            , B.formGroup UpdatePassword "Password" "password" model.password
+            [ B.inputWithLabel UpdateEmail "Email" "email" model.email
+            , B.inputWithLabel UpdatePassword "Password" "password" model.password
             , div [ class "flex-h spread" ]
                 [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                , button [ onClick SwitchToRegister, class "btn btn-default" ] [ text "new user" ]
+                , button [ type_ "button", onClick SwitchToRegister, class "btn btn-default" ] [ text "new user" ]
                 ]
             ]
         ]
@@ -302,11 +305,10 @@ viewRegister model =
         [ h1 [] [ text "Register" ]
         , Html.form
             [ onSubmit SubmitRegistration ]
-            [ B.formGroup UpdateEmail "Email" "email" model.email
-              -- input [ onInput UpdateEmail, value model.email ] []
-            , B.formGroup UpdatePassword "Password" "password" model.password
-            , B.formGroup UpdatePassword2 "Retype Password" "password2" model.password2
-            , B.formGroup UpdateUsername "Your Name" "name" model.name
+            [ B.inputWithLabel UpdateUsername "Your Name" "name" model.name
+            , B.inputWithLabel UpdateEmail "Email" "email" model.email
+            , B.inputWithLabel UpdatePassword "Password" "password" model.password
+            , B.inputWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
             , button
                 [ type_ "submit"
                 , disabled <| model.password == "" || model.password /= model.password2
