@@ -7,7 +7,7 @@ import App exposing (..)
 
 main =
     Html.program
-        { init = ( init, Cmd.none )
+        { init = init
         , update = update
         , view = view
         , subscriptions = subscriptions

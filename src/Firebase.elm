@@ -41,8 +41,27 @@ push obj =
     jsmessage <| PortMsg "push" obj
 
 
+push_ : String -> E.Value -> Cmd msg
+push_ ref val =
+    [ ( "ref", E.string ref )
+    , ( "payload", val )
+    ]
+        |> E.object
+        |> push
+
+
+set : E.Value -> Cmd msg
 set obj =
     jsmessage <| PortMsg "set" obj
+
+
+set_ : String -> E.Value -> Cmd msg
+set_ ref val =
+    [ ( "ref", E.string ref )
+    , ( "payload", val )
+    ]
+        |> E.object
+        |> set
 
 
 remove : String -> Cmd msg
@@ -61,8 +80,9 @@ makeTakenByRef otherRef presentRef =
     otherRef ++ "/presents/" ++ presentRef ++ "/takenBy"
 
 
-makePresent ref description =
-    [ ( "ref", string ref )
-    , ( "payload", object [ ( "description", E.string description ) ] )
-    ]
-        |> E.object
+
+-- makePresent ref description =
+--     [ ( "ref", string ref )
+--     , ( "payload", object [ ( "description", E.string description ) ] )
+--     ]
+--         |> E.object

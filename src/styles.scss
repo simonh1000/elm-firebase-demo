@@ -11,6 +11,9 @@ header {
     display: flex;
     justify-content: space-between;
 }
+h1 {
+    margin-bottom: 15px;
+}
 .login, .register {
     flex-direction: column;
     width: 400px;
@@ -30,6 +33,21 @@ header {
         flex: 0 0 50%;
     }
 }
+.new-present {
+    margin-bottom: 20px;
+}
+
+.section, li.present {
+    background-color: white;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    padding: 3px 10px;
+}
+.section {
+    input {
+        background-color: #ddd;
+    }
+}
 .warning {
     color: #ee3333;
 }
@@ -39,11 +57,7 @@ ul {
     padding-left: 0;
     li.present {
         justify-content: space-between;
-        background-color: white;
-        border-radius: 3px;
-        border: 1px solid #ddd;
         margin-bottom: 3px;
-        padding: 3px 10px;
         span {
             font-size: 14px;
         }

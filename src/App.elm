@@ -12,9 +12,11 @@ import Bootstrap as B
 import Firebase as FB
 
 
-init : Model
+init : ( Model, Cmd Msg )
 init =
-    { blank | email = "sim@sim.be", password = "test11" }
+    ( { blank | email = "sim@sim.be", password = "test11" }
+    , Cmd.none
+    )
 
 
 
@@ -30,10 +32,15 @@ type Msg
     | SwitchToRegister
     | SubmitRegistration
     | Signout
+      --
     | Claim String String
     | Unclaim String String
+      -- Editor
     | UpdateNewPresent String
+    | UpdateNewPresentLink String
     | SubmitNewPresent
+    | EditPresent Present
+      --
     | OnAuthStateChange Value
     | OnSnapshot Value
 
@@ -71,14 +78,18 @@ update message model =
         Unclaim otherRef presentRef ->
             model ! [ unclaim otherRef presentRef ]
 
-        UpdateNewPresent newPresent ->
-            { model | newPresent = newPresent } ! []
+        EditPresent newPresent ->
+            updateEditor (\_ -> newPresent) model ! []
+
+        UpdateNewPresent description ->
+            updateEditor (\ed -> { ed | description = description }) model ! []
+
+        UpdateNewPresentLink link ->
+            updateEditor (\ed -> { ed | link = Just link }) model ! []
 
         SubmitNewPresent ->
-            ( { model | newPresent = "" }
-            , model.newPresent
-                |> FB.makePresent ("/" ++ model.user.uid ++ "/presents")
-                |> FB.push
+            ( { model | editor = blankPresent }
+            , savePresent model
             )
 
         OnAuthStateChange val ->
@@ -103,6 +114,15 @@ update message model =
 
                 Err err ->
                     { model | userMessage = err } ! []
+
+
+updateEditor : (Present -> Present) -> Model -> Model
+updateEditor fn model =
+    let
+        ed =
+            model.editor
+    in
+        { model | editor = fn model.editor }
 
 
 
@@ -195,6 +215,10 @@ badge cl t =
     span [ class cl ] [ text t ]
 
 
+
+--
+
+
 viewMine : Model -> List ( String, UserData ) -> Html Msg
 viewMine model lst =
     let
@@ -203,7 +227,7 @@ viewMine model lst =
                 [ ( _, { presents } ) ] ->
                     presents
                         |> Dict.values
-                        |> L.map (.description >> text >> L.singleton >> li [ class "present" ])
+                        |> L.map viewMyPresentIdea
                         |> ul []
 
                 [] ->
@@ -214,9 +238,43 @@ viewMine model lst =
     in
         div [ class "mine col-sm-6" ]
             [ h3 [] [ text "My suggestions" ]
-            , B.inputWithButton UpdateNewPresent SubmitNewPresent model.newPresent
+            , viewSuggestionEditor model
             , mypresents
             ]
+
+
+viewSuggestionEditor : Model -> Html Msg
+viewSuggestionEditor { editor } =
+    div [ class "new-present section" ]
+        [ h3 []
+            [ case editor.uid of
+                Just _ ->
+                    text "Editor"
+
+                Nothing ->
+                    text "New suggestion"
+            ]
+        , B.inputWithLabel UpdateNewPresent "newpresent" "Description" editor.description
+        , editor.link
+            |> Maybe.withDefault ""
+            |> B.inputWithLabel UpdateNewPresentLink "newpresentlink" "Link"
+        , div [ class "flex-h spread" ]
+            [ button
+                [ class "btn btn-primary"
+                , onClick SubmitNewPresent
+                ]
+                [ text "Save" ]
+            , button [ class "btn btn-primary", disabled True ] [ text "Cancel" ]
+            ]
+        ]
+
+
+viewMyPresentIdea : Present -> Html Msg
+viewMyPresentIdea present =
+    li [ class "present flex-h spread" ]
+        [ text present.description
+        , span [ class "material-icons clickable", onClick (EditPresent present) ] [ text "mode_edit" ]
+        ]
 
 
 
@@ -269,3 +327,14 @@ claim uid otherRef presentRef =
 
 unclaim otherRef presentRef =
     FB.remove <| FB.makeTakenByRef otherRef presentRef
+
+
+savePresent : Model -> Cmd Msg
+savePresent model =
+    case model.editor.uid of
+        Just uid_ ->
+            -- update exisiting present
+            FB.set_ ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.editor)
+
+        Nothing ->
+            FB.push_ ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
