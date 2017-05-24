@@ -18,6 +18,7 @@ function createAuthListener(cb) {
         });
 }
 
+// Elm message handler
 function handler({message, payload}, cb, fbToElm) {
     switch (message) {
         case "signin":

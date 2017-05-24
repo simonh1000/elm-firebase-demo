@@ -92,6 +92,12 @@ module.exports = {
         //       "/": "http://localhost:9779"
         //   },
         inline: true,
-        stats: 'errors-only'
+        stats: 'errors-only',
+        setup(app) {
+			// firebase messaging script needs to be able to find this route
+			app.get('/firebase-messaging-sw.js', (req, res) => {
+				res.sendFile(path.join(__dirname, 'src/firebase-messaging-sw.js'));
+			})
+		}
     }
 };
