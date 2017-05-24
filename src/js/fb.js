@@ -18,10 +18,10 @@ function createAuthListener(cb) {
         });
 }
 
-function handler({message, payload}, cb) {
+function handler({message, payload}, cb, fbToElm) {
     switch (message) {
         case "signin":
-            signin(payload.email, payload.password);
+            signin(payload.email, payload.password, fbToElm);
             break;
         case "register":
             register(payload.email, payload.password);
@@ -50,14 +50,15 @@ function handler({message, payload}, cb) {
 }
 
 
-function signin(email, password) {
+function signin(email, password, fbToElm) {
     firebase.auth()
         .signInWithEmailAndPassword(email, password)
         .then(res => {
             console.log("Signin success", res);
         })
-        .catch(function(error) {
-            console.error(error);
+        .catch(function(err) {
+            fbToElm({message: "error", payload: err});
+            console.error(err);
         });
 }
 

@@ -27,7 +27,7 @@ type Msg
     | UpdatePassword2 String
     | UpdateUsername String
     | Submit
-    | SwitchToRegister
+    | SwitchTo Page
     | SubmitRegistration
     | GoogleSignin
       --
@@ -42,6 +42,7 @@ type Msg
       -- My presents list
     | EditPresent Present
       -- Subscriptions
+    | FBMsgHandler FB.FBMsg
     | OnAuthStateChange Value
     | OnSnapshot Value
 
@@ -62,8 +63,8 @@ update message model =
             model ! [ FB.signinGoogle ]
 
         -- Registration page
-        SwitchToRegister ->
-            { model | page = Register } ! []
+        SwitchTo page ->
+            { model | page = page } ! []
 
         SubmitRegistration ->
             model ! [ FB.register model.email model.password ]
@@ -113,7 +114,7 @@ update message model =
             case Json.decodeValue decoderXmas res of
                 Ok xmas ->
                     case Dict.get model.user.uid xmas of
-                        -- If there is data for this user, then copy of the Name field
+                        -- If there is data for this user, then copy over the Name field
                         Just userData ->
                             ( { model | xmas = xmas }
                                 |> setDisplayName userData.meta.name
@@ -132,22 +133,19 @@ update message model =
                 Err err ->
                     { model | userMessage = err } ! []
 
-
-updateEditor : (Present -> Present) -> Model -> Model
-updateEditor fn model =
-    { model | editor = fn model.editor }
-
-
-setDisplayName : String -> Model -> Model
-setDisplayName displayName model =
-    let
-        user =
-            model.user
-    in
-        { model | user = { user | displayName = Just displayName } }
+        FBMsgHandler fbMsg ->
+            model ! []
 
 
 
+-- case Json.decodeValue FB.fbMsgDecoder fbMsg of
+--     Ok { message, payload } ->
+--         case message of
+--             _ ->
+--                 { model | userMessage = toString payload } ! []
+--
+--     Err err ->
+--         { model | userMessage = err } ! []
 -- VIEW
 
 
@@ -365,7 +363,7 @@ viewLogin model =
             , B.passwordWithLabel UpdatePassword "Password" "password" model.password
             , div [ class "flex-h spread" ]
                 [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                , button [ type_ "button", class "btn btn-default", onClick SwitchToRegister ] [ text "New? Register yourself" ]
+                , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
                 ]
             ]
         ]
@@ -381,12 +379,19 @@ viewRegister model =
             , B.inputWithLabel UpdateEmail "Email" "email" model.email
             , B.passwordWithLabel UpdatePassword "Password" "password" model.password
             , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
-            , button
-                [ type_ "submit"
-                , class "btn btn-primary"
-                , disabled <| model.password == "" || model.password /= model.password2
+            , div [ class "flex-h spread" ]
+                [ button
+                    [ type_ "submit"
+                    , class "btn btn-primary"
+                    , disabled <| model.password == "" || model.password /= model.password2
+                    ]
+                    [ text "Register" ]
+                , button
+                    [ class "btn btn-default"
+                    , onClick (SwitchTo Login)
+                    ]
+                    [ text "Login" ]
                 ]
-                [ text "Login" ]
             ]
         ]
 

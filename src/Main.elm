@@ -10,12 +10,6 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = subscriptions
+        , subscriptions =
+            Firebase.subscriptions FBMsgHandler OnAuthStateChange OnSnapshot
         }
-
-
-subscriptions model =
-    Sub.batch
-        [ Firebase.authStateChange OnAuthStateChange
-        , Firebase.onSnapshot OnSnapshot
-        ]

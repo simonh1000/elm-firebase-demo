@@ -13,10 +13,26 @@ type alias FBMsg =
 port jsmessage : FBMsg -> Cmd msg
 
 
+port fbToElm : (FBMsg -> msg) -> Sub msg
+
+
 port authStateChange : (Value -> msg) -> Sub msg
 
 
 port onSnapshot : (Value -> msg) -> Sub msg
+
+
+
+-- Subscriptions
+
+
+subscriptions : (FBMsg -> msg) -> (Value -> msg) -> (Value -> msg) -> m -> Sub msg
+subscriptions fbMsgHandler authMsg ssMsg _ =
+    Sub.batch
+        [ authStateChange authMsg
+        , onSnapshot ssMsg
+        , fbToElm fbMsgHandler
+        ]
 
 
 

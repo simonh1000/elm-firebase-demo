@@ -15,5 +15,5 @@ fb.createAuthListener(app.ports.authStateChange.send);
 app.ports.jsmessage.subscribe( ({message, payload}) => {
     // console.log("jsmessage",message, payload);
     // Provide call back for data subscriptions
-    fb.handler({message, payload}, app.ports.onSnapshot.send);
+    fb.handler({message, payload}, app.ports.onSnapshot.send, app.ports.fbToElm.send);
 });

@@ -66,6 +66,24 @@ type alias UserMeta =
 
 
 
+-- Model update helpers
+
+
+updateEditor : (Present -> Present) -> Model -> Model
+updateEditor fn model =
+    { model | editor = fn model.editor }
+
+
+setDisplayName : String -> Model -> Model
+setDisplayName displayName model =
+    let
+        user =
+            model.user
+    in
+        { model | user = { user | displayName = Just displayName } }
+
+
+
 -- DECODER
 
 
@@ -107,7 +125,7 @@ decoderMeta =
 
 
 
---
+-- Encoders
 
 
 encodePresent : Present -> E.Value
