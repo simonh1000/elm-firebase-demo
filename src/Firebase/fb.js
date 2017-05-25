@@ -1,29 +1,14 @@
-function createAuthListener(cb) {
-    firebase.auth()
-        .onAuthStateChanged(function(user) {
-            console.log("auth state change", user);
-            if (user) {
-                return cb({
-                    message: "authstate",
-                    payload: {
-                        email: user.email,
-                        uid: user.uid,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL
-                    }
-                })
-            } else {
-                cb({
-                    message: "authstate",
-                    payload: null
-                });
-            }
-        });
-}
+import fbmsg from './fbm';
 
 // Elm message handler
 function handler({message, payload}, fbToElm) {
     switch (message) {
+        case "ListenAuthState":
+            createAuthListener(fbToElm);
+            break;
+        case "RequestMessagingPermission":
+            fbmsg.requestMessagingPermission(fbToElm);
+            break;
         case "signin":
             signin(payload.email, payload.password, fbToElm);
             break;
@@ -52,6 +37,30 @@ function handler({message, payload}, fbToElm) {
             break;
     }
 }
+
+function createAuthListener(fbToElm) {
+    firebase.auth()
+        .onAuthStateChanged(function(user) {
+            console.log("auth state change", user);
+            if (user) {
+                return fbToElm({
+                    message: "authstate",
+                    payload: {
+                        email: user.email,
+                        uid: user.uid,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL
+                    }
+                })
+            } else {
+                fbToElm({
+                    message: "authstate",
+                    payload: null
+                });
+            }
+        });
+}
+
 
 
 function signin(email, password, fbToElm) {

@@ -14,7 +14,7 @@ import Bootstrap as B
 
 init : ( Model, Cmd Msg )
 init =
-    blank ! []
+    blank ! [ FB.setUpAuthListener, FB.requestMessagingPermission ]
 
 
 
@@ -232,11 +232,11 @@ viewOthers model others =
 viewOther : Model -> ( String, UserData ) -> Html Msg
 viewOther model ( userRef, { meta, presents } ) =
     let
-        viewPresent ( presentRef, present ) =
+        viewPresent presentRef present =
             case present.takenBy of
                 Just id ->
                     if model.user.uid == id then
-                        li [ onClick <| Unclaim userRef presentRef, class "present flex-h" ]
+                        li [ class "present flex-h", onClick <| Unclaim userRef presentRef ]
                             [ makeDescription present
                             , badge "success clickable" "Claimed"
                             ]
@@ -258,18 +258,15 @@ viewOther model ( userRef, { meta, presents } ) =
 
         ps =
             presents
-                |> Dict.toList
-                |> L.map viewPresent
+                |> Dict.map viewPresent
+                |> Dict.values
     in
         case ps of
             [] ->
                 text ""
 
             _ ->
-                div [ class "person other" ]
-                    [ h4 [] [ text meta.name ]
-                    , ul [] ps
-                    ]
+                div [ class "person other" ] [ h4 [] [ text meta.name ], ul [] ps ]
 
 
 badge : String -> String -> Html msg
@@ -331,8 +328,16 @@ viewSuggestionEditor { editor } =
                 |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
             , div [ class "flex-h spread" ]
                 [ btn SubmitNewPresent "Save"
+                , if isJust editor.uid then
+                    button [ class "btn btn-danger", disabled True ] [ text "Delete*" ]
+                  else
+                    text ""
                 , btn CancelEditor "Cancel"
                 ]
+            , if isJust editor.uid then
+                p [] [ text "* Warning: someone may already have commited to buy this!" ]
+              else
+                text ""
             ]
 
 
@@ -348,11 +353,7 @@ makeDescription : Present -> Html Msg
 makeDescription { description, link } =
     case link of
         Just link_ ->
-            a
-                [ href link_
-                , target "_blank"
-                ]
-                [ text description ]
+            a [ href link_, target "_blank" ] [ text description ]
 
         Nothing ->
             text description
@@ -418,6 +419,15 @@ viewRegister model =
 
 
 
+--
+
+
+isJust : Maybe a -> Bool
+isJust =
+    Maybe.map (\_ -> True) >> Maybe.withDefault False
+
+
+
 -- CMDs
 
 
@@ -429,6 +439,10 @@ claim uid otherRef presentRef =
 
 unclaim otherRef presentRef =
     FB.remove <| makeTakenByRef otherRef presentRef
+
+
+delete model ref =
+    FB.remove ("/" ++ model.user.uid ++ "/presents/" ++ ref)
 
 
 savePresent : Model -> Cmd Msg

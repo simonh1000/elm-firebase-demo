@@ -26,7 +26,19 @@ subscriptions fbMsgHandler _ =
 
 
 
+--
+
+
+requestMessagingPermission =
+    elmToFb <| FBMsg "RequestMessagingPermission" E.null
+
+
+
 -- AUTHENTICATION
+
+
+setUpAuthListener =
+    elmToFb <| FBMsg "ListenAuthState" E.null
 
 
 type alias FBUser =

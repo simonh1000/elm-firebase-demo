@@ -32,6 +32,10 @@ var common = {
                 },
                 {
                     from: 'src/firebase-messaging-sw.js'
+                },
+                {
+                    from: 'src/Firebase/*.config.js',
+                    to: 'Firebase/'
                 }
             ]
         )
@@ -117,6 +121,9 @@ var common = {
                     })
                     app.get('/assets/:fname', (req, res) => {
                         res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));
+                    })
+                    app.get('/Firebase/:fname', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
                     })
                 }
             }

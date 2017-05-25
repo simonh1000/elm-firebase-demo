@@ -1,3 +1,5 @@
+import config from "./fb.config";
+
 function requestMessagingPermission(cb) {
     const messaging = firebase.messaging();
     messaging.requestPermission()
@@ -32,7 +34,7 @@ function getToken() {
                 // console.log(url);
                 var myHeaders = new Headers();
                 myHeaders.append("Content-Type", "application/json");
-                myHeaders.append("Authorization", "key=AAAAvDlB7Io:APA91bG00Uie2BS5TpkCwQPTqoiAOqo0Nbzo0hEfZfs5R_0iTPRyvmvXl0NIzwjvZsbYbYFMihauJeLZQoSHJEJHyYm75Wj5XvKoIKDYkSISjm9qcM_LohrQDsWCVMdx9rXl9L2QxXpD");
+                myHeaders.append("Authorization", "key=" + config.serverKey);
                 var myInit = {
                     method: 'POST',
                     headers: myHeaders,
