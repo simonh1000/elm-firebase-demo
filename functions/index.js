@@ -12,19 +12,21 @@ admin.initializeApp(functions.config().firebase);
 
 exports.sendNotification = functions.database.ref('/{userId}/presents/{presentId}')
     .onWrite(event => {
-        var topic = "presents";
         // Grab the current value of what was written to the Realtime Database.
-        var eventSnapshot = event.data;
-        let present = eventSnapshot.child("description").val();
+        let present = event.data.child("description").val();
+
+        // Stop if this an update to exisiting data
+        if (event.data.previous.exists()) {
+            return;
+        }
 
         return event.data.ref.parent.parent.child('meta/name').once("value")
             .then(snapshot => {
-                let person = snapshot.val();
+                var topic = "presents";
                 // console.log(`* ${person} added ${present}`);
-
                 var payload = {
                     data: {
-                        person: person,
+                        person: snapshot.val(),
                         present: present
                     }
                 };

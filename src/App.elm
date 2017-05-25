@@ -7,9 +7,9 @@ import Json.Decode as Json exposing (Value)
 import Json.Encode as E
 import Dict exposing (Dict)
 import List as L
+import Firebase.Firebase as FB
 import Model as M exposing (..)
 import Bootstrap as B
-import Firebase as FB
 
 
 init : ( Model, Cmd Msg )
@@ -39,12 +39,11 @@ type Msg
     | UpdateNewPresentLink String
     | SubmitNewPresent
     | CancelEditor
+    | DeletePresent
       -- My presents list
     | EditPresent Present
       -- Subscriptions
     | FBMsgHandler FB.FBMsg
-    | OnAuthStateChange Value
-    | OnSnapshot Value
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -97,55 +96,69 @@ update message model =
         CancelEditor ->
             { model | editor = blankPresent } ! []
 
+        DeletePresent ->
+            { model | editor = model.editor } ! []
+
         EditPresent newPresent ->
             updateEditor (\_ -> newPresent) model ! []
 
-        OnAuthStateChange val ->
-            case Json.decodeValue FB.decodeAuthState val |> Result.andThen identity of
-                Ok user ->
-                    ( { model | user = user, page = Picker }
-                    , FB.subscribe "/"
+        FBMsgHandler { message, payload } ->
+            case message of
+                "authstate" ->
+                    handleAuthChange payload model
+
+                "snapshot" ->
+                    handleSnapshot payload model
+
+                "error" ->
+                    let
+                        userMessage =
+                            Json.decodeValue decoderError payload
+                                |> Result.withDefault model.userMessage
+                    in
+                        { model | userMessage = userMessage } ! []
+
+                _ ->
+                    model ! []
+
+
+handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
+handleAuthChange val model =
+    case Json.decodeValue FB.decodeAuthState val |> Result.andThen identity of
+        Ok user ->
+            ( { model | user = user, page = Picker }
+            , FB.subscribe "/"
+            )
+
+        Err err ->
+            { model | user = FB.init, page = Login, userMessage = err } ! []
+
+
+handleSnapshot snapshot model =
+    case Json.decodeValue decoderXmas snapshot of
+        Ok xmas ->
+            case Dict.get model.user.uid xmas of
+                -- If there is data for this user, then copy over the Name field
+                Just userData ->
+                    ( { model | xmas = xmas }
+                        |> setDisplayName userData.meta.name
+                    , Cmd.none
                     )
 
-                Err err ->
-                    { model | user = FB.init, page = Login, userMessage = err } ! []
+                -- If no data, then we should set the Name field using local data
+                Nothing ->
+                    case model.user.displayName of
+                        Just displayName ->
+                            { model | xmas = xmas } ! [ setMeta model.user.uid displayName ]
 
-        OnSnapshot res ->
-            case Json.decodeValue decoderXmas res of
-                Ok xmas ->
-                    case Dict.get model.user.uid xmas of
-                        -- If there is data for this user, then copy over the Name field
-                        Just userData ->
-                            ( { model | xmas = xmas }
-                                |> setDisplayName userData.meta.name
-                            , Cmd.none
-                            )
-
-                        -- If no data, then we should set the Name field using local data
                         Nothing ->
-                            case model.user.displayName of
-                                Just displayName ->
-                                    { model | xmas = xmas } ! [ setMeta model.user.uid displayName ]
+                            { model | xmas = xmas } ! []
 
-                                Nothing ->
-                                    { model | xmas = xmas } ! []
-
-                Err err ->
-                    { model | userMessage = err } ! []
-
-        FBMsgHandler fbMsg ->
-            model ! []
+        Err err ->
+            { model | userMessage = err } ! []
 
 
 
--- case Json.decodeValue FB.fbMsgDecoder fbMsg of
---     Ok { message, payload } ->
---         case message of
---             _ ->
---                 { model | userMessage = toString payload } ! []
---
---     Err err ->
---         { model | userMessage = err } ! []
 -- VIEW
 
 
@@ -161,7 +174,6 @@ view model =
 
             Picker ->
                 viewPicker model
-        , div [ class "warning" ] [ text model.userMessage ]
         ]
 
 
@@ -190,20 +202,22 @@ viewPicker ({ user } as model) =
 
 viewHeader : Model -> Html Msg
 viewHeader model =
-    header [ class "flex-h" ]
-        [ div [ class "container flex-h spread" ]
-            [ div []
-                [ case model.user.photoURL of
-                    Just photoURL ->
-                        img [ src photoURL, class "avatar" ] []
+    header []
+        [ div [ class "container" ]
+            [ div [ class "flex-h spread" ]
+                [ div []
+                    [ case model.user.photoURL of
+                        Just photoURL ->
+                            img [ src photoURL, class "avatar" ] []
 
-                    Nothing ->
-                        text ""
-                , model.user.displayName
-                    |> Maybe.map (text >> L.singleton >> strong [])
-                    |> Maybe.withDefault (text "")
+                        Nothing ->
+                            text ""
+                    , model.user.displayName
+                        |> Maybe.map (text >> L.singleton >> strong [])
+                        |> Maybe.withDefault (text "")
+                    ]
+                , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
                 ]
-            , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
             ]
         ]
 
@@ -224,12 +238,12 @@ viewOther model ( userRef, { meta, presents } ) =
                     if model.user.uid == id then
                         li [ onClick <| Unclaim userRef presentRef, class "present flex-h" ]
                             [ makeDescription present
-                            , badge "text-success clickable" "Claimed"
+                            , badge "success clickable" "Claimed"
                             ]
                     else
                         li [ class "present flex-h" ]
                             [ makeDescription present
-                            , badge "text-warning" "Taken"
+                            , badge "warning" "Taken"
                             ]
 
                 Nothing ->
@@ -260,7 +274,7 @@ viewOther model ( userRef, { meta, presents } ) =
 
 badge : String -> String -> Html msg
 badge cl t =
-    span [ class cl ] [ text t ]
+    span [ class <| "badge badge-" ++ cl ] [ text t ]
 
 
 
@@ -351,21 +365,27 @@ makeDescription { description, link } =
 viewLogin model =
     div [ id "login" ]
         [ h1 [] [ text "Login" ]
-        , p [] [ text "Login with Google or register your email address" ]
-        , img
-            [ src "assets/btn_google_signin_light_normal_web.png"
-            , onClick GoogleSignin
+        , div [ class "google" ]
+            [ h4 [] [ text "Either sign in with Google" ]
+            , img
+                [ src "assets/btn_google_signin_light_normal_web.png"
+                , onClick GoogleSignin
+                ]
+                []
             ]
-            []
-        , Html.form
-            [ onSubmit Submit, class "section" ]
-            [ B.inputWithLabel UpdateEmail "Email" "email" model.email
-            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-            , div [ class "flex-h spread" ]
-                [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
+        , div [ class "section" ]
+            [ h4 [] [ text "Or sign in with other email address" ]
+            , Html.form
+                [ onSubmit Submit ]
+                [ B.inputWithLabel UpdateEmail "Email" "email" model.email
+                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+                , div [ class "flex-h spread" ]
+                    [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
+                    , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
+                    ]
                 ]
             ]
+        , div [ class "warning" ] [ text model.userMessage ]
         ]
 
 
@@ -393,6 +413,7 @@ viewRegister model =
                     [ text "Login" ]
                 ]
             ]
+        , div [ class "warning" ] [ text model.userMessage ]
         ]
 
 

@@ -2,24 +2,27 @@ function createAuthListener(cb) {
     firebase.auth()
         .onAuthStateChanged(function(user) {
             console.log("auth state change", user);
-            // let res = user || {error: ""};
-            let res;
             if (user) {
-                res = {
-                    email: user.email,
-                    uid: user.uid,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL
-                }
+                return cb({
+                    message: "authstate",
+                    payload: {
+                        email: user.email,
+                        uid: user.uid,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL
+                    }
+                })
             } else {
-                res = {error: ""};
+                cb({
+                    message: "authstate",
+                    payload: null
+                });
             }
-            cb(res);
         });
 }
 
 // Elm message handler
-function handler({message, payload}, cb, fbToElm) {
+function handler({message, payload}, fbToElm) {
     switch (message) {
         case "signin":
             signin(payload.email, payload.password, fbToElm);
@@ -34,7 +37,7 @@ function handler({message, payload}, cb, fbToElm) {
             signout();
             break;
         case "subscribe":
-            subscribe(cb, payload);
+            subscribe(fbToElm, payload);
             break;
         case "set":
             set(payload);
@@ -119,16 +122,19 @@ function push(data) {
         .push(data.payload);
 }
 
-function subscribe(onSnapshot, _ref) {
+function subscribe(fbToElm, _ref) {
     firebase.database().ref(_ref)
         .on('value', snapshot => {
-            let res = {
-                key: _ref,
-                value: snapshot.val()
-            };
-            onSnapshot(res);
+            fbToElm({
+                message: "snapshot",
+                payload: {
+                    key: _ref,
+                    value: snapshot.val()
+                }
+            });
         });
 }
+
 export default {
     createAuthListener, handler
 };

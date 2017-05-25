@@ -28,3 +28,4 @@ npm run prod && firebase deploy
 
  * Add firebase rules so that first person to claim can't be overwritten
  * Implement incoming port for a FBMsg so that e.g. an error on logging in can be shown to user
+ * Delete item (with warning)

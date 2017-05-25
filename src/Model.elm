@@ -4,7 +4,7 @@ import Json.Decode as Json exposing (..)
 import Json.Encode as E
 import Dict exposing (Dict)
 import List as L
-import Firebase as FB
+import Firebase.Firebase as FB
 
 
 type Page
@@ -122,6 +122,10 @@ decoderMeta =
     Json.map UserMeta
         -- (field "uid" string)
         (field "name" string)
+
+
+decoderError =
+    field "message" string
 
 
 

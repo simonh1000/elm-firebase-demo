@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Html
-import Firebase
+import Firebase.Firebase as FB
 import App exposing (..)
 
 
@@ -11,5 +11,5 @@ main =
         , update = update
         , view = view
         , subscriptions =
-            Firebase.subscriptions FBMsgHandler OnAuthStateChange OnSnapshot
+            FB.subscriptions FBMsgHandler
         }

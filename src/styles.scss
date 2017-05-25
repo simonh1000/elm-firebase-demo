@@ -1,3 +1,5 @@
+$border-color: #ddd;
+
 body, .app {
     background-color: #eee;
     height: 100%;
@@ -11,26 +13,21 @@ body, .app {
     flex-direction: column;
     header {
         flex: 0 0 60px;
+        flex-direction: column;
+        display: flex;
+        justify-content: center;
+        background-color: #444;
+        color: white;
     }
-    .container {
-        flex: 1 1;
-        overflow-y: auto;
+    .main {
+        margin-top: 20px;
     }
     .others, .mine {
-        // height: 100%;
         overflow-y: auto;
     }
 }
 
 header {
-    display: flex;
-    background-color: #444;
-    color: white;
-    padding: 5px 0;
-    margin-bottom: 15px;
-    .container {
-        flex: 1 1;
-    }
     @media (min-width: 576px) {
         .container {
             flex: initial;
@@ -43,11 +40,16 @@ header {
     }
 }
 h1, h2 {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 #login, #register {
-    width: 300px;
+    width: 400px;
     margin: 50px auto 0;
+    .google {
+        margin-bottom: 30px;
+        border: 1px solid $border-color;
+        padding: 3px 10px;
+    }
     form {
         margin-top: 15px;
     }
@@ -59,7 +61,7 @@ h1, h2 {
 .section, li.present {
     background-color: white;
     border-radius: 3px;
-    border: 1px solid #ddd;
+    border: 1px solid $border-color;
     padding: 3px 10px;
 }
 .section {
@@ -72,6 +74,7 @@ ul {
     list-style: none;
     padding-left: 0;
     li.present {
+        height: 34px;
         justify-content: space-between;
         margin-bottom: 3px;
         span {

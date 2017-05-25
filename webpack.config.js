@@ -1,10 +1,13 @@
-const webpack = require('webpack');
+const webpack         = require('webpack');
+var merge             = require( 'webpack-merge' );
 var CopyWebpackPlugin = require('copy-webpack-plugin');
-var path = require('path');
+var path              = require('path');
 
-var elmSource = __dirname + '/src';
+var elmSource = path.join(__dirname, 'src');
 
-module.exports = {
+var TARGET_ENV = process.env.npm_lifecycle_event === 'build' ? 'production' : 'development';
+
+var common = {
     entry: './src/index.js',
 
     output: {
@@ -21,10 +24,17 @@ module.exports = {
     },
     plugins: [
         new webpack.NoEmitOnErrorsPlugin(),
-        new CopyWebpackPlugin([{
-            from: 'src/assets/',
-            to: 'assets/'
-        }])
+        new CopyWebpackPlugin(
+            [
+                {
+                    from: 'src/assets/',
+                    to: 'assets/'
+                },
+                {
+                    from: 'src/firebase-messaging-sw.js'
+                }
+            ]
+        )
     ],
     module: {
         rules: [{
@@ -33,25 +43,12 @@ module.exports = {
                 loader: 'file-loader?name=[name].[ext]'
             },
             {
-                test: /\.elm$/,
-                exclude: [/elm-stuff/, /node_modules/],
-                use: [{
-                        loader: "elm-hot-loader"
-                    },
-                    {
-                        loader: "elm-webpack-loader",
-                        options: {
-                            debug: true
-                        }
-                    }
-                ]
-            },
-            {
                 test: /\.js$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
+                        // env: automatically determines the Babel plugins you need based on your supported environments
                         presets: ['env']
                     }
                 }
@@ -65,11 +62,6 @@ module.exports = {
                 exclude: [/elm-stuff/, /node_modules/],
                 loaders: ["style-loader", "css-loader"]
             },
-            // {
-            //     test: /\.(jpg|png|gif|svg|ico)$/,
-            //     exclude: [/elm-stuff/, /node_modules/],
-            //     loaders: ["url-loader"]
-            // },
             {
                 test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                 exclude: [/elm-stuff/, /node_modules/],
@@ -85,22 +77,68 @@ module.exports = {
                 loader: "file-loader"
             }
         ]
-    },
-
-    devServer: {
-        //   proxy: {
-        //       "/": "http://localhost:9779"
-        //   },
-        inline: true,
-        stats: 'errors-only',
-        setup(app) {
-			// firebase messaging script needs to be able to find this route
-			app.get('/firebase-messaging-sw.js', (req, res) => {
-				res.sendFile(path.join(__dirname, 'src/firebase-messaging-sw.js'));
-			})
-			app.get('/assets/:fname', (req, res) => {
-				res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));
-			})
-		}
     }
-};
+}
+  if ( TARGET_ENV === 'development' ) {
+    console.log( 'Building for dev...');
+    module.exports =
+        merge(common, {
+            plugins: [
+                new webpack.NamedModulesPlugin()
+            ],
+            module: {
+                rules: [
+                    {
+                        test: /\.elm$/,
+                        exclude: [/elm-stuff/, /node_modules/],
+                        use: [{
+                                loader: "elm-hot-loader"
+                            },
+                            {
+                                loader: "elm-webpack-loader",
+                                options: {
+                                    debug: true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            devServer: {
+                //   proxy: {
+                //       "/": "http://localhost:9779"
+                //   },
+                inline: true,
+                stats: 'errors-only',
+                setup(app) {
+                    // firebase messaging script needs to be able to find this route
+                    app.get('/firebase-messaging-sw.js', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/firebase-messaging-sw.js'));
+                    })
+                    app.get('/assets/:fname', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));
+                    })
+                }
+            }
+        });
+}
+
+if ( TARGET_ENV === 'production' ) {
+  console.log( 'Building for prod...');
+  module.exports =
+      merge(common, {
+          module: {
+              rules: [
+                  {
+                      test: /\.elm$/,
+                      exclude: [/elm-stuff/, /node_modules/],
+                      use: [
+                          {
+                              loader: "elm-webpack-loader"
+                          }
+                      ]
+                  }
+              ]
+          }
+      });
+}

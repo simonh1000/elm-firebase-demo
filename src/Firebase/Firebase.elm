@@ -1,4 +1,4 @@
-port module Firebase exposing (..)
+port module Firebase.Firebase exposing (..)
 
 import Json.Encode as E
 import Json.Decode as Json exposing (..)
@@ -10,29 +10,19 @@ type alias FBMsg =
     }
 
 
-port jsmessage : FBMsg -> Cmd msg
+port elmToFb : FBMsg -> Cmd msg
 
 
 port fbToElm : (FBMsg -> msg) -> Sub msg
-
-
-port authStateChange : (Value -> msg) -> Sub msg
-
-
-port onSnapshot : (Value -> msg) -> Sub msg
 
 
 
 -- Subscriptions
 
 
-subscriptions : (FBMsg -> msg) -> (Value -> msg) -> (Value -> msg) -> m -> Sub msg
-subscriptions fbMsgHandler authMsg ssMsg _ =
-    Sub.batch
-        [ authStateChange authMsg
-        , onSnapshot ssMsg
-        , fbToElm fbMsgHandler
-        ]
+subscriptions : (FBMsg -> msg) -> m -> Sub msg
+subscriptions fbMsgHandler _ =
+    fbToElm fbMsgHandler
 
 
 
@@ -59,9 +49,11 @@ init =
 decodeAuthState : Decoder (Result String FBUser)
 decodeAuthState =
     oneOf
-        [ map Err <| field "error" string
-        , map Ok userDecoder
-        , succeed <| Err ""
+        [ map Ok userDecoder
+        , null (Err "")
+
+        -- , map Err <| field "error" string
+        -- , succeed <| Err ""
         ]
 
 
@@ -84,22 +76,22 @@ encodeCredentials email password =
 
 signin : String -> String -> Cmd msg
 signin email password =
-    jsmessage <| FBMsg "signin" (encodeCredentials email password)
+    elmToFb <| FBMsg "signin" (encodeCredentials email password)
 
 
 signinGoogle : Cmd msg
 signinGoogle =
-    jsmessage <| FBMsg "signinGoogle" E.null
+    elmToFb <| FBMsg "signinGoogle" E.null
 
 
 signout : Cmd msg
 signout =
-    jsmessage <| FBMsg "signout" E.null
+    elmToFb <| FBMsg "signout" E.null
 
 
 register : String -> String -> Cmd msg
 register email password =
-    jsmessage <| FBMsg "register" (encodeCredentials email password)
+    elmToFb <| FBMsg "register" (encodeCredentials email password)
 
 
 
@@ -108,7 +100,7 @@ register email password =
 
 subscribe : String -> Cmd msg
 subscribe ref =
-    jsmessage <| FBMsg "subscribe" <| E.string ref
+    elmToFb <| FBMsg "subscribe" <| E.string ref
 
 
 push : String -> E.Value -> Cmd msg
@@ -118,7 +110,7 @@ push ref val =
     ]
         |> E.object
         |> FBMsg "push"
-        |> jsmessage
+        |> elmToFb
 
 
 set : String -> E.Value -> Cmd msg
@@ -128,9 +120,9 @@ set ref val =
     ]
         |> E.object
         |> FBMsg "set"
-        |> jsmessage
+        |> elmToFb
 
 
 remove : String -> Cmd msg
 remove ref =
-    jsmessage <| FBMsg "remove" (E.string ref)
+    elmToFb <| FBMsg "remove" (E.string ref)
