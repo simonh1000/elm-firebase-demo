@@ -1,38 +1,21 @@
-function requestMessagingPermission() {
+function requestMessagingPermission(cb) {
     const messaging = firebase.messaging();
     messaging.requestPermission()
         .then(function() {
             console.log('Notification permission granted.');
-            // TODO(developer): Retrieve an Instance ID token for use with FCM.
             return getToken();
-            // ...
         })
         .catch(function(err) {
             console.log('Unable to get permission to notify.', err);
         });
 
-    // Handle incoming messages. Called when:
-    // - a message is received while the app has focus
-    // - the user clicks on an app notification created by a sevice worker
-    //   `messaging.setBackgroundMessageHandler` handler.
     messaging.onMessage(function(payload) {
       console.log("Message received. ", payload);
-      // ...
+      cb({
+          message: "OnMessage",
+          payload: payload
+      })
     });
-    //
-    // messaging.setBackgroundMessageHandler(function(payload) {
-    //     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    //     // Customize notification here
-    //     const notificationTitle = 'Background Message Title';
-    //     const notificationOptions = {
-    //         body: 'Background Message body.',
-    //         icon: '/firebase-logo.png'
-    //     };
-    //
-    //     return self.registration.showNotification(notificationTitle,
-    //         notificationOptions);
-    // });
-
 }
 
 function getToken() {
@@ -59,8 +42,11 @@ function getToken() {
                var myRequest = new Request(url, myInit);
                fetch(myRequest)
                    .then(function(response) {
-                       if (response.status !== 200)
-                        console.eror("Bad response",response);
+                        if (response.status !== 200) {
+                            return console.eror("Bad response",response);
+                        }
+
+                        return console.log("Registered for topic:", topic);
                    })
                    .catch( (err) => {
                        console.error("error registering for topic", err)

@@ -98,6 +98,9 @@ module.exports = {
 			app.get('/firebase-messaging-sw.js', (req, res) => {
 				res.sendFile(path.join(__dirname, 'src/firebase-messaging-sw.js'));
 			})
+			app.get('/assets/:fname', (req, res) => {
+				res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));
+			})
 		}
     }
 };

@@ -12,7 +12,7 @@ var app = Elm.Main.fullscreen();
 
 // Subscribe to auth state changes
 fb.createAuthListener(app.ports.authStateChange.send);
-fbmsg.requestMessagingPermission();
+fbmsg.requestMessagingPermission(app.ports.fbToElm.send);
 
 app.ports.jsmessage.subscribe( ({message, payload}) => {
     // console.log("jsmessage",message, payload);
