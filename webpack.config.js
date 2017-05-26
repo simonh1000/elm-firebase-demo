@@ -34,7 +34,7 @@ var common = {
                     from: 'src/dist'
                 },
                 {
-                    from: 'src/Firebase/*.config.js',
+                    from: 'src/Firebase/fbsw.config.js',
                     to: 'Firebase/[name].[ext]'
                 }
             ]
@@ -115,16 +115,22 @@ var common = {
                 inline: true,
                 stats: 'errors-only',
                 setup(app) {
-                    // firebase messaging script needs to be able to find this route
-                    app.get('/firebase-messaging-sw.js', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
-                    })
+                    // app.get('/firebase-messaging-sw.js', (req, res) => {
+                    //     res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
+                    // })
+                    // catch all calls for root level files and redirect to src/dist
+                    app.get('/:fname', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/dist/', req.params.fname));
+                    });
+                    // images,...
                     app.get('/assets/:fname', (req, res) => {
                         res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));
-                    })
-                    app.get('/Firebase/:fname', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
-                    })
+                    });
+                    // Firebase config
+                    // app.get('/Firebase/:fname', (req, res) => {
+                    //     conole.log("Firebase directory", req.params.fname)
+                    //     res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
+                    // })
                 }
             }
         });
