@@ -27,15 +27,15 @@ var common = {
         new CopyWebpackPlugin(
             [
                 {
-                    from: 'src/assets/',
-                    to: 'assets/'
+                    from: 'src/assets/images',
+                    to: 'images/'
                 },
                 {
-                    from: 'src/firebase-messaging-sw.js'
+                    from: 'src/dist'
                 },
                 {
                     from: 'src/Firebase/*.config.js',
-                    to: 'Firebase/'
+                    to: 'Firebase/[name].[ext]'
                 }
             ]
         )
@@ -117,7 +117,7 @@ var common = {
                 setup(app) {
                     // firebase messaging script needs to be able to find this route
                     app.get('/firebase-messaging-sw.js', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/firebase-messaging-sw.js'));
+                        res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
                     })
                     app.get('/assets/:fname', (req, res) => {
                         res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));

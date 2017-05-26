@@ -41,5 +41,5 @@ repl-temp-*
 example/dist
 
 ignore
-dist
-*config.js
+/dist
+/src/**/*.config.js

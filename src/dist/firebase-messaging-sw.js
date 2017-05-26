@@ -20,7 +20,7 @@ messaging.setBackgroundMessageHandler(function(payload) {
     const notificationTitle = 'Presents Update for ' + payload.data.person;
     const notificationOptions = {
         body: 'Added new idea: ' + payload.data.present,
-        icon: '/assets/firebase-logo.png'
+        icon: '/images/firebase-logo.png'
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);

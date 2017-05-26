@@ -1,10 +1,12 @@
-# Xmas present picker
+# PWA featuring Firebase messaging and data base with Elm frontend
 
 An Elm experiment to use Firebase to provide a real time xmas present idea exchange between a family group. Register, set up your present wishes and claim what you want to buy for others.
 
 ## Installation
 
-All that is needed is to add a file `/src/js/fbconfig.js` with your firebase data in as below:
+All that is needed is to add two files
+
+`/src/Firebase/fb.config.js`
 
 ```js
 var config = {
@@ -15,7 +17,16 @@ var config = {
   storageBucket: "xxxxxxx.appspot.com",
   messagingSenderId: "123456"
 };
-firebase.initializeApp(config);
+export default config;
+```
+
+`/src/Firebase/fbsw.config.js`
+
+```js
+var config = {
+  messagingSenderId: "123456"
+};
+self.config = self.config || config;
 ```
 
 ## Deploy to Firebase
@@ -26,6 +37,6 @@ npm run prod && firebase deploy
 
 ## ToDo
 
- * Add firebase rules so that first person to claim can't be overwritten
- * Implement incoming port for a FBMsg so that e.g. an error on logging in can be shown to user
  * Delete item (with warning)
+ * add click-action to notification
+ * Add firebase rules so that first person to claim can't be overwritten

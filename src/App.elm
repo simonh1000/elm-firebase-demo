@@ -369,7 +369,7 @@ viewLogin model =
         , div [ class "google" ]
             [ h4 [] [ text "Either sign in with Google" ]
             , img
-                [ src "assets/btn_google_signin_light_normal_web.png"
+                [ src "images/btn_google_signin_light_normal_web.png"
                 , onClick GoogleSignin
                 ]
                 []
