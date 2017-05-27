@@ -8,6 +8,10 @@ require("./styles.scss");
 var Elm = require("./Main");
 var app = Elm.Main.fullscreen();
 
+app.ports.removeAppShell.subscribe( () => {
+    document.querySelector(".removable").remove();
+});
+
 // Set up Firebase and main handler
 import config from "./Firebase/fb.config";
 firebase.initializeApp(config);

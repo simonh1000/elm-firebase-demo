@@ -1,7 +1,8 @@
-const webpack         = require('webpack');
-var merge             = require( 'webpack-merge' );
+const webpack = require('webpack');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
-var path              = require('path');
+var SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
+var merge = require('webpack-merge');
+var path = require('path');
 
 var elmSource = path.join(__dirname, 'src');
 
@@ -12,6 +13,7 @@ var common = {
 
     output: {
         path: path.join(__dirname, "dist"),
+        // filename: '[name]-[hash].js'
         filename: 'index.js'
     },
 
@@ -22,24 +24,6 @@ var common = {
         ],
         extensions: ['.js', '.elm', '.scss']
     },
-    plugins: [
-        new webpack.NoEmitOnErrorsPlugin(),
-        new CopyWebpackPlugin(
-            [
-                {
-                    from: 'src/assets/images',
-                    to: 'images/'
-                },
-                {
-                    from: 'src/dist'
-                },
-                {
-                    from: 'src/Firebase/fbsw.config.js',
-                    to: 'Firebase/[name].[ext]'
-                }
-            ]
-        )
-    ],
     module: {
         rules: [{
                 test: /\.html$/,
@@ -83,30 +67,30 @@ var common = {
         ]
     }
 }
-  if ( TARGET_ENV === 'development' ) {
-    console.log( 'Building for dev...');
+
+if (TARGET_ENV === 'development') {
+    console.log('Building for dev...');
     module.exports =
         merge(common, {
             plugins: [
-                new webpack.NamedModulesPlugin()
+                new webpack.NamedModulesPlugin(),
+                new webpack.NoEmitOnErrorsPlugin()
             ],
             module: {
-                rules: [
-                    {
-                        test: /\.elm$/,
-                        exclude: [/elm-stuff/, /node_modules/],
-                        use: [{
-                                loader: "elm-hot-loader"
-                            },
-                            {
-                                loader: "elm-webpack-loader",
-                                options: {
-                                    debug: true
-                                }
+                rules: [{
+                    test: /\.elm$/,
+                    exclude: [/elm-stuff/, /node_modules/],
+                    use: [{
+                            loader: "elm-hot-loader"
+                        },
+                        {
+                            loader: "elm-webpack-loader",
+                            options: {
+                                debug: true
                             }
-                        ]
-                    }
-                ]
+                        }
+                    ]
+                }]
             },
             devServer: {
                 //   proxy: {
@@ -119,39 +103,70 @@ var common = {
                     //     res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
                     // })
                     // catch all calls for root level files and redirect to src/dist
-                    app.get('/:fname', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/dist/', req.params.fname));
+                    // app.get('/index.js', (req, res) => {
+                    //     res.sendFile(path.join(__dirname, 'src/index.js'));
+                    // });
+                    // serve images,...
+                    app.get('/images/:fname', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/assets/images/', req.params.fname));
                     });
-                    // images,...
-                    app.get('/assets/:fname', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/assets/', req.params.fname));
+                    // Make fbsw.config.js available
+                    app.get('/Firebase/:fname', (req, res) => {
+                        conole.log("Firebase directory", req.params.fname)
+                        res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
+                    })
+                    app.get('/firebase-messaging-sw.js', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
                     });
-                    // Firebase config
-                    // app.get('/Firebase/:fname', (req, res) => {
-                    //     conole.log("Firebase directory", req.params.fname)
-                    //     res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
-                    // })
+                    app.get('/sw.js', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/dist/sw.js'));
+                    });
+                    app.get('/manifest.json', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'src/dist/manifest.json'));
+                    });
                 }
             }
         });
 }
 
-if ( TARGET_ENV === 'production' ) {
-  console.log( 'Building for prod...');
-  module.exports =
-      merge(common, {
-          module: {
-              rules: [
-                  {
-                      test: /\.elm$/,
-                      exclude: [/elm-stuff/, /node_modules/],
-                      use: [
-                          {
-                              loader: "elm-webpack-loader"
-                          }
-                      ]
-                  }
-              ]
-          }
-      });
+if (TARGET_ENV === 'production') {
+    console.log('Building for prod...');
+    module.exports =
+        merge(common, {
+            plugins: [
+                new SWPrecacheWebpackPlugin({
+                    cacheId: 'presents',
+                    filename: 'sw.js',
+                    staticFileGlobs: [
+                        "dist/index.*",
+                        "dist/images/*.png"
+                    ],
+                    stripPrefix: 'dist/'
+                }),
+                new CopyWebpackPlugin(
+                    [{
+                            from: 'src/assets/images',
+                            to: 'images/'
+                        },
+                        {
+                            from: 'src/dist'
+                        },
+                        {
+                            from: 'src/Firebase/fbsw.config.js',
+                            to: 'Firebase/[name].[ext]'
+                        }
+                    ]
+                ),
+                new webpack.optimize.UglifyJsPlugin()
+            ],
+            module: {
+                rules: [{
+                    test: /\.elm$/,
+                    exclude: [/elm-stuff/, /node_modules/],
+                    use: [{
+                        loader: "elm-webpack-loader"
+                    }]
+                }]
+            }
+        });
 }

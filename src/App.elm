@@ -1,4 +1,4 @@
-module App exposing (..)
+port module App exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -12,9 +12,23 @@ import Model as M exposing (..)
 import Bootstrap as B
 
 
+--
+
+
+port removeAppShell : String -> Cmd msg
+
+
+
+--
+
+
 init : ( Model, Cmd Msg )
 init =
-    blank ! [ FB.setUpAuthListener, FB.requestMessagingPermission ]
+    blank
+        ! [ FB.setUpAuthListener
+          , FB.requestMessagingPermission
+          , removeAppShell ""
+          ]
 
 
 
@@ -191,8 +205,8 @@ viewPicker ({ user } as model) =
     in
         div [ id "picker" ]
             [ viewHeader model
-            , div [ class "container" ]
-                [ div [ class "main row" ]
+            , div [ class "main container" ]
+                [ div [ class "row" ]
                     [ viewOthers model others
                     , viewMine model mine
                     ]
@@ -266,7 +280,7 @@ viewOther model ( userRef, { meta, presents } ) =
                 text ""
 
             _ ->
-                div [ class "person other" ] [ h4 [] [ text meta.name ], ul [] ps ]
+                div [ class "person section" ] [ h4 [] [ text meta.name ], ul [] ps ]
 
 
 badge : String -> String -> Html msg
@@ -298,7 +312,7 @@ viewMine model lst =
         div [ class "mine col-sm-6" ]
             [ h2 [] [ text "My suggestions" ]
             , viewSuggestionEditor model
-            , mypresents
+            , div [ class "section" ] [ mypresents ]
             ]
 
 
@@ -365,34 +379,37 @@ makeDescription { description, link } =
 
 viewLogin model =
     div [ id "login" ]
-        [ h1 [] [ text "Login" ]
-        , div [ class "google" ]
-            [ h4 [] [ text "Either sign in with Google" ]
-            , img
-                [ src "images/btn_google_signin_light_normal_web.png"
-                , onClick GoogleSignin
+        [ div [ class "main container" ]
+            [ h1 [] [ text "Login" ]
+            , div [ class "section google" ]
+                [ h4 [] [ text "Either sign in with Google" ]
+                , img
+                    [ src "images/google_signin.png"
+                    , onClick GoogleSignin
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div [ class "section" ]
-            [ h4 [] [ text "Or sign in with other email address" ]
-            , Html.form
-                [ onSubmit Submit ]
-                [ B.inputWithLabel UpdateEmail "Email" "email" model.email
-                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                , div [ class "flex-h spread" ]
-                    [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                    , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
+            , div [ class "section" ]
+                [ h4 [] [ text "Or sign in with your email address" ]
+                , Html.form
+                    [ onSubmit Submit ]
+                    [ B.inputWithLabel UpdateEmail "Email" "email" model.email
+                    , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+                    , div [ class "flex-h spread" ]
+                        [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
+                        , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
+                        ]
                     ]
                 ]
+            , div [ class "warning" ] [ text model.userMessage ]
             ]
-        , div [ class "warning" ] [ text model.userMessage ]
+        , myFooter
         ]
 
 
 viewRegister : Model -> Html Msg
 viewRegister model =
-    div [ id "register" ]
+    div [ id "register", class "container" ]
         [ h1 [] [ text "Register" ]
         , Html.form
             [ onSubmit SubmitRegistration ]
@@ -415,6 +432,13 @@ viewRegister model =
                 ]
             ]
         , div [ class "warning" ] [ text model.userMessage ]
+        ]
+
+
+myFooter =
+    footer [ class "container" ]
+        [ a [ href "" ] [ text "Simon Hampton" ]
+        , text ", May 2017"
         ]
 
 

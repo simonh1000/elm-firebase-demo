@@ -1,10 +1,8 @@
 module.exports = {
-    "staticFileGlobs": [
-        "images/*",
-        "scripts/*",
-        "src/*"
+    cacheId: "presents",
+    staticFileGlobs: [
+        "dist/index.*",
+        "dist/images/*.png"
     ],
-    "importScripts": [
-        "src/scripts/sw-push.js"
-    ]
+    stripPrefix: 'dist/'
 }

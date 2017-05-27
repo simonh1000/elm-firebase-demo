@@ -4,14 +4,33 @@
     <meta charset="utf-8" />
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#db5945">
+    <link rel="icon" sizes="192x192" href="images/icons/icon-192x192.png">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>2017 Xmas presents</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style media="screen">
+        body, .app, #login, #register, #picker {
+            background-color: #eee;
+            height: 100vh;
+        }
+        header, footer {
+            flex: 0 0 60px;
+            flex-direction: column;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            background-color: #444;
+            color: white;
+        }
+    </style>
   </head>
 
   <body>
-      <!-- <h1>Family xmas</h1> -->
-      <script src="https://www.gstatic.com/firebasejs/3.9.0/firebase.js"></script>
+      <header class="removable">
+          <h3>Xmas present picker</h3>
+      </header>
+
+      <script src="https://www.gstatic.com/firebasejs/4.0.0/firebase.js"></script>
       <script src="index.js"></script>
   </body>
 </html>

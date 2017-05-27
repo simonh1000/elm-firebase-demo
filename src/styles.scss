@@ -1,56 +1,89 @@
 $border-color: #ddd;
 
-body, .app {
+body, .app, #login, #register, #picker {
     background-color: #eee;
-    height: 100%;
-    // overflow: hidden;
+    height: 100vh;
 }
-.app {
-}
-#picker {
-    height: 100%;
+
+#login, #register, #picker {
     display: flex;
     flex-direction: column;
-    header {
-        flex: 0 0 60px;
-        flex-direction: column;
-        display: flex;
-        justify-content: center;
-        background-color: #444;
-        color: white;
-        .avatar {
-            height: 30px;
-            border-radius: 100%;
-            margin-right: 15px;
-        }
-        .container {
-            margin-left: 0;
-            margin-right: 0;
-        }
-        @media (min-width: 576px) {
-            .container {
-                flex: initial;
-                margin-left: auto;
-                margin-right: auto;
-            }
-        }
-    }
     .main {
-        margin-top: 20px;
-    }
-    .others, .mine {
-        overflow-y: auto;
+        flex: 1 1;
+        padding-top: 30px;
+        display: flex;
+        flex-direction: column;
+        align-content: stretch;
     }
 }
 
-h1, h2 {
-    margin-bottom: 20px;
+header, footer {
+    flex: 0 0 60px;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    background-color: #444;
+    color: white;
+    .container {
+        margin-left: 0;
+        margin-right: 0;
+    }
+    @media (min-width: 576px) {
+        .container {
+            flex: initial;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+    .avatar {
+        height: 30px;
+        border-radius: 100%;
+        margin-right: 15px;
+    }
 }
+
+#picker {
+    .main > div {
+        flex: 1 1;
+    }
+
+    .others, .mine {
+        overflow-y: auto;
+    }
+    .person {
+        background-color: white;
+        margin-bottom: 15px;
+    }
+    .new-present {
+        margin-bottom: 20px;
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 0;
+        li.present {
+            height: 34px;
+            justify-content: space-between;
+            margin-bottom: -1px;
+            border: 1px solid $border-color;
+            padding: 3px 10px;
+            span {
+                font-size: 14px;
+            }
+        }
+    }
+}
+
+
 #login, #register {
     .google {
         margin-bottom: 30px;
         border: 1px solid $border-color;
         padding: 3px 10px;
+        img {
+            height: 45px;
+        }
     }
     form {
         margin-top: 15px;
@@ -60,38 +93,21 @@ h1, h2 {
         margin: 50px auto 0;
     }
 }
-.new-present {
-    margin-bottom: 20px;
-}
 
-.section, li.present {
-    background-color: white;
-    border-radius: 3px;
-    border: 1px solid $border-color;
-    padding: 3px 10px;
-}
+
+// ....
 .section {
+    background-color: white;
+    padding: 10px;
+    border-radius: 3px;
     input {
         background-color: #ddd;
     }
 }
 
-ul {
-    list-style: none;
-    padding-left: 0;
-    li.present {
-        height: 34px;
-        justify-content: space-between;
-        margin-bottom: 3px;
-        span {
-            font-size: 14px;
-        }
-    }
+h1, h2 {
+    margin-bottom: 20px;
 }
-
-
-
-// ....
 
 .flex-h {
     display: flex;
