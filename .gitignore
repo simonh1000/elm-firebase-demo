@@ -43,3 +43,4 @@ example/dist
 ignore
 /dist
 /src/**/*.config.js
+/src/dist/sw.js

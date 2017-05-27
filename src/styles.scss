@@ -2,15 +2,21 @@ $border-color: #ddd;
 
 body, .app, #login, #register, #picker {
     background-color: #eee;
-    height: 100vh;
+    // height: 100vh;
+    // overflow: hidden;
 }
 
 #login, #register, #picker {
     display: flex;
     flex-direction: column;
     .main {
-        flex: 1 1;
         padding-top: 30px;
+        padding-bottom: 10px;
+    }
+}
+@media (min-width: 576px) {
+    .main {
+        flex: 1 1;
         display: flex;
         flex-direction: column;
         align-content: stretch;
@@ -18,29 +24,23 @@ body, .app, #login, #register, #picker {
 }
 
 header, footer {
-    flex: 0 0 60px;
-    flex-direction: column;
-    display: flex;
-    justify-content: center;
     width: 100%;
     background-color: #444;
     color: white;
-    .container {
-        margin-left: 0;
-        margin-right: 0;
-    }
-    @media (min-width: 576px) {
-        .container {
-            flex: initial;
-            margin-left: auto;
-            margin-right: auto;
-        }
+    .container, .container > div {
+        height: 100%;
     }
     .avatar {
         height: 30px;
         border-radius: 100%;
         margin-right: 15px;
     }
+}
+header {
+    flex: 0 0 60px;
+}
+footer {
+    flex: 0 0 40px;
 }
 
 #picker {
@@ -62,12 +62,13 @@ header, footer {
     ul {
         list-style: none;
         padding-left: 0;
+        margin-bottom: 0;
         li.present {
             height: 34px;
             justify-content: space-between;
             margin-bottom: -1px;
             border: 1px solid $border-color;
-            padding: 3px 10px;
+            padding: 5px;
             span {
                 font-size: 14px;
             }

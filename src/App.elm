@@ -196,12 +196,12 @@ view model =
 
 
 viewPicker : Model -> Html Msg
-viewPicker ({ user } as model) =
+viewPicker model =
     let
         ( mine, others ) =
             model.xmas
                 |> Dict.toList
-                |> L.partition (Tuple.first >> ((==) user.uid))
+                |> L.partition (Tuple.first >> ((==) model.user.uid))
     in
         div [ id "picker" ]
             [ viewHeader model
@@ -211,6 +211,7 @@ viewPicker ({ user } as model) =
                     , viewMine model mine
                     ]
                 ]
+            , viewFooter
             ]
 
 
@@ -222,7 +223,7 @@ viewHeader model =
                 [ div []
                     [ case model.user.photoURL of
                         Just photoURL ->
-                            img [ src photoURL, class "avatar" ] []
+                            img [ src photoURL, class "avatar", alt "avatar" ] []
 
                         Nothing ->
                             text ""
@@ -231,6 +232,18 @@ viewHeader model =
                         |> Maybe.withDefault (text "")
                     ]
                 , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
+                ]
+            ]
+        ]
+
+
+viewFooter =
+    footer []
+        [ div [ class "container" ]
+            [ div [ class "flex-h spread" ]
+                [ a [ href "https://simonh1000.github.io/" ] [ text "Simon Hampton" ]
+                , span [] [ text "May 2017" ]
+                , a [ href "https://github.com/simonh1000/elm-firebase-demo" ] [ text "Code" ]
                 ]
             ]
         ]
@@ -386,6 +399,7 @@ viewLogin model =
                 , img
                     [ src "images/google_signin.png"
                     , onClick GoogleSignin
+                    , alt "Click to sigin with Google"
                     ]
                     []
                 ]
@@ -403,7 +417,7 @@ viewLogin model =
                 ]
             , div [ class "warning" ] [ text model.userMessage ]
             ]
-        , myFooter
+        , viewFooter
         ]
 
 
@@ -432,13 +446,6 @@ viewRegister model =
                 ]
             ]
         , div [ class "warning" ] [ text model.userMessage ]
-        ]
-
-
-myFooter =
-    footer [ class "container" ]
-        [ a [ href "" ] [ text "Simon Hampton" ]
-        , text ", May 2017"
         ]
 
 

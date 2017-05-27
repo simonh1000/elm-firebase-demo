@@ -32,7 +32,7 @@ self.config = self.config || config;
 ## Deploy to Firebase
 
 ```sh
-npm run prod && firebase deploy --only hosting
+npm run build && firebase deploy --only hosting
 ```
 
 ## ToDo
