@@ -4,15 +4,15 @@ function requestMessagingPermission(cb) {
     const messaging = firebase.messaging();
     messaging.requestPermission()
         .then(function() {
-            console.log('Notification permission granted.');
+            console.log('[fbm] Notification permission granted.');
             return getToken();
         })
         .catch(function(err) {
-            console.log('Unable to get permission to notify.', err);
+            console.log('[fbm] Unable to get permission to notify.', err);
         });
 
     messaging.onMessage(function(payload) {
-      console.log("Message received. ", payload);
+      console.log("[fbm] Message received. ", payload);
       cb({
           message: "OnMessage",
           payload: payload
@@ -31,7 +31,7 @@ function getToken() {
                 // Register for topic: presents
                 let topic = "presents"
                 let url = `https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/${topic}`;
-                // console.log(url);
+                // console.log("[fbm] ", config.serverKey);
                 var myHeaders = new Headers();
                 myHeaders.append("Content-Type", "application/json");
                 myHeaders.append("Authorization", "key=" + config.serverKey);
@@ -42,20 +42,20 @@ function getToken() {
                     cache: 'default',
                };
                var myRequest = new Request(url, myInit);
-               fetch(myRequest)
+               return fetch(myRequest)
                    .then(function(response) {
                         if (response.status !== 200) {
-                            return console.eror("Bad response",response);
+                            return console.log("[fbm] Bad response",response);
                         }
 
-                        return console.log("Registered for topic:", topic);
+                        return console.log("[fbm] Registered for topic:", topic);
                    })
                    .catch( (err) => {
-                       console.error("error registering for topic", err)
+                       console.log("[fbm] Error registering for topic", err)
                    });
             } else {
                 // Show permission request.
-                console.log('No Instance ID token available. Request permission to generate one.');
+                console.log('[fbm] No Instance ID token available. Request permission to generate one.');
                 // Show permission UI.
                 // updateUIForPushPermissionRequired();
                 // setTokenSentToServer(false);

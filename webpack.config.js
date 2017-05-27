@@ -112,7 +112,7 @@ if (TARGET_ENV === 'development') {
                     });
                     // Make fbsw.config.js available
                     app.get('/Firebase/:fname', (req, res) => {
-                        conole.log("Firebase directory", req.params.fname)
+                        console.log("Firebase directory", req.params.fname)
                         res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
                     })
                     app.get('/firebase-messaging-sw.js', (req, res) => {

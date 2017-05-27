@@ -3,7 +3,7 @@
 // are not available in the service worker.
 importScripts('https://www.gstatic.com/firebasejs/3.9.0/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/3.9.0/firebase-messaging.js');
-importScripts('./Firebase/fbsw.config.js');
+importScripts('/Firebase/fbsw.config.js');
 
 // Initialize the Firebase app in the service worker by passing in the config.messagingSenderId.
 firebase.initializeApp({
