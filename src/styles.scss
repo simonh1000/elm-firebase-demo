@@ -1,19 +1,39 @@
 $border-color: #ddd;
 
-body, .app, #login, #register, #picker {
-    background-color: #eee;
-    // height: 100vh;
-    // overflow: hidden;
-}
+// LAYOUT
 
-#login, #register, #picker {
+body, .app {
+    height: 100vh;
+    overflow: hidden;
+}
+.app {
     display: flex;
     flex-direction: column;
-    .main {
-        padding-top: 30px;
-        padding-bottom: 10px;
+}
+#login, #register {
+    overflow: auto;
+}
+.main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: auto;
+}
+header {
+    flex: 0 0 60px;
+}
+footer {
+    flex: 0 0 40px;
+}
+#picker {
+    // .main > div {
+    //     flex: 1 1;
+    // }
+    .others, .mine {
+        overflow-y: auto;
     }
 }
+
 @media (min-width: 576px) {
     .main {
         flex: 1 1;
@@ -21,8 +41,18 @@ body, .app, #login, #register, #picker {
         flex-direction: column;
         align-content: stretch;
     }
+    #picker {
+        background-color: #eee;
+        height: inherit;
+        // overflow: hidden;
+    }
 }
 
+// OTHER
+
+body {
+    background-color: #eee;
+}
 header, footer {
     width: 100%;
     background-color: #444;
@@ -36,29 +66,22 @@ header, footer {
         margin-right: 15px;
     }
 }
-header {
-    flex: 0 0 60px;
-}
-footer {
-    flex: 0 0 40px;
+.main {
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
 #picker {
-    .main > div {
-        flex: 1 1;
-    }
-
-    .others, .mine {
-        overflow-y: auto;
-    }
     .person {
         background-color: white;
         margin-bottom: 15px;
     }
+    .mine {
+        padding-bottom: 20px;
+    }
     .new-present {
         margin-bottom: 20px;
     }
-
     ul {
         list-style: none;
         padding-left: 0;
@@ -90,8 +113,18 @@ footer {
         margin-top: 15px;
     }
     @media (min-width: 576px) {
-        width: 400px;
-        margin: 50px auto 0;
+        margin: 0 auto;
+        padding-top: 50px;
+        h1 {
+            text-align: center;
+        }
+        .section {
+            width: 400px;
+            margin: 15px auto;
+        }
+        .container {
+            width: 400px;
+        }
     }
 }
 
@@ -101,6 +134,7 @@ footer {
     background-color: white;
     padding: 10px;
     border-radius: 3px;
+    border: 1px solid #ddd;
     input {
         background-color: #ddd;
     }

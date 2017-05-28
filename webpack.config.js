@@ -1,22 +1,28 @@
 const webpack = require('webpack');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
+var HTMLWebpackPlugin = require('html-webpack-plugin');
 var merge = require('webpack-merge');
 var path = require('path');
 
 var elmSource = path.join(__dirname, 'src');
 
 var TARGET_ENV = process.env.npm_lifecycle_event === 'build' ? 'production' : 'development';
+var filename = (TARGET_ENV == 'production') ? '[name]-[hash].js' : 'index.js'
 
 var common = {
     entry: './src/index.js',
 
     output: {
         path: path.join(__dirname, "dist"),
-        // filename: '[name]-[hash].js'
-        filename: 'index.js'
+        filename: filename
     },
-
+    plugins: [
+        new HTMLWebpackPlugin({
+            template: 'src/index.ejs',
+            inject: 'body'
+        })
+    ],
     resolve: {
         modules: [
             path.join(__dirname, "src"),
@@ -73,7 +79,9 @@ if (TARGET_ENV === 'development') {
     module.exports =
         merge(common, {
             plugins: [
+                // Suggested for hot-loading
                 new webpack.NamedModulesPlugin(),
+                // Prevents compilation errors causing the hot loader to lose state
                 new webpack.NoEmitOnErrorsPlugin()
             ],
             module: {
@@ -85,6 +93,7 @@ if (TARGET_ENV === 'development') {
                         },
                         {
                             loader: "elm-webpack-loader",
+                            // add Elm's debug overlay to output
                             options: {
                                 debug: true
                             }
@@ -99,13 +108,6 @@ if (TARGET_ENV === 'development') {
                 inline: true,
                 stats: 'errors-only',
                 setup(app) {
-                    // app.get('/firebase-messaging-sw.js', (req, res) => {
-                    //     res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
-                    // })
-                    // catch all calls for root level files and redirect to src/dist
-                    // app.get('/index.js', (req, res) => {
-                    //     res.sendFile(path.join(__dirname, 'src/index.js'));
-                    // });
                     // serve images,...
                     app.get('/images/:fname', (req, res) => {
                         res.sendFile(path.join(__dirname, 'src/assets/images/', req.params.fname));
@@ -114,15 +116,14 @@ if (TARGET_ENV === 'development') {
                     app.get('/Firebase/:fname', (req, res) => {
                         console.log("Firebase directory", req.params.fname)
                         res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
-                    })
-                    app.get('/firebase-messaging-sw.js', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/dist/firebase-messaging-sw.js'));
                     });
-                    app.get('/sw.js', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/dist/sw.js'));
-                    });
-                    app.get('/manifest.json', (req, res) => {
-                        res.sendFile(path.join(__dirname, 'src/dist/manifest.json'));
+                    // catch certain calls for root level files and redirect to src/dist
+                    app.get('/:rootFileName', (req, res, next) => {
+                        if (['firebase-messaging-sw.js', 'sw.js', 'manifest.json'].includes(req.params.rootFileName)) {
+                            console.log("redirecting:", req.params.rootFileName);
+                            return res.sendFile(path.join(__dirname, 'src/dist/'+req.params.rootFileName));
+                        }
+                        next();
                     });
                 }
             }
@@ -134,15 +135,6 @@ if (TARGET_ENV === 'production') {
     module.exports =
         merge(common, {
             plugins: [
-                new SWPrecacheWebpackPlugin({
-                    cacheId: 'presents',
-                    filename: 'sw.js',
-                    staticFileGlobs: [
-                        "dist/index.*",
-                        "dist/images/*.png"
-                    ],
-                    stripPrefix: 'dist/'
-                }),
                 new CopyWebpackPlugin(
                     [{
                             from: 'src/assets/images',
@@ -157,7 +149,17 @@ if (TARGET_ENV === 'production') {
                         }
                     ]
                 ),
-                new webpack.optimize.UglifyJsPlugin()
+                new webpack.optimize.UglifyJsPlugin(),
+                new SWPrecacheWebpackPlugin({
+                    cacheId: 'presents',
+                    filename: 'sw.js',
+                    staticFileGlobs: [
+                        "dist/index.*",
+                        "dist/main*.js",
+                        "dist/images/*.png"
+                    ],
+                    stripPrefix: 'dist/'
+                })
             ],
             module: {
                 rules: [{

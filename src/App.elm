@@ -62,7 +62,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case Debug.log "update" message of
+    case message of
         UpdateEmail email ->
             { model | email = email } ! []
 
@@ -179,7 +179,8 @@ handleSnapshot snapshot model =
 view : Model -> Html Msg
 view model =
     div [ class "app" ]
-        [ case model.page of
+        [ viewHeader model
+        , case model.page of
             Login ->
                 viewLogin model
 
@@ -188,31 +189,9 @@ view model =
 
             Picker ->
                 viewPicker model
+        , div [ class "warning" ] [ text model.userMessage ]
+        , viewFooter
         ]
-
-
-
---
-
-
-viewPicker : Model -> Html Msg
-viewPicker model =
-    let
-        ( mine, others ) =
-            model.xmas
-                |> Dict.toList
-                |> L.partition (Tuple.first >> ((==) model.user.uid))
-    in
-        div [ id "picker" ]
-            [ viewHeader model
-            , div [ class "main container" ]
-                [ div [ class "row" ]
-                    [ viewOthers model others
-                    , viewMine model mine
-                    ]
-                ]
-            , viewFooter
-            ]
 
 
 viewHeader : Model -> Html Msg
@@ -229,7 +208,7 @@ viewHeader model =
                             text ""
                     , model.user.displayName
                         |> Maybe.map (text >> L.singleton >> strong [])
-                        |> Maybe.withDefault (text "")
+                        |> Maybe.withDefault (text "Xmas Present ideas")
                     ]
                 , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
                 ]
@@ -247,6 +226,26 @@ viewFooter =
                 ]
             ]
         ]
+
+
+
+--
+
+
+viewPicker : Model -> Html Msg
+viewPicker model =
+    let
+        ( mine, others ) =
+            model.xmas
+                |> Dict.toList
+                |> L.partition (Tuple.first >> ((==) model.user.uid))
+    in
+        div [ id "picker", class "main container" ]
+            [ div [ class "row" ]
+                [ viewOthers model others
+                , viewMine model mine
+                ]
+            ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -391,42 +390,38 @@ makeDescription { description, link } =
 
 
 viewLogin model =
-    div [ id "login" ]
-        [ div [ class "main container" ]
-            [ h1 [] [ text "Login" ]
-            , div [ class "section google" ]
-                [ h4 [] [ text "Either sign in with Google" ]
-                , img
-                    [ src "images/google_signin.png"
-                    , onClick GoogleSignin
-                    , alt "Click to sigin with Google"
-                    ]
-                    []
+    div [ id "login", class "main container" ]
+        [ h1 [] [ text "Login" ]
+        , div [ class "section google" ]
+            [ h4 [] [ text "Either sign in with Google" ]
+            , img
+                [ src "images/google_signin.png"
+                , onClick GoogleSignin
+                , alt "Click to sigin with Google"
                 ]
-            , div [ class "section" ]
-                [ h4 [] [ text "Or sign in with your email address" ]
-                , Html.form
-                    [ onSubmit Submit ]
-                    [ B.inputWithLabel UpdateEmail "Email" "email" model.email
-                    , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                    , div [ class "flex-h spread" ]
-                        [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                        , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
-                        ]
-                    ]
-                ]
-            , div [ class "warning" ] [ text model.userMessage ]
+                []
             ]
-        , viewFooter
+        , div [ class "section" ]
+            [ h4 [] [ text "Or sign in with your email address" ]
+            , Html.form
+                [ onSubmit Submit ]
+                [ B.inputWithLabel UpdateEmail "Email" "email" model.email
+                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+                , div [ class "flex-h spread" ]
+                    [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
+                    , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
+                    ]
+                ]
+            ]
         ]
 
 
 viewRegister : Model -> Html Msg
 viewRegister model =
-    div [ id "register", class "container" ]
+    div [ id "register", class "main container" ]
         [ h1 [] [ text "Register" ]
         , Html.form
-            [ onSubmit SubmitRegistration ]
+            [ onSubmit SubmitRegistration, class "section" ]
             [ B.inputWithLabel UpdateUsername "Your Name" "name" (Maybe.withDefault "" model.user.displayName)
             , B.inputWithLabel UpdateEmail "Email" "email" model.email
             , B.passwordWithLabel UpdatePassword "Password" "password" model.password
@@ -445,7 +440,6 @@ viewRegister model =
                     [ text "Login" ]
                 ]
             ]
-        , div [ class "warning" ] [ text model.userMessage ]
         ]
 
 
