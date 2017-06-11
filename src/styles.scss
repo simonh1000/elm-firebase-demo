@@ -9,29 +9,48 @@ body, .app {
 .app {
     display: flex;
     flex-direction: column;
+    header {
+        flex: 0 0 60px;
+    }
+    .main {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        overflow: auto;
+        .row {
+            flex: 1 1;
+        }
+        .my-ideas {
+            display: flex;
+            flex-direction: column;
+        }
+        .new-present {
+            overflow:hidden;
+            transition:flex 0.3s ease-out; // note that we're transitioning flex, not height!
+            height:auto;
+            // flex: 1 1;
+        }
+        // .new-present.collapsed {
+        //     flex: 0 0;
+        // }
+        .my-presents {
+            // flex-grow: 1;
+        }
+    }
+    footer {
+        flex: 0 0 40px;
+    }
 }
 #login, #register {
     overflow: auto;
 }
-.main {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    overflow: auto;
-}
-header {
-    flex: 0 0 60px;
-}
-footer {
-    flex: 0 0 40px;
-}
 #picker {
-    // .main > div {
-    //     flex: 1 1;
-    // }
-    .others, .mine {
+    .others, .my-ideas {
         overflow-y: auto;
     }
+    // .my-ideas {
+    //     height: 100%;
+    // }
 }
 
 @media (min-width: 576px) {
@@ -39,12 +58,11 @@ footer {
         flex: 1 1;
         display: flex;
         flex-direction: column;
-        align-content: stretch;
+        // align-content: stretch;
     }
     #picker {
-        background-color: #eee;
+        // background-color: #eee;
         height: inherit;
-        // overflow: hidden;
     }
 }
 
@@ -76,7 +94,7 @@ header, footer {
         background-color: white;
         margin-bottom: 15px;
     }
-    .mine {
+    .my-ideas {
         padding-bottom: 20px;
     }
     .new-present {

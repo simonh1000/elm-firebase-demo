@@ -8,7 +8,8 @@ import Firebase.Firebase as FB
 
 
 type Page
-    = Login
+    = Loading
+    | Login
     | Register
     | Picker
 
@@ -22,12 +23,13 @@ type alias Model =
     , xmas : Dict String UserData
     , userMessage : String
     , editor : Present
+    , editorCollapsed : Bool
     }
 
 
 blank : Model
 blank =
-    { page = Login
+    { page = Loading
     , email = ""
     , password = ""
     , password2 = ""
@@ -35,6 +37,7 @@ blank =
     , xmas = Dict.empty
     , userMessage = ""
     , editor = blankPresent
+    , editorCollapsed = True
     }
 
 

@@ -18,6 +18,9 @@ import Bootstrap as B
 port removeAppShell : String -> Cmd msg
 
 
+port expander : String -> Cmd msg
+
+
 
 --
 
@@ -55,6 +58,7 @@ type Msg
     | CancelEditor
     | DeletePresent
       -- My presents list
+    | Expander
     | EditPresent Present
       -- Subscriptions
     | FBMsgHandler FB.FBMsg
@@ -113,6 +117,10 @@ update message model =
         DeletePresent ->
             { model | editor = model.editor } ! []
 
+        -- New present form
+        Expander ->
+            ( { model | editorCollapsed = not model.editorCollapsed }, Cmd.none )
+
         EditPresent newPresent ->
             updateEditor (\_ -> newPresent) model ! []
 
@@ -139,6 +147,7 @@ update message model =
 handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
 handleAuthChange val model =
     case Json.decodeValue FB.decodeAuthState val |> Result.andThen identity of
+        -- If user exists, then subscribe to db changes
         Ok user ->
             ( { model | user = user, page = Picker }
             , FB.subscribe "/"
@@ -148,6 +157,9 @@ handleAuthChange val model =
             { model | user = FB.init, page = Login, userMessage = err } ! []
 
 
+{-| In addition to the present data, we also possibly get a real name registered by
+email/password users
+-}
 handleSnapshot snapshot model =
     case Json.decodeValue decoderXmas snapshot of
         Ok xmas ->
@@ -181,6 +193,9 @@ view model =
     div [ class "app" ]
         [ viewHeader model
         , case model.page of
+            Loading ->
+                h1 [] [ text "Loading..." ]
+
             Login ->
                 viewLogin model
 
@@ -229,7 +244,7 @@ viewFooter =
 
 
 
---
+-- LHS
 
 
 viewPicker : Model -> Html Msg
@@ -321,15 +336,19 @@ viewMine model lst =
                 _ ->
                     text <| "error" ++ toString lst
     in
-        div [ class "mine col-sm-6" ]
-            [ h2 [] [ text "My suggestions" ]
-            , viewSuggestionEditor model
-            , div [ class "section" ] [ mypresents ]
+        div [ class "my-ideas col-sm-6" ]
+            [ h2 []
+                [ text "My suggestions"
+
+                -- , button [ onClick Expander ] [ text "expand" ]
+                ]
+            , viewNewIdeaForm model
+            , div [ class "my-presents section" ] [ mypresents ]
             ]
 
 
-viewSuggestionEditor : Model -> Html Msg
-viewSuggestionEditor { editor } =
+viewNewIdeaForm : Model -> Html Msg
+viewNewIdeaForm { editor, editorCollapsed } =
     let
         btn msg txt =
             button
@@ -338,8 +357,14 @@ viewSuggestionEditor { editor } =
                 , disabled <| editor.description == ""
                 ]
                 [ text txt ]
+
+        mkAttrs s =
+            if editorCollapsed then
+                s ++ " collapsed"
+            else
+                s
     in
-        div [ class "new-present section" ]
+        div [ class <| mkAttrs "new-present section" ]
             [ h4 []
                 [ case editor.uid of
                     Just _ ->
@@ -348,22 +373,24 @@ viewSuggestionEditor { editor } =
                     Nothing ->
                         text "New suggestion"
                 ]
-            , B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
-            , editor.link
-                |> Maybe.withDefault ""
-                |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
-            , div [ class "flex-h spread" ]
-                [ btn SubmitNewPresent "Save"
+            , div [ id "new-present-form" ]
+                [ B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
+                , editor.link
+                    |> Maybe.withDefault ""
+                    |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
+                , div [ class "flex-h spread" ]
+                    [ btn SubmitNewPresent "Save"
+                    , if isJust editor.uid then
+                        button [ class "btn btn-danger", disabled True ] [ text "Delete*" ]
+                      else
+                        text ""
+                    , btn CancelEditor "Cancel"
+                    ]
                 , if isJust editor.uid then
-                    button [ class "btn btn-danger", disabled True ] [ text "Delete*" ]
+                    p [] [ text "* Warning: someone may already have commited to buy this!" ]
                   else
                     text ""
-                , btn CancelEditor "Cancel"
                 ]
-            , if isJust editor.uid then
-                p [] [ text "* Warning: someone may already have commited to buy this!" ]
-              else
-                text ""
             ]
 
 

@@ -12,14 +12,13 @@ function requestMessagingPermission(cb) {
         });
 
     messaging.onMessage(function(payload) {
-      console.log("[fbm] Message received. ", payload);
-      cb({
-          message: "OnMessage",
-          payload: payload
-      })
+        console.log("[fbm] Message received. ", payload);
+        cb({
+            message: "OnMessage",
+            payload: payload
+        })
     });
 }
-
 function getToken() {
     const messaging = firebase.messaging();
 
@@ -56,15 +55,10 @@ function getToken() {
             } else {
                 // Show permission request.
                 console.log('[fbm] No Instance ID token available. Request permission to generate one.');
-                // Show permission UI.
-                // updateUIForPushPermissionRequired();
-                // setTokenSentToServer(false);
             }
         })
         .catch(function(err) {
-            console.error('An error occurred while retrieving token. ', err);
-            // showToken('Error retrieving Instance ID token. ', err);
-            // setTokenSentToServer(false);
+            console.error('An error occurred while retrieving token.', err);
         });
 }
 
