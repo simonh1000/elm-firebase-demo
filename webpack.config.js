@@ -12,14 +12,16 @@ var filename = (TARGET_ENV == 'production') ? '[name]-[hash].js' : 'index.js'
 
 var common = {
     entry: './src/index.js',
-
     output: {
         path: path.join(__dirname, "dist"),
+        // add hash when building for production
         filename: filename
     },
     plugins: [
         new HTMLWebpackPlugin({
+            // using .ejs prevents other loaders causing errors
             template: 'src/index.ejs',
+            // inject details of output file at end of body
             inject: 'body'
         })
     ],
@@ -136,7 +138,8 @@ if (TARGET_ENV === 'production') {
         merge(common, {
             plugins: [
                 new CopyWebpackPlugin(
-                    [{
+                    [
+                        {
                             from: 'src/assets/images',
                             to: 'images/'
                         },
@@ -145,11 +148,12 @@ if (TARGET_ENV === 'production') {
                         },
                         {
                             from: 'src/Firebase/fbsw.config.js',
-                            to: 'Firebase/[name].[ext]'
+                            to: 'Firebase/fbsw.config.js'
                         }
                     ]
                 ),
                 new webpack.optimize.UglifyJsPlugin(),
+                // Creates best practise service worker and cache
                 new SWPrecacheWebpackPlugin({
                     cacheId: 'presents',
                     filename: 'sw.js',
