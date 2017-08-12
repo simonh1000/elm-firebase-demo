@@ -5,12 +5,16 @@ require("bootstrap-loader");
 require("./styles.scss");
 // require('firebase');
 
+let d = new Date();
 var Elm = require("./Main");
-var app = Elm.Main.fullscreen();
+var app = Elm.Main.fullscreen({
+    now: d.getTime()
+});
 
 // Once Elm is running, remove the existing 'app=shell'
 app.ports.removeAppShell.subscribe(() => {
-    document.querySelector(".removable").remove();
+    let rm = document.querySelector(".removable")
+    if (rm) rm.remove();
 });
 
 // F i r e b a s e

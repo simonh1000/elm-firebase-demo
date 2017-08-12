@@ -5,14 +5,15 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Json exposing (Value)
 import Json.Encode as E
+import Date exposing (Date)
+import Time exposing (Time)
 import Dict exposing (Dict)
 import List as L
 import Firebase.Firebase as FB
 import Model as M exposing (..)
 import Bootstrap as B
-
-
---
+import Jwt
+import Jwt.Decoders
 
 
 port removeAppShell : String -> Cmd msg
@@ -25,9 +26,23 @@ port expander : String -> Cmd msg
 --
 
 
-init : ( Model, Cmd Msg )
-init =
-    blank
+type alias Flags =
+    { now : Time }
+
+
+canShowWants : Time -> Bool
+canShowWants t =
+    case Date.fromString "1 sept 2017" |> Result.map Date.toTime of
+        Ok b ->
+            t > b
+
+        Err _ ->
+            False
+
+
+init : Flags -> ( Model, Cmd Msg )
+init { now } =
+    { blank | showWants = canShowWants now }
         ! [ FB.setUpAuthListener
           , FB.requestMessagingPermission
           , removeAppShell ""
@@ -132,6 +147,17 @@ update message model =
                 "snapshot" ->
                     handleSnapshot payload model
 
+                "token" ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "payload" payload
+                    --
+                    --     _ =
+                    --         Debug.log ""
+                    --             (Json.decodeValue (Json.field "accessToken" <| Jwt.tokenDecoder Jwt.Decoders.firebase) payload)
+                    -- in
+                    ( model, Cmd.none )
+
                 "error" ->
                     let
                         userMessage =
@@ -181,7 +207,7 @@ handleSnapshot snapshot model =
                             { model | xmas = xmas } ! []
 
         Err err ->
-            { model | userMessage = err } ! []
+            { model | userMessage = "handleSnapshot: " ++ err } ! []
 
 
 
@@ -190,22 +216,37 @@ handleSnapshot snapshot model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "app" ]
-        [ viewHeader model
-        , case model.page of
+    div [ class "app" ] <|
+        case model.page of
             Loading ->
-                h1 [] [ text "Loading..." ]
+                [ simpleHeader
+                , h1 [] [ text "Loading..." ]
+                ]
 
             Login ->
-                viewLogin model
+                [ simpleHeader
+                , viewLogin model
+                ]
 
             Register ->
-                viewRegister model
+                [ simpleHeader
+                , viewRegister model
+                ]
 
             Picker ->
-                viewPicker model
-        , div [ class "warning" ] [ text model.userMessage ]
-        , viewFooter
+                [ viewHeader model
+                , viewPicker model
+                ]
+                    ++ [ div [ class "warning" ] [ text model.userMessage ]
+                       , viewFooter
+                       ]
+
+
+simpleHeader : Html msg
+simpleHeader =
+    header []
+        [ div [ class "container" ]
+            [ div [ class "flex-h spread" ] [ text "Xmas Present ideas" ] ]
         ]
 
 
@@ -231,6 +272,7 @@ viewHeader model =
         ]
 
 
+viewFooter : Html msg
 viewFooter =
     footer []
         [ div [ class "container" ]
@@ -244,7 +286,7 @@ viewFooter =
 
 
 
--- LHS
+-- Main Page
 
 
 viewPicker : Model -> Html Msg
@@ -257,17 +299,28 @@ viewPicker model =
     in
         div [ id "picker", class "main container" ]
             [ div [ class "row" ]
-                [ viewOthers model others
-                , viewMine model mine
+                [ viewMine model mine
+                , viewOthers model others
                 ]
             ]
 
 
+
+-- LHS
+
+
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
 viewOthers model others =
-    div [ class "others col-12 col-sm-6" ] <|
-        h2 [] [ text "Xmas wishes" ]
-            :: L.map (viewOther model) others
+    let
+        wishes =
+            if model.showWants then
+                L.map (viewOther model) others
+            else
+                [ text "You will be able to see other wishes in due course" ]
+    in
+        div [ class "others col-12 col-sm-6" ] <|
+            h2 [] [ text "Xmas wishes" ]
+                :: wishes
 
 
 viewOther : Model -> ( String, UserData ) -> Html Msg
@@ -325,13 +378,17 @@ viewMine model lst =
         mypresents =
             case lst of
                 [ ( _, { presents } ) ] ->
-                    presents
-                        |> Dict.values
-                        |> L.map viewMyPresentIdea
-                        |> ul []
+                    case Dict.values presents of
+                        [] ->
+                            text "Time to add you first idea!"
+
+                        lst ->
+                            lst
+                                |> L.map viewMyPresentIdea
+                                |> ul []
 
                 [] ->
-                    text "time to add you first present"
+                    text "Time to add you first idea!"
 
                 _ ->
                     text <| "error" ++ toString lst
@@ -416,11 +473,11 @@ makeDescription { description, link } =
 --
 
 
+viewLogin : Model -> Html Msg
 viewLogin model =
     div [ id "login", class "main container" ]
-        [ h1 [] [ text "Login" ]
-        , div [ class "section google" ]
-            [ h4 [] [ text "Either sign in with Google" ]
+        [ div [ class "section google" ]
+            [ h4 [] [ text "Either sign in with Google..." ]
             , img
                 [ src "images/google_signin.png"
                 , onClick GoogleSignin
@@ -429,7 +486,7 @@ viewLogin model =
                 []
             ]
         , div [ class "section" ]
-            [ h4 [] [ text "Or sign in with your email address" ]
+            [ h4 [] [ text "...Or with your email address" ]
             , Html.form
                 [ onSubmit Submit ]
                 [ B.inputWithLabel UpdateEmail "Email" "email" model.email
@@ -508,6 +565,7 @@ savePresent model =
             FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
 
 
+setMeta : String -> String -> Cmd msg
 setMeta uid name =
     FB.set (uid ++ "/meta") (E.object [ ( "name", E.string name ) ])
 

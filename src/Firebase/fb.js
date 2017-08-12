@@ -42,6 +42,16 @@ function createAuthListener(fbToElm) {
     firebase.auth()
         .onAuthStateChanged(function(user) {
             console.log("auth state change", user);
+
+            firebase.auth()
+                .getIdToken()
+                .then( token => {
+                    fbToElm({
+                    message: "token",
+                    payload: token
+                });
+            });
+
             if (user) {
                 return fbToElm({
                     message: "authstate",
@@ -49,7 +59,8 @@ function createAuthListener(fbToElm) {
                         email: user.email,
                         uid: user.uid,
                         displayName: user.displayName,
-                        photoURL: user.photoURL
+                        photoURL: user.photoURL,
+                        token: user.token
                     }
                 })
             } else {

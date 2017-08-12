@@ -20,8 +20,8 @@ port fbToElm : (FBMsg -> msg) -> Sub msg
 -- Subscriptions
 
 
-subscriptions : (FBMsg -> msg) -> m -> Sub msg
-subscriptions fbMsgHandler _ =
+subscriptions : (FBMsg -> msg) -> Sub msg
+subscriptions fbMsgHandler =
     fbToElm fbMsgHandler
 
 
@@ -29,6 +29,7 @@ subscriptions fbMsgHandler _ =
 --
 
 
+requestMessagingPermission : Cmd msg
 requestMessagingPermission =
     elmToFb <| FBMsg "RequestMessagingPermission" E.null
 

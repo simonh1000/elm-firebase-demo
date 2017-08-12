@@ -6,10 +6,10 @@ import App exposing (..)
 
 
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , update = update
         , view = view
         , subscriptions =
-            FB.subscriptions FBMsgHandler
+            always (FB.subscriptions FBMsgHandler)
         }

@@ -7,7 +7,7 @@ importScripts('/Firebase/fbsw.config.js');
 
 // Initialize the Firebase app in the service worker by passing in the config.messagingSenderId.
 firebase.initializeApp({
-  'messagingSenderId': self.config.messagingSenderId
+    'messagingSenderId': self.config.messagingSenderId
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
@@ -16,11 +16,12 @@ const messaging = firebase.messaging();
 // SW will handle background messages while app handles foreground ones
 messaging.setBackgroundMessageHandler(function(payload) {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // Customize notification here
+    // click_action should open app
     const notificationTitle = 'Presents Update for ' + payload.data.person;
     const notificationOptions = {
         body: 'Added new idea: ' + payload.data.present,
-        icon: '/images/icons/present-192x192.png'
+        icon: '/images/icons/present-192x192.png',
+        click_action: 'https://hampton-xmas.firebaseapp.com/'
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);

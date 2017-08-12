@@ -20,7 +20,9 @@ var config = {
 export default config;
 ```
 
+
 `/src/Firebase/fbsw.config.js`
+https://console.firebase.google.com/project/<projid>/settings/cloudmessaging/
 
 ```js
 var config = {
@@ -29,7 +31,7 @@ var config = {
 self.config = self.config || config;
 ```
 
-## Deploy to Firebase
+## Deploy to Firebase: firebase-tools
 
 ```sh
 npm run build && firebase deploy --only hosting
@@ -37,6 +39,7 @@ npm run build && firebase deploy --only hosting
 
 ## ToDo
 
+ * Generate sw.js directly in ./dist
  * Delete item (with warning)
  * add click-action to notification
  * Add firebase rules so that first person to claim can't be overwritten

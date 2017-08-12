@@ -24,6 +24,7 @@ type alias Model =
     , userMessage : String
     , editor : Present
     , editorCollapsed : Bool
+    , showWants : Bool
     }
 
 
@@ -38,6 +39,7 @@ blank =
     , userMessage = ""
     , editor = blankPresent
     , editorCollapsed = True
+    , showWants = False
     }
 
 
@@ -90,8 +92,15 @@ setDisplayName displayName model =
 -- DECODER
 
 
+decoderXmas : Decoder (Dict String UserData)
 decoderXmas =
-    field "value" <| dict decodeUserData
+    field "value" <|
+        oneOf
+            [ dict decodeUserData
+
+            --  Need to handle case where the database starts empty
+            , null Dict.empty
+            ]
 
 
 decodeUserData =
