@@ -123,7 +123,7 @@ if (TARGET_ENV === 'development') {
                 // });
                 // Make fbsw.config.js available
                 app.get('/Firebase/:fname', (req, res) => {
-                    console.log("Firebase directory", req.params.fname)
+                    // console.log("Firebase directory", req.params.fname)
                     res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
                 });
                 // catch certain calls for root level files and redirect to src/dist

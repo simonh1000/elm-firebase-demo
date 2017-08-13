@@ -33,6 +33,7 @@ self.config = self.config || config;
 
 ## Deploy to Firebase: firebase-tools
 
+No update of functions
 ```sh
 npm run build && firebase deploy --only hosting
 ```
