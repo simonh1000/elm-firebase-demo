@@ -24,7 +24,7 @@ type alias Model =
     , userMessage : String
     , editor : Present
     , editorCollapsed : Bool
-    , showWants : Bool
+    , isPhase2 : Bool
     }
 
 
@@ -39,7 +39,7 @@ blank =
     , userMessage = ""
     , editor = blankPresent
     , editorCollapsed = True
-    , showWants = False
+    , isPhase2 = False
     }
 
 

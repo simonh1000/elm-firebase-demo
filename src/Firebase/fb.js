@@ -13,7 +13,7 @@ function handler({message, payload}, fbToElm) {
             signin(payload.email, payload.password, fbToElm);
             break;
         case "register":
-            register(payload.email, payload.password);
+            register(payload.email, payload.password, fbToElm);
             break;
         case "signinGoogle":
             signinGoogle();
@@ -86,14 +86,15 @@ function signin(email, password, fbToElm) {
         });
 }
 
-function register(email, password) {
+function register(email, password, fbToElm) {
     firebase.auth()
         .createUserWithEmailAndPassword(email, password)
         .then(res => {
-            console.log("Signin success", res);
+            console.log("Register success", res);
         })
-        .catch(function(error) {
-            console.error(error);
+        .catch(function(err) {
+            fbToElm({message: "error", payload: err});
+            console.error(err);
         });
 }
 

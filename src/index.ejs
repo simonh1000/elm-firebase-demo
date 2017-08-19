@@ -15,12 +15,17 @@
         }
         .app {
             height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         header {
             flex: 0 0 60px;
             flex-direction: column;
             display: flex;
             justify-content: center;
+        }
+        header.removable {
+            padding-left: 15px;
             width: 100%;
             background-color: #444;
             color: white;
@@ -30,7 +35,7 @@
 
   <body>
       <header class="removable">
-          <h3>Xmas present picker</h3>
+          <h3>Xmas 2017</h3>
       </header>
 
       <script src="https://www.gstatic.com/firebasejs/4.0.0/firebase.js"></script>

@@ -7,8 +7,6 @@ body, .app {
     overflow: hidden;
 }
 .app {
-    display: flex;
-    flex-direction: column;
     header {
         flex: 0 0 60px;
     }
@@ -44,6 +42,9 @@ body, .app {
 }
 #login, #register {
     overflow: auto;
+    form {
+        margin-bottom: 15px;
+    }
 }
 #picker {
     .others, .my-ideas {

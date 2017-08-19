@@ -35,7 +35,7 @@ self.config = self.config || config;
 
 No update of functions
 ```sh
-npm run build && firebase deploy --only hosting
+npm run prod && firebase deploy --only hosting
 ```
 
 ## ToDo

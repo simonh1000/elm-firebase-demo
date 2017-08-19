@@ -12,8 +12,10 @@ import List as L
 import Firebase.Firebase as FB
 import Model as M exposing (..)
 import Bootstrap as B
-import Jwt
-import Jwt.Decoders
+
+
+-- import Jwt
+-- import Jwt.Decoders
 
 
 port removeAppShell : String -> Cmd msg
@@ -30,11 +32,11 @@ type alias Flags =
     { now : Time }
 
 
-canShowWants : Time -> Bool
-canShowWants t =
+isPhase2 : Time -> Bool
+isPhase2 now =
     case Date.fromString "1 sept 2017" |> Result.map Date.toTime of
-        Ok b ->
-            t > b
+        Ok endPhase1 ->
+            now > endPhase1
 
         Err _ ->
             False
@@ -42,7 +44,7 @@ canShowWants t =
 
 init : Flags -> ( Model, Cmd Msg )
 init { now } =
-    { blank | showWants = canShowWants now }
+    { blank | isPhase2 = isPhase2 now }
         ! [ FB.setUpAuthListener
           , FB.requestMessagingPermission
           , removeAppShell ""
@@ -71,7 +73,7 @@ type Msg
     | UpdateNewPresentLink String
     | SubmitNewPresent
     | CancelEditor
-    | DeletePresent
+    | DeletePresent String
       -- My presents list
     | Expander
     | EditPresent Present
@@ -89,17 +91,17 @@ update message model =
             { model | password = password } ! []
 
         Submit ->
-            model ! [ FB.signin model.email model.password ]
+            { model | userMessage = "" } ! [ FB.signin model.email model.password ]
 
         GoogleSignin ->
-            model ! [ FB.signinGoogle ]
+            { model | userMessage = "" } ! [ FB.signinGoogle ]
 
         -- Registration page
         SwitchTo page ->
             { model | page = page } ! []
 
         SubmitRegistration ->
-            model ! [ FB.register model.email model.password ]
+            { model | userMessage = "" } ! [ FB.register model.email model.password ]
 
         UpdatePassword2 password2 ->
             { model | password2 = password2 } ! []
@@ -129,8 +131,8 @@ update message model =
         CancelEditor ->
             { model | editor = blankPresent } ! []
 
-        DeletePresent ->
-            { model | editor = model.editor } ! []
+        DeletePresent uid ->
+            { model | editor = blankPresent } ! [ delete model uid ]
 
         -- New present form
         Expander ->
@@ -186,6 +188,7 @@ handleAuthChange val model =
 {-| In addition to the present data, we also possibly get a real name registered by
 email/password users
 -}
+handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot snapshot model =
     case Json.decodeValue decoderXmas snapshot of
         Ok xmas ->
@@ -217,10 +220,10 @@ handleSnapshot snapshot model =
 view : Model -> Html Msg
 view model =
     div [ class "app" ] <|
-        case model.page of
+        (case model.page of
             Loading ->
                 [ simpleHeader
-                , h1 [] [ text "Loading..." ]
+                , h1 [ class "main" ] [ text "Loading..." ]
                 ]
 
             Login ->
@@ -237,52 +240,10 @@ view model =
                 [ viewHeader model
                 , viewPicker model
                 ]
-                    ++ [ div [ class "warning" ] [ text model.userMessage ]
-                       , viewFooter
-                       ]
-
-
-simpleHeader : Html msg
-simpleHeader =
-    header []
-        [ div [ class "container" ]
-            [ div [ class "flex-h spread" ] [ text "Xmas Present ideas" ] ]
-        ]
-
-
-viewHeader : Model -> Html Msg
-viewHeader model =
-    header []
-        [ div [ class "container" ]
-            [ div [ class "flex-h spread" ]
-                [ div []
-                    [ case model.user.photoURL of
-                        Just photoURL ->
-                            img [ src photoURL, class "avatar", alt "avatar" ] []
-
-                        Nothing ->
-                            text ""
-                    , model.user.displayName
-                        |> Maybe.map (text >> L.singleton >> strong [])
-                        |> Maybe.withDefault (text "Xmas Present ideas")
-                    ]
-                , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
-                ]
-            ]
-        ]
-
-
-viewFooter : Html msg
-viewFooter =
-    footer []
-        [ div [ class "container" ]
-            [ div [ class "flex-h spread" ]
-                [ a [ href "https://simonh1000.github.io/" ] [ text "Simon Hampton" ]
-                , span [] [ text "May 2017" ]
-                , a [ href "https://github.com/simonh1000/elm-firebase-demo" ] [ text "Code" ]
-                ]
-            ]
-        ]
+        )
+            ++ [ div [ class "container warning" ] [ text model.userMessage ]
+               , viewFooter
+               ]
 
 
 
@@ -313,7 +274,7 @@ viewOthers : Model -> List ( String, UserData ) -> Html Msg
 viewOthers model others =
     let
         wishes =
-            if model.showWants then
+            if model.isPhase2 then
                 L.map (viewOther model) others
             else
                 [ text "You will be able to see other wishes in due course" ]
@@ -405,7 +366,7 @@ viewMine model lst =
 
 
 viewNewIdeaForm : Model -> Html Msg
-viewNewIdeaForm { editor, editorCollapsed } =
+viewNewIdeaForm { editor, isPhase2 } =
     let
         btn msg txt =
             button
@@ -415,13 +376,13 @@ viewNewIdeaForm { editor, editorCollapsed } =
                 ]
                 [ text txt ]
 
-        mkAttrs s =
-            if editorCollapsed then
-                s ++ " collapsed"
-            else
-                s
+        -- mkAttrs s =
+        --     if editorCollapsed then
+        --         s ++ " collapsed"
+        --     else
+        --         s
     in
-        div [ class <| mkAttrs "new-present section" ]
+        div [ class "new-present section" ]
             [ h4 []
                 [ case editor.uid of
                     Just _ ->
@@ -436,12 +397,14 @@ viewNewIdeaForm { editor, editorCollapsed } =
                     |> Maybe.withDefault ""
                     |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
                 , div [ class "flex-h spread" ]
-                    [ btn SubmitNewPresent "Save"
-                    , if isJust editor.uid then
-                        button [ class "btn btn-danger", disabled True ] [ text "Delete*" ]
-                      else
-                        text ""
-                    , btn CancelEditor "Cancel"
+                    [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
+                    , case ( editor.uid, isPhase2 ) of
+                        ( Just uid, False ) ->
+                            button [ class "btn btn-danger", onClick (DeletePresent uid) ] [ text "Delete*" ]
+
+                        _ ->
+                            text ""
+                    , button [ class "btn btn-success", onClick SubmitNewPresent, disabled <| editor.description == "" ] [ text "Save" ]
                     ]
                 , if isJust editor.uid then
                     p [] [ text "* Warning: someone may already have commited to buy this!" ]
@@ -473,11 +436,59 @@ makeDescription { description, link } =
 --
 
 
+simpleHeader : Html msg
+simpleHeader =
+    header []
+        [ div [ class "container flex-h" ]
+            [ h4 [ class "truncate" ] [ text "Xmas 2017 coordination" ] ]
+        ]
+
+
+viewHeader : Model -> Html Msg
+viewHeader model =
+    header []
+        [ div [ class "container" ]
+            [ div [ class "flex-h spread" ]
+                [ div []
+                    [ case model.user.photoURL of
+                        Just photoURL ->
+                            img [ src photoURL, class "avatar", alt "avatar" ] []
+
+                        Nothing ->
+                            text ""
+                    , model.user.displayName
+                        |> Maybe.map (text >> L.singleton >> strong [])
+                        |> Maybe.withDefault (text "Xmas Present ideas")
+                    ]
+                , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
+                ]
+            ]
+        ]
+
+
+viewFooter : Html msg
+viewFooter =
+    footer []
+        [ div [ class "container" ]
+            [ div [ class "flex-h spread" ]
+                [ a [ href "https://simonh1000.github.io/" ] [ text "Simon Hampton" ]
+                , span [] [ text "Aug 2017" ]
+
+                -- , a [ href "https://github.com/simonh1000/elm-firebase-demo" ] [ text "Code" ]
+                ]
+            ]
+        ]
+
+
+
+--
+
+
 viewLogin : Model -> Html Msg
 viewLogin model =
     div [ id "login", class "main container" ]
         [ div [ class "section google" ]
-            [ h4 [] [ text "Either sign in with Google..." ]
+            [ h4 [] [ text "Quick Sign in (recommended)..." ]
             , img
                 [ src "images/google_signin.png"
                 , onClick GoogleSignin
@@ -486,15 +497,16 @@ viewLogin model =
                 []
             ]
         , div [ class "section" ]
-            [ h4 [] [ text "...Or with your email address" ]
+            [ h4 [] [ text "...Or with email address" ]
             , Html.form
                 [ onSubmit Submit ]
                 [ B.inputWithLabel UpdateEmail "Email" "email" model.email
                 , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                , div [ class "flex-h spread" ]
-                    [ button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                    , button [ type_ "button", class "btn btn-default", onClick (SwitchTo Register) ] [ text "New? Register yourself" ]
-                    ]
+                , button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
+                ]
+            , button [ class "btn btn-default", onClick (SwitchTo Register) ]
+                [ strong [] [ text "New?" ]
+                , text " Register email address"
                 ]
             ]
         ]
@@ -511,17 +523,13 @@ viewRegister model =
             , B.passwordWithLabel UpdatePassword "Password" "password" model.password
             , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
             , div [ class "flex-h spread" ]
-                [ button
+                [ span [ onClick (SwitchTo Login) ] [ text "Login" ]
+                , button
                     [ type_ "submit"
                     , class "btn btn-primary"
                     , disabled <| model.password == "" || model.password /= model.password2
                     ]
                     [ text "Register" ]
-                , button
-                    [ class "btn btn-default"
-                    , onClick (SwitchTo Login)
-                    ]
-                    [ text "Login" ]
                 ]
             ]
         ]
@@ -540,16 +548,19 @@ isJust =
 -- CMDs
 
 
+claim : String -> String -> String -> Cmd msg
 claim uid otherRef presentRef =
     FB.set
         (makeTakenByRef otherRef presentRef)
         (E.string uid)
 
 
+unclaim : String -> String -> Cmd msg
 unclaim otherRef presentRef =
     FB.remove <| makeTakenByRef otherRef presentRef
 
 
+delete : Model -> String -> Cmd Msg
 delete model ref =
     FB.remove ("/" ++ model.user.uid ++ "/presents/" ++ ref)
 
