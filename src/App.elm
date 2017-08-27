@@ -34,7 +34,7 @@ type alias Flags =
 
 isPhase2 : Time -> Bool
 isPhase2 now =
-    case Date.fromString "1 sept 2017" |> Result.map Date.toTime of
+    case Date.fromString "1 oct 2017" |> Result.map Date.toTime of
         Ok endPhase1 ->
             now > endPhase1
 
@@ -61,9 +61,9 @@ type Msg
     | UpdatePassword2 String
     | UpdateUsername String
     | Submit
-    | SwitchTo Page
     | SubmitRegistration
     | GoogleSignin
+    | SwitchTo Page
       --
     | Signout
     | Claim String String
@@ -83,7 +83,8 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case message of
+    case Debug.log "" message of
+        -- case message of
         UpdateEmail email ->
             { model | email = email } ! []
 
@@ -106,8 +107,8 @@ update message model =
         UpdatePassword2 password2 ->
             { model | password2 = password2 } ! []
 
-        UpdateUsername displayName ->
-            setDisplayName displayName model ! []
+        UpdateUsername userName ->
+            setDisplayName userName model ! []
 
         -- Main page
         Signout ->
@@ -177,10 +178,29 @@ handleAuthChange val model =
     case Json.decodeValue FB.decodeAuthState val |> Result.andThen identity of
         -- If user exists, then subscribe to db changes
         Ok user ->
-            ( { model | user = user, page = Picker }
-            , FB.subscribe "/"
-            )
+            case ( user.displayName, model.user.displayName ) of
+                ( Nothing, Just displayName ) ->
+                    -- This case occurs immediately after new registration
+                    ( { model
+                        | user = { user | displayName = Just displayName }
+                        , page = Picker
+                        , userMessage = ""
+                      }
+                    , Cmd.batch [ FB.subscribe "/", setMeta user.uid displayName ]
+                    )
 
+                _ ->
+                    ( { model
+                        | user = user
+                        , page = Picker
+                        , userMessage = ""
+                      }
+                    , FB.subscribe "/"
+                    )
+
+        -- ( Nothing, Nothing ) ->
+        --     -- Occurs when a non-Google user reloads page
+        --     ( { model | userMessage = "handleAuthChange missing userName" }, Cmd.none )
         Err err ->
             { model | user = FB.init, page = Login, userMessage = err } ! []
 
@@ -193,22 +213,25 @@ handleSnapshot snapshot model =
     case Json.decodeValue decoderXmas snapshot of
         Ok xmas ->
             case Dict.get model.user.uid xmas of
-                -- If there is data for this user, then copy over the Name field
+                -- If there is data for this user, copy over the Name field
                 Just userData ->
+                    -- TODO the error condition is when model.user.displayName == Nothing and userData.meta.name == Nothing
                     ( { model | xmas = xmas }
                         |> setDisplayName userData.meta.name
                     , Cmd.none
                     )
 
-                -- If no data, then we should set the Name field using local data
+                -- May occur on first login, but anothig snapshot should be coming already due to
+                -- the setMeta in handleAuthChange
                 Nothing ->
-                    case model.user.displayName of
-                        Just displayName ->
-                            { model | xmas = xmas } ! [ setMeta model.user.uid displayName ]
+                    { model | xmas = xmas } ! []
 
-                        Nothing ->
-                            { model | xmas = xmas } ! []
-
+        -- case model.user.displayName of
+        --     Just displayName ->
+        --
+        --     Nothing ->
+        --         -- This is an error condition as no username exists anywhere
+        --         { model | xmas = xmas } ! []
         Err err ->
             { model | userMessage = "handleSnapshot: " ++ err } ! []
 
@@ -514,25 +537,32 @@ viewLogin model =
 
 viewRegister : Model -> Html Msg
 viewRegister model =
-    div [ id "register", class "main container" ]
-        [ h1 [] [ text "Register" ]
-        , Html.form
-            [ onSubmit SubmitRegistration, class "section" ]
-            [ B.inputWithLabel UpdateUsername "Your Name" "name" (Maybe.withDefault "" model.user.displayName)
-            , B.inputWithLabel UpdateEmail "Email" "email" model.email
-            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-            , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
-            , div [ class "flex-h spread" ]
-                [ span [ onClick (SwitchTo Login) ] [ text "Login" ]
-                , button
-                    [ type_ "submit"
-                    , class "btn btn-primary"
-                    , disabled <| model.password == "" || model.password /= model.password2
+    let
+        username =
+            Maybe.withDefault "" model.user.displayName
+
+        isDisabled =
+            model.password == "" || model.password /= model.password2 || username == ""
+    in
+        div [ id "register", class "main container" ]
+            [ h1 [] [ text "Register" ]
+            , Html.form
+                [ onSubmit SubmitRegistration, class "section" ]
+                [ B.inputWithLabel UpdateUsername "Your Name" "name" username
+                , B.inputWithLabel UpdateEmail "Email" "email" model.email
+                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+                , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
+                , div [ class "flex-h spread" ]
+                    [ span [ onClick (SwitchTo Login) ] [ text "Login" ]
+                    , button
+                        [ type_ "submit"
+                        , class "btn btn-primary"
+                        , disabled isDisabled
+                        ]
+                        [ text "Register" ]
                     ]
-                    [ text "Register" ]
                 ]
             ]
-        ]
 
 
 

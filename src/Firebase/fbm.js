@@ -5,7 +5,7 @@ function requestMessagingPermission(cb) {
     messaging.requestPermission()
         .then(function() {
             console.log('[fbm] Notification permission granted.');
-            return getToken();
+            return resigterForUpdates();
         })
         .catch(function(err) {
             console.log('[fbm] Unable to get permission to notify.', err);
@@ -19,7 +19,8 @@ function requestMessagingPermission(cb) {
         })
     });
 }
-function getToken() {
+
+function resigterForUpdates() {
     const messaging = firebase.messaging();
 
     // Get Instance ID token. Initially this makes a network call, once retrieved
@@ -44,7 +45,7 @@ function getToken() {
                return fetch(myRequest)
                    .then(function(response) {
                         if (response.status !== 200) {
-                            return console.log("[fbm] Bad response",response);
+                            return console.log("[fbm] Bad response", response);
                         }
 
                         return console.log("[fbm] Registered for topic:", topic);
