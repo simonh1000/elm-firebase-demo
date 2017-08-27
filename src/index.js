@@ -1,5 +1,6 @@
 "use strict";
 
+require('./rollbar');
 require('./sw-installer');
 require("bootstrap-loader");
 require("./styles.scss");
