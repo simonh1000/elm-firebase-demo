@@ -180,7 +180,7 @@ handleAuthChange val model =
         Ok user ->
             case ( user.displayName, model.user.displayName ) of
                 ( Nothing, Just displayName ) ->
-                    -- This case occurs immediately after new registration
+                    -- This case occurs immediately after new Email registration
                     ( { model
                         | user = { user | displayName = Just displayName }
                         , page = Picker
@@ -190,6 +190,8 @@ handleAuthChange val model =
                     )
 
                 _ ->
+                    -- (Just displayName, Nothing) ->
+                    -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
                     ( { model
                         | user = user
                         , page = Picker
@@ -198,6 +200,11 @@ handleAuthChange val model =
                     , FB.subscribe "/"
                     )
 
+        -- (Nothing, Nothing) ->
+        --     ( { model | userMessage = "Unexpected error: no userName present"
+        --       }
+        --     , FB.subscribe "/"
+        --     )
         -- ( Nothing, Nothing ) ->
         --     -- Occurs when a non-Google user reloads page
         --     ( { model | userMessage = "handleAuthChange missing userName" }, Cmd.none )
@@ -212,26 +219,27 @@ handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot snapshot model =
     case Json.decodeValue decoderXmas snapshot of
         Ok xmas ->
-            case Dict.get model.user.uid xmas of
-                -- If there is data for this user, copy over the Name field
-                Just userData ->
-                    -- TODO the error condition is when model.user.displayName == Nothing and userData.meta.name == Nothing
+            case ( Dict.get model.user.uid xmas, model.user.displayName ) of
+                -- User already registered; copy over userName
+                ( Just userData, Nothing ) ->
                     ( { model | xmas = xmas }
                         |> setDisplayName userData.meta.name
                     , Cmd.none
                     )
 
-                -- May occur on first login, but anothig snapshot should be coming already due to
-                -- the setMeta in handleAuthChange
-                Nothing ->
-                    { model | xmas = xmas } ! []
+                ( Nothing, Nothing ) ->
+                    ( { model | userMessage = "Unexpected error - no username present" }, Cmd.none )
 
-        -- case model.user.displayName of
-        --     Just displayName ->
-        --
-        --     Nothing ->
-        --         -- This is an error condition as no username exists anywhere
-        --         { model | xmas = xmas } ! []
+                ( Nothing, Just _ ) ->
+                    -- This is the snapshot after creating a new Email registration
+                    -- The username has already been sent to FB on handleAuthChange
+                    -- and this snapshot is going to be replaced shortly
+                    ( { model | xmas = xmas }, Cmd.none )
+
+                ( Just _, Just _ ) ->
+                    -- all subsequent snapshots
+                    ( { model | xmas = xmas }, Cmd.none )
+
         Err err ->
             { model | userMessage = "handleSnapshot: " ++ err } ! []
 

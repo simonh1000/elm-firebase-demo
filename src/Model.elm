@@ -49,6 +49,11 @@ type alias UserData =
     }
 
 
+type alias UserMeta =
+    { name : String
+    }
+
+
 type alias Present =
     { uid : Maybe String
     , description : String
@@ -57,16 +62,12 @@ type alias Present =
     }
 
 
+blankPresent : Present
 blankPresent =
     { uid = Nothing
     , description = ""
     , link = Nothing
     , takenBy = Nothing
-    }
-
-
-type alias UserMeta =
-    { name : String
     }
 
 
@@ -96,19 +97,36 @@ decoderXmas : Decoder (Dict String UserData)
 decoderXmas =
     field "value" <|
         oneOf
-            [ dict decodeUserData
+            [ keyValuePairs decodeUserData
+                |> map (L.map converter >> L.filterMap identity >> Dict.fromList)
 
-            --  Need to handle case where the database starts empty
+            --  handle case where the database starts empty
             , null Dict.empty
             ]
 
 
+converter : ( a, Maybe b ) -> Maybe ( a, b )
+converter ( a, b ) =
+    case b of
+        Just b_ ->
+            Just ( a, b_ )
+
+        Nothing ->
+            Nothing
+
+
+decodeUserData : Decoder (Maybe UserData)
 decodeUserData =
-    map2 UserData
-        (field "meta" decoderMeta)
-        (Json.oneOf [ field "presents" decodePresents, Json.succeed Dict.empty ])
+    oneOf
+        [ map Just <|
+            map2 UserData
+                (field "meta" decoderMeta)
+                (Json.oneOf [ field "presents" decodePresents, Json.succeed Dict.empty ])
+        , succeed Nothing
+        ]
 
 
+decodePresents : Decoder (Dict String Present)
 decodePresents =
     let
         go ( id, p ) ps =
