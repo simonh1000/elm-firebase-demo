@@ -22,7 +22,7 @@ export default config;
 
 
 `/src/Firebase/fbsw.config.js`
-https://console.firebase.google.com/project/<projid>/settings/cloudmessaging/
+https://console.firebase.google.com/project/\<projid\>/settings/cloudmessaging/
 
 ```js
 var config = {
@@ -44,3 +44,21 @@ npm run prod && firebase deploy --only hosting
  * Delete item (with warning)
  * add click-action to notification
  * Add firebase rules so that first person to claim can't be overwritten
+
+
+### Signup flow
+
+Google
+    - auth returns a username, sends a snapshot without username
+    - so send username when auth returns?  (or when discover snapshot does not contain own username)
+
+Email registration
+    - app collects username, but does not initially send it anywhere
+    - auth returns no username, know that username needs to be saved 
+
+On subsequent signup
+
+Google
+    - auth returns a username, sends a snapshot WITH username
+Email
+    - auth return NO username

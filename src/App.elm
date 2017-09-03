@@ -92,10 +92,10 @@ update message model =
             { model | password = password } ! []
 
         Submit ->
-            { model | userMessage = "" } ! [ FB.signin model.email model.password ]
+            { model | userMessage = "", page = Loading } ! [ FB.signin model.email model.password ]
 
         GoogleSignin ->
-            { model | userMessage = "" } ! [ FB.signinGoogle ]
+            { model | userMessage = "", page = Loading } ! [ FB.signinGoogle ]
 
         -- Registration page
         SwitchTo page ->
@@ -254,7 +254,7 @@ view model =
         (case model.page of
             Loading ->
                 [ simpleHeader
-                , h1 [ class "main" ] [ text "Loading..." ]
+                , div [ class "main loading" ] [ img [ src "spinner.svg" ] [] ]
                 ]
 
             Login ->

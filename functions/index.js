@@ -8,9 +8,9 @@ exports.sendNotification = functions.database.ref('/{userId}/presents/{presentId
         // Don't show any notifications before ....
         let endPhase1 = new Date("1 oct 2017");
         let now = new Date();
-        // if (now < endPhase1) {
-        //     returns;
-        // }
+        if (now < endPhase1) {
+            returns;
+        }
 
         // Grab the current value of what was written to the Realtime Database.
         let present = event.data.child("description").val();
