@@ -83,8 +83,8 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case Debug.log "" message of
-        -- case message of
+    -- case Debug.log "" message of
+    case message of
         UpdateEmail email ->
             { model | email = email } ! []
 
@@ -153,9 +153,6 @@ update message model =
                 "token" ->
                     -- let
                     --     _ =
-                    --         Debug.log "payload" payload
-                    --
-                    --     _ =
                     --         Debug.log ""
                     --             (Json.decodeValue (Json.field "accessToken" <| Jwt.tokenDecoder Jwt.Decoders.firebase) payload)
                     -- in
@@ -186,7 +183,7 @@ handleAuthChange val model =
                         , page = Picker
                         , userMessage = ""
                       }
-                    , Cmd.batch [ FB.subscribe "/", setMeta user.uid displayName ]
+                    , Cmd.batch [ FB.subscribe "/" ]
                     )
 
                 _ ->
@@ -230,11 +227,10 @@ handleSnapshot snapshot model =
                 ( Nothing, Nothing ) ->
                     ( { model | userMessage = "Unexpected error - no username present" }, Cmd.none )
 
-                ( Nothing, Just _ ) ->
-                    -- This is the snapshot after creating a new Email registration
-                    -- The username has already been sent to FB on handleAuthChange
-                    -- and this snapshot is going to be replaced shortly
-                    ( { model | xmas = xmas }, Cmd.none )
+                ( Nothing, Just displayName ) ->
+                    -- Either from the registration or the FB Google user data
+                    -- we have the username and the database does not know it
+                    ( { model | xmas = xmas }, setMeta model.user.uid displayName )
 
                 ( Just _, Just _ ) ->
                     -- all subsequent snapshots
@@ -308,11 +304,17 @@ viewOthers model others =
             if model.isPhase2 then
                 L.map (viewOther model) others
             else
-                [ text "You will be able to see other wishes in due course" ]
+                L.map (viewOtherPhase1 model) others
     in
         div [ class "others col-12 col-sm-6" ] <|
             h2 [] [ text "Xmas wishes" ]
                 :: wishes
+
+
+viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
+viewOtherPhase1 model ( userRef, { meta, presents } ) =
+    div [ class "person section" ]
+        [ div [] [ text <| meta.name ++ ": " ++ toString (Dict.size presents) ++ " suggestion(s)" ] ]
 
 
 viewOther : Model -> ( String, UserData ) -> Html Msg
@@ -352,7 +354,10 @@ viewOther model ( userRef, { meta, presents } ) =
                 text ""
 
             _ ->
-                div [ class "person section" ] [ h4 [] [ text meta.name ], ul [] ps ]
+                div [ class "person section" ]
+                    [ h4 [] [ text meta.name ]
+                    , ul [] ps
+                    ]
 
 
 badge : String -> String -> Html msg

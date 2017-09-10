@@ -2,6 +2,13 @@
 
 An Elm experiment to use Firebase to provide a real time xmas present idea exchange between a family group. Register, set up your present wishes and claim what you want to buy for others.
 
+## Deploy to Firebase: firebase-tools
+
+No update of functions
+```sh
+npm run prod && firebase deploy --only hosting
+```
+
 ## Installation
 
 All that is needed is to add two files
@@ -20,7 +27,6 @@ var config = {
 export default config;
 ```
 
-
 `/src/Firebase/fbsw.config.js`
 https://console.firebase.google.com/project/\<projid\>/settings/cloudmessaging/
 
@@ -29,13 +35,6 @@ var config = {
   messagingSenderId: "123456"
 };
 self.config = self.config || config;
-```
-
-## Deploy to Firebase: firebase-tools
-
-No update of functions
-```sh
-npm run prod && firebase deploy --only hosting
 ```
 
 ## ToDo
@@ -54,7 +53,7 @@ Google
 
 Email registration
     - app collects username, but does not initially send it anywhere
-    - auth returns no username, know that username needs to be saved 
+    - auth returns no username, know that username needs to be saved
 
 On subsequent signup
 

@@ -1,7 +1,7 @@
 {
   "author": "Simon Hampton",
-  "name": "elm-pwa-demo",
-  "version": "0.9.0",
+  "name": "xmas",
+  "version": "1.0.2",
   "description": "Elm PWA demo",
   "main": "index.js",
   "scripts": {

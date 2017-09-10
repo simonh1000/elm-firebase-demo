@@ -1,5 +1,7 @@
 import config from "./fb.config";
 
+// See also /assets/firebase-messaging.js
+
 function requestMessagingPermission(cb) {
     const messaging = firebase.messaging();
     messaging.requestPermission()
