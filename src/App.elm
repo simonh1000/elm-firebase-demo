@@ -66,6 +66,7 @@ type Msg
     | SwitchTo Page
       --
     | Signout
+    | ToggleDropDown
     | Claim String String
     | Unclaim String String
       -- Editor
@@ -111,6 +112,9 @@ update message model =
             setDisplayName userName model ! []
 
         -- Main page
+        ToggleDropDown ->
+            ( { model | showSettings = not model.showSettings }, Cmd.none )
+
         Signout ->
             blank ! [ FB.signout ]
 
@@ -485,7 +489,7 @@ viewHeader model =
     header []
         [ div [ class "container" ]
             [ div [ class "flex-h spread" ]
-                [ div []
+                [ div [ onClick ToggleDropDown ]
                     [ case model.user.photoURL of
                         Just photoURL ->
                             img [ src photoURL, class "avatar", alt "avatar" ] []
@@ -496,7 +500,10 @@ viewHeader model =
                         |> Maybe.map (text >> L.singleton >> strong [])
                         |> Maybe.withDefault (text "Xmas Present ideas")
                     ]
-                , button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
+                , if model.showSettings then
+                    button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
+                  else
+                    text ""
                 ]
             ]
         ]

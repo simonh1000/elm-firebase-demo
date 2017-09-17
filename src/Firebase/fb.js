@@ -16,7 +16,7 @@ function handler({message, payload}, fbToElm) {
             register(payload.email, payload.password, fbToElm);
             break;
         case "signinGoogle":
-            signinGoogle();
+            signinGoogle(fbToElm);
             break;
         case "signout":
             signout();
@@ -38,31 +38,46 @@ function handler({message, payload}, fbToElm) {
     }
 }
 
+function logger(msg) {
+    let reg = new RegExp('localhost/');
+
+    if (reg.test(window.location.href)) {
+        console.error("[fb.js]", msg);
+    } else {
+        console.log("Sending to rollbar", msg);
+        Rollbar.error("[fb.js]", msg);
+    }
+}
+
+function makeUserObject(user) {
+    return {
+        message: "authstate",
+        payload: {
+            email: user.email,
+            uid: user.uid,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            token: user.token
+        }
+    };
+}
+
 function createAuthListener(fbToElm) {
     firebase.auth()
         .onAuthStateChanged(function(user) {
             console.log("auth state change", user);
 
-            firebase.auth()
-                .getIdToken()
-                .then( token => {
-                    fbToElm({
-                    message: "token",
-                    payload: token
-                });
-            });
+            // firebase.auth()
+            //     .getIdToken()
+            //     .then( token => {
+            //         fbToElm({
+            //         message: "token",
+            //         payload: token
+            //     });
+            // });
 
             if (user) {
-                return fbToElm({
-                    message: "authstate",
-                    payload: {
-                        email: user.email,
-                        uid: user.uid,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL,
-                        token: user.token
-                    }
-                })
+                fbToElm(makeUserObject(user))
             } else {
                 fbToElm({
                     message: "authstate",
@@ -71,8 +86,6 @@ function createAuthListener(fbToElm) {
             }
         });
 }
-
-
 
 function signin(email, password, fbToElm) {
     firebase.auth()
@@ -94,27 +107,24 @@ function register(email, password, fbToElm) {
         })
         .catch(function(err) {
             fbToElm({message: "error", payload: err});
-            console.error(err);
+            logger(err);
         });
 }
 
-function signinGoogle() {
+// Use success here to send message back to Elm. Hopefully this will enable the client
+// to go forward, as otherwise the authstate change does not seem always to be recorded
+function signinGoogle(fbToElm) {
     var provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider).then(function(result) {
+        console.log("Google signin successful")
         // This gives you a Google Access Token. You can use it to access the Google API.
-        var token = result.credential.accessToken;
-        // The signed-in user info.
-        var user = result.user;
-        // ...
-    }).catch(function(error) {
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        // The email of the user's account used.
-        var email = error.email;
-        // The firebase.auth.AuthCredential type that was used.
-        var credential = error.credential;
-        // ...
+        // var token = result.credential.accessToken;
+
+        // No return as that would become a promise
+        fbToElm(makeUserObject(result.user));
+    })
+    .catch(function(error) {
+        logger(error);
     });
 }
 
@@ -133,7 +143,7 @@ function set(data) {
 }
 
 function remove(ref) {
-    console.log("removing ref:", ref);
+    // console.log("removing ref:", ref);
     firebase.database().ref(ref)
         .remove();
 }
