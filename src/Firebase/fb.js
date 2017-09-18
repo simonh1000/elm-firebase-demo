@@ -7,7 +7,7 @@ function handler({message, payload}, fbToElm) {
             createAuthListener(fbToElm);
             break;
         case "RequestMessagingPermission":
-            fbmsg.requestMessagingPermission(fbToElm);
+            fbmsg.requestMessagingPermission(logger, fbToElm);
             break;
         case "signin":
             signin(payload.email, payload.password, fbToElm);
@@ -115,12 +115,13 @@ function register(email, password, fbToElm) {
 // to go forward, as otherwise the authstate change does not seem always to be recorded
 function signinGoogle(fbToElm) {
     var provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider).then(function(result) {
+    // firebase.auth().signInWithPopup(provider).then(function(result) {
+    firebase.auth().signInWithRedirect(provider).then(function(result) {
         console.log("Google signin successful")
         // This gives you a Google Access Token. You can use it to access the Google API.
         // var token = result.credential.accessToken;
 
-        // No return as that would become a promise
+        // Send user details back to Elm
         fbToElm(makeUserObject(result.user));
     })
     .catch(function(error) {
@@ -167,5 +168,5 @@ function subscribe(fbToElm, _ref) {
 }
 
 export default {
-    createAuthListener, handler
+    createAuthListener, handler, logger
 };

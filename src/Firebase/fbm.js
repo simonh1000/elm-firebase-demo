@@ -2,12 +2,12 @@ import config from "./fb.config";
 
 // See also /assets/firebase-messaging.js
 
-function requestMessagingPermission(cb) {
+function requestMessagingPermission(logger, cb) {
     const messaging = firebase.messaging();
     messaging.requestPermission()
         .then(function() {
             console.log('[fbm] Notification permission granted.');
-            return resigterForUpdates();
+            return resigterForUpdates(logger);
         })
         .catch(function(err) {
             console.log('[fbm] Unable to get permission to notify.', err);
@@ -22,7 +22,7 @@ function requestMessagingPermission(cb) {
     });
 }
 
-function resigterForUpdates() {
+function resigterForUpdates(logger) {
     const messaging = firebase.messaging();
 
     // Get Instance ID token. Initially this makes a network call, once retrieved
@@ -61,7 +61,8 @@ function resigterForUpdates() {
             }
         })
         .catch(function(err) {
-            console.error('An error occurred while retrieving token.', err);
+            logger(err)
+            // console.error('An error occurred while retrieving token.', err);
         });
 }
 

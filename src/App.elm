@@ -24,6 +24,9 @@ port removeAppShell : String -> Cmd msg
 port expander : String -> Cmd msg
 
 
+port rollbar : String -> Cmd msg
+
+
 
 --
 
@@ -210,7 +213,9 @@ handleAuthChange val model =
         --     -- Occurs when a non-Google user reloads page
         --     ( { model | userMessage = "handleAuthChange missing userName" }, Cmd.none )
         Err err ->
-            { model | user = FB.init, page = Login, userMessage = err } ! []
+            ( { model | user = FB.init, page = Login, userMessage = err }
+            , rollbar err
+            )
 
 
 {-| In addition to the present data, we also possibly get a real name registered by
@@ -241,7 +246,7 @@ handleSnapshot snapshot model =
                     ( { model | xmas = xmas }, Cmd.none )
 
         Err err ->
-            { model | userMessage = "handleSnapshot: " ++ err } ! []
+            ( { model | userMessage = "handleSnapshot: " ++ err }, rollbar err )
 
 
 

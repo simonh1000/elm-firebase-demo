@@ -25,3 +25,8 @@ firebase.initializeApp(config);
 import fb from './Firebase/fb';
 // Finally, set up Elm to use Firebase handler
 app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));
+
+// rollbar
+app.ports.rollbar.subscribe(msg => {
+    fb.logger(msg);
+});
