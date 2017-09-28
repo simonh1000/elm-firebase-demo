@@ -16,11 +16,11 @@ exports.sendNotification = functions.database.ref('/{userId}/presents/{presentId
                 let person = snapshot.val();
 
                 // Don't show any notifications before ....
-                let endPhase1 = new Date("1 oct 2017");
+                let endPhase1 = new Date("15 oct 2017");
                 let now = new Date();
                 let present;
                 if (now < endPhase1) {
-                    present = person + " <visible in October>";
+                    present = person + " <visible October 15>";
                 } else {
                     present = event.data.child("description").val();
                 }
