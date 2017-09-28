@@ -143,6 +143,7 @@ decodePresents =
             |> andThen (L.foldl go Dict.empty >> succeed)
 
 
+decoderPresent : Decoder ( String, Maybe String, Maybe String )
 decoderPresent =
     map3 (,,)
         (field "description" string)
@@ -150,12 +151,14 @@ decoderPresent =
         (maybe <| field "takenBy" string)
 
 
+decoderMeta : Decoder UserMeta
 decoderMeta =
     Json.map UserMeta
         -- (field "uid" string)
         (field "name" string)
 
 
+decoderError : Decoder String
 decoderError =
     field "message" string
 
@@ -166,9 +169,21 @@ decoderError =
 
 encodePresent : Present -> E.Value
 encodePresent { description, link, takenBy } =
-    [ ( "description", Just description ), ( "link", link ), ( "takenBy", takenBy ) ]
-        |> L.filterMap encodeMaybe
-        |> E.object
+    let
+        commonData =
+            [ ( "description", Just description ), ( "takenBy", takenBy ) ]
+
+        dataToEncode =
+            case link of
+                Just link_ ->
+                    ( "link", Just link_ ) :: commonData
+
+                Nothing ->
+                    commonData
+    in
+        dataToEncode
+            |> L.filterMap encodeMaybe
+            |> E.object
 
 
 encodeMaybe : ( String, Maybe String ) -> Maybe ( String, E.Value )

@@ -14,10 +14,6 @@ import Model as M exposing (..)
 import Bootstrap as B
 
 
--- import Jwt
--- import Jwt.Decoders
-
-
 port removeAppShell : String -> Cmd msg
 
 
@@ -37,7 +33,7 @@ type alias Flags =
 
 isPhase2 : Time -> Bool
 isPhase2 now =
-    case Date.fromString "1 oct 2017" |> Result.map Date.toTime of
+    case Date.fromString "15 oct 2017" |> Result.map Date.toTime of
         Ok endPhase1 ->
             now > endPhase1
 
@@ -131,7 +127,18 @@ update message model =
             updateEditor (\ed -> { ed | description = description }) model ! []
 
         UpdateNewPresentLink link ->
-            updateEditor (\ed -> { ed | link = Just link }) model ! []
+            updateEditor
+                (\ed ->
+                    { ed
+                        | link =
+                            if link == "" then
+                                Nothing
+                            else
+                                Just link
+                    }
+                )
+                model
+                ! []
 
         SubmitNewPresent ->
             { model | editor = blankPresent } ! [ savePresent model ]
