@@ -7,7 +7,7 @@ function requestMessagingPermission(logger, cb) {
     messaging.requestPermission()
         .then(function() {
             console.log('[fbm] Notification permission granted.');
-            return resigterForUpdates(logger);
+            return registerForUpdates(logger);
         })
         .catch(function(err) {
             console.log('[fbm] Unable to get permission to notify.', err);
@@ -22,7 +22,7 @@ function requestMessagingPermission(logger, cb) {
     });
 }
 
-function resigterForUpdates(logger) {
+function registerForUpdates(logger) {
     const messaging = firebase.messaging();
 
     // Get Instance ID token. Initially this makes a network call, once retrieved
@@ -60,9 +60,11 @@ function resigterForUpdates(logger) {
                 console.log('[fbm] No Instance ID token available. Request permission to generate one.');
             }
         })
-        .catch(function(err) {
-            logger(err)
-            // console.error('An error occurred while retrieving token.', err);
+        .catch(err => {
+            logger({
+                source: "registerForUpdates",
+                message: err
+            });
         });
 }
 

@@ -42,10 +42,10 @@ function logger(msg) {
     let reg = new RegExp('localhost/');
 
     if (reg.test(window.location.href)) {
-        console.error("[fb.js]", msg);
+        console.error(msg);
     } else {
         console.log("Sending to rollbar", msg);
-        Rollbar.error("[fb.js]", msg);
+        Rollbar.error(msg);
     }
 }
 

@@ -28,5 +28,8 @@ app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));
 
 // rollbar
 app.ports.rollbar.subscribe(msg => {
-    fb.logger(msg);
+    fb.logger({
+        source: "elm",
+        message: msg
+    });
 });
