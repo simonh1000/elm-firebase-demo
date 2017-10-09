@@ -6,9 +6,9 @@ An Elm experiment to use Firebase to provide a real time xmas present idea excha
 
 
 No update of functions
-**!! mainfest.json/package.json - bump !!**
+**!! assets/mainfest.json/package.json - bump !!**
 ```sh
-**!! mainfest.json/package.json - bump !!**
+**!! assets/mainfest.json/package.json - bump !!**
 npm run prod && firebase deploy --only hosting
 ```
 
