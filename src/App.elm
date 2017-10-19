@@ -221,7 +221,7 @@ handleAuthChange val model =
         --     ( { model | userMessage = "handleAuthChange missing userName" }, Cmd.none )
         Err err ->
             ( { model | user = FB.init, page = Login, userMessage = err }
-            , rollbar err
+            , rollbar <| "handleAuthChange " ++ err
             )
 
 
@@ -253,7 +253,9 @@ handleSnapshot snapshot model =
                     ( { model | xmas = xmas }, Cmd.none )
 
         Err err ->
-            ( { model | userMessage = "handleSnapshot: " ++ err }, rollbar err )
+            ( { model | userMessage = "handleSnapshot: " ++ err }
+            , rollbar <| "handleSnapshot: " ++ err
+            )
 
 
 
