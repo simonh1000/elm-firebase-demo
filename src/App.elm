@@ -219,6 +219,9 @@ handleAuthChange val model =
         -- ( Nothing, Nothing ) ->
         --     -- Occurs when a non-Google user reloads page
         --     ( { model | userMessage = "handleAuthChange missing userName" }, Cmd.none )
+        Err "nouser" ->
+            ( { model | user = FB.init, page = Login }, Cmd.none )
+
         Err err ->
             ( { model | user = FB.init, page = Login, userMessage = err }
             , rollbar <| "handleAuthChange " ++ err

@@ -63,10 +63,7 @@ decodeAuthState : Decoder (Result String FBUser)
 decodeAuthState =
     oneOf
         [ map Ok userDecoder
-        , null (Err "")
-
-        -- , map Err <| field "error" string
-        -- , succeed <| Err ""
+        , null (Err "nouser")
         ]
 
 
