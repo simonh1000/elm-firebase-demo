@@ -345,9 +345,13 @@ viewOther model ( userRef, { meta, presents } ) =
             case present.takenBy of
                 Just id ->
                     if model.user.uid == id then
-                        li [ class "present flex-h", onClick <| Unclaim userRef presentRef ]
+                        li [ class "present flex-h" ]
                             [ makeDescription present
-                            , badge "success clickable" "Claimed"
+                            , button
+                                [ class "btn btn-success btn-sm"
+                                , onClick <| Unclaim userRef presentRef
+                                ]
+                                [ text "Claimed" ]
                             ]
                     else
                         li [ class "present flex-h" ]
@@ -432,12 +436,6 @@ viewNewIdeaForm { editor, isPhase2 } =
                 , disabled <| editor.description == ""
                 ]
                 [ text txt ]
-
-        -- mkAttrs s =
-        --     if editorCollapsed then
-        --         s ++ " collapsed"
-        --     else
-        --         s
     in
         div [ class "new-present section" ]
             [ h4 []
