@@ -47,6 +47,21 @@ self.config = self.config || config;
  * add click-action to notification
  * Add firebase rules so that first person to claim can't be overwritten
 
+## Data structure (for 2.0)
+
+```
+/key1
+     - meta
+         - name
+     - presents
+         - key2
+             - description
+             - ?link
+             - ?takenBy : key1
+             - ?purchased : Bool
+```
+
+
 
 ### Signup flow
 
