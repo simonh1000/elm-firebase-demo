@@ -42,7 +42,7 @@ function logger(msg) {
     let reg = new RegExp('localhost/');
 
     if (reg.test(window.location.href)) {
-        console.error(msg);
+        console.error("[logger]", msg);
     } else {
         console.log("Sending to rollbar", msg);
         Rollbar.error(msg);
@@ -65,7 +65,7 @@ function makeUserObject(user) {
 function createAuthListener(fbToElm) {
     firebase.auth()
         .onAuthStateChanged(function(user) {
-            console.log("auth state change", user);
+            console.log("[createAuthListener]", user);
 
             // firebase.auth()
             //     .getIdToken()
@@ -116,17 +116,19 @@ function register(email, password, fbToElm) {
 function signinGoogle(fbToElm) {
     var provider = new firebase.auth.GoogleAuthProvider();
     // firebase.auth().signInWithPopup(provider).then(function(result) {
-    firebase.auth().signInWithRedirect(provider).then(function(result) {
-        console.log("Google signin successful")
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        // var token = result.credential.accessToken;
+    firebase.auth().signInWithRedirect(provider)
+        .then(function(result) {
+            console.log("Google signin successful")
+            // This gives you a Google Access Token. You can use it to access the Google API.
+            // var token = result.credential.accessToken;
 
-        // Send user details back to Elm
-        fbToElm(makeUserObject(result.user));
-    })
-    .catch(function(error) {
-        logger(error);
-    });
+            // Send user details back to Elm
+            fbToElm(makeUserObject(result.user));
+        })
+        .catch(function(error) {
+            console.log(error)
+            logger(error);
+        });
 }
 
 

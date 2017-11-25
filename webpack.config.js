@@ -117,23 +117,11 @@ if (TARGET_ENV === 'development') {
             stats: 'errors-only',
             contentBase: path.join(__dirname, "src/assets"),
             setup(app) {
-                // serve images,...
-                // app.get('/images/:fname', (req, res) => {
-                //     res.sendFile(path.join(__dirname, 'src/assets/images/', req.params.fname));
-                // });
                 // Make fbsw.config.js available
                 app.get('/Firebase/:fname', (req, res) => {
-                    // console.log("Firebase directory", req.params.fname)
+                    console.log("[devserver] Firebase directory", req.params.fname)
                     res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
                 });
-                // catch certain calls for root level files and redirect to src/dist
-                // app.get('/:rootFileName', (req, res, next) => {
-                //     if (['firebase-messaging-sw.js', 'sw.js', 'manifest.json'].includes(req.params.rootFileName)) {
-                //         console.log("redirecting:", req.params.rootFileName);
-                //         return res.sendFile(path.join(__dirname, 'src/assets/' + req.params.rootFileName));
-                //     }
-                //     next();
-                // });
             }
         }
     });
