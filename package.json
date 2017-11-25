@@ -22,7 +22,7 @@
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",
     "babel-preset-env": "^1.5.1",
-    "bootstrap-loader": "^2.1.0",
+    "bootstrap-loader": "^2.2.0",
     "clean-webpack-plugin": "^0.1.16",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.28.3",
@@ -43,6 +43,6 @@
     "webpack-merge": "^4.1.0"
   },
   "dependencies": {
-    "bootstrap": "^4.0.0-alpha.6"
+    "bootstrap": "^4.0.0-beta"
   }
 }

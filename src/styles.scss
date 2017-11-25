@@ -27,16 +27,10 @@ body, .app {
         }
         .new-present {
             transition:flex 0.3s ease-out; // note that we're transitioning flex, not height!
-            // overflow:hidden;
-            // height:auto;
             flex: 0 0;
         }
-        // .new-present.collapsed {
-        //     flex: 0 0;
-        // }
         .my-presents {
             overflow-y: auto;
-            // flex-grow: 1;
         }
     }
     footer {
@@ -53,9 +47,9 @@ body, .app {
     .others, .my-ideas {
         overflow-y: auto;
     }
-    // .my-ideas {
-    //     height: 100%;
-    // }
+    .my-ideas {
+        padding-bottom: 20px;
+    }
 }
 
 @media (min-width: 576px) {
@@ -66,6 +60,9 @@ body, .app {
     }
     #picker {
         height: inherit;
+        .my-ideas {
+            padding-bottom: 0;
+        }
     }
 }
 
@@ -96,9 +93,6 @@ header, footer {
     .person {
         background-color: white;
         margin-bottom: 15px;
-    }
-    .my-ideas {
-        padding-bottom: 20px;
     }
     .new-present {
         margin-bottom: 20px;

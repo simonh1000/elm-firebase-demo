@@ -787,9 +787,9 @@ boom@2.x.x:
   dependencies:
     hoek "2.x.x"
 
-bootstrap-loader@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/bootstrap-loader/-/bootstrap-loader-2.1.0.tgz#6e4596eeb890edcfd86e4f40ae4e3b95e5cee27a"
+bootstrap-loader@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/bootstrap-loader/-/bootstrap-loader-2.2.0.tgz#dc162c82497275f0e427ab49bc406b4e6a8e250b"
   dependencies:
     chalk "^1.1.3"
     escape-regexp "0.0.1"
@@ -800,9 +800,9 @@ bootstrap-loader@^2.1.0:
     semver "^5.3.0"
     strip-json-comments "^2.0.1"
 
-bootstrap@^4.0.0-alpha.6:
-  version "4.0.0-beta"
-  resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.0.0-beta.tgz#dc5928175d2e71310bc668cf9e05a907211b72a6"
+bootstrap@^4.0.0-beta:
+  version "4.0.0-beta.2"
+  resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-4.0.0-beta.2.tgz#4d67d2aa2219f062cd90bc1247e6747b9e8fd051"
 
 boxen@^0.6.0:
   version "0.6.0"
