@@ -68,6 +68,7 @@ type Msg
     | ToggleDropDown
     | Claim String String
     | Unclaim String String
+    | TogglePurchased String String Bool -- other user ref, present ref, new value
       -- Editor
     | UpdateNewPresent String
     | UpdateNewPresentLink String
@@ -83,8 +84,8 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    -- case Debug.log "" message of
-    case message of
+    case Debug.log "" message of
+        -- case message of
         UpdateEmail email ->
             { model | email = email } ! []
 
@@ -121,7 +122,17 @@ update message model =
             model ! [ claim model.user.uid otherRef presentRef ]
 
         Unclaim otherRef presentRef ->
-            model ! [ unclaim otherRef presentRef ]
+            ( model
+            , Cmd.batch
+                [ unclaim otherRef presentRef
+
+                -- must also set as unpurchased
+                , purchase otherRef presentRef False
+                ]
+            )
+
+        TogglePurchased otherRef presentRef newValue ->
+            ( model, purchase otherRef presentRef newValue )
 
         UpdateNewPresent description ->
             updateEditor (\ed -> { ed | description = description }) model ! []
@@ -284,8 +295,9 @@ view model =
                 , viewRegister model
                 ]
 
-            Picker ->
-                [ viewHeader model
+            _ ->
+                -- Picker + MyClaims
+                [ viewNavbar model
                 , viewPicker model
                 ]
         )
@@ -309,13 +321,65 @@ viewPicker model =
         div [ id "picker", class "main container" ]
             [ div [ class "row" ]
                 [ viewMine model mine
-                , viewOthers model others
+                , if model.page == Picker then
+                    viewOthers model others
+                  else
+                    viewClaims model others
                 ]
             ]
 
 
 
--- LHS
+-- RHS
+
+
+viewClaims : Model -> List ( String, UserData ) -> Html Msg
+viewClaims model others =
+    let
+        mkItem oRef presentRef present =
+            let
+                ( status, cls ) =
+                    if present.purchased then
+                        ( "Purchased", class "btn btn-success btn-sm" )
+                    else
+                        ( "Claimed", class "btn btn-warning btn-sm" )
+            in
+                li [ class "present flex-h spread" ]
+                    [ makeDescription present
+                    , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
+                    ]
+
+        mkItemsForPerson ( oRef, other ) =
+            div [ class "person section" ]
+                [ h4 [] [ text other.meta.name ]
+                , other.presents
+                    |> filterMyClaims
+                    |> Dict.map (mkItem oRef)
+                    |> Dict.values
+                    |> ul []
+                ]
+
+        filterMyClaims =
+            Dict.filter (\_ v -> v.takenBy == Just model.user.uid)
+
+        addORef oRef ( pRef, p ) =
+            ( oRef, pRef, p )
+
+        claims =
+            others
+                |> L.map mkItemsForPerson
+                |> div []
+
+        title =
+            div [ class "title flex-h spread flex-baseline" ]
+                [ h2 [] [ text "My Claims" ]
+                , button [ onClick (SwitchTo Picker) ] [ text "My Family" ]
+                ]
+    in
+        div [ class "claims col-12 col-sm-6" ]
+            [ title
+            , claims
+            ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -326,10 +390,15 @@ viewOthers model others =
                 L.map (viewOther model) others
             else
                 L.map (viewOtherPhase1 model) others
+
+        title =
+            div [ class "flex-h spread flex-baseline" ]
+                [ h2 [] [ text "My Family" ]
+                , button [ onClick (SwitchTo MyClaims) ] [ text "My Claims" ]
+                ]
     in
-        div [ class "others col-12 col-sm-6" ] <|
-            h2 [] [ text "Xmas wishes" ]
-                :: wishes
+        div [ class "others col-12 col-sm-6" ]
+            (title :: wishes)
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
@@ -499,8 +568,8 @@ simpleHeader =
         ]
 
 
-viewHeader : Model -> Html Msg
-viewHeader model =
+viewNavbar : Model -> Html Msg
+viewNavbar model =
     header []
         [ div [ class "container" ]
             [ div [ class "flex-h spread" ]
@@ -616,13 +685,20 @@ isJust =
 claim : String -> String -> String -> Cmd msg
 claim uid otherRef presentRef =
     FB.set
-        (makeTakenByRef otherRef presentRef)
+        (makeSetPresentRef "takenBy" otherRef presentRef)
         (E.string uid)
+
+
+purchase : String -> String -> Bool -> Cmd msg
+purchase otherRef presentRef purchased =
+    FB.set
+        (makeSetPresentRef "purchased" otherRef presentRef)
+        (E.bool purchased)
 
 
 unclaim : String -> String -> Cmd msg
 unclaim otherRef presentRef =
-    FB.remove <| makeTakenByRef otherRef presentRef
+    FB.remove <| makeSetPresentRef "takenBy" otherRef presentRef
 
 
 delete : Model -> String -> Cmd Msg
@@ -646,6 +722,6 @@ setMeta uid name =
     FB.set (uid ++ "/meta") (E.object [ ( "name", E.string name ) ])
 
 
-makeTakenByRef : String -> String -> String
-makeTakenByRef otherRef presentRef =
-    otherRef ++ "/presents/" ++ presentRef ++ "/takenBy"
+makeSetPresentRef : String -> String -> String -> String
+makeSetPresentRef str otherRef presentRef =
+    [ otherRef, "presents", presentRef, str ] |> String.join "/"

@@ -4,6 +4,7 @@ import Json.Decode as Json exposing (..)
 import Json.Encode as E
 import Dict exposing (Dict)
 import List as L
+import Common.CoreHelpers exposing (andMap)
 import Firebase.Firebase as FB
 
 
@@ -12,6 +13,7 @@ type Page
     | Login
     | Register
     | Picker
+    | MyClaims
 
 
 type alias Model =
@@ -61,6 +63,7 @@ type alias Present =
     , description : String
     , link : Maybe String
     , takenBy : Maybe String
+    , purchased : Bool
     }
 
 
@@ -70,6 +73,7 @@ blankPresent =
     , description = ""
     , link = Nothing
     , takenBy = Nothing
+    , purchased = False
     }
 
 
@@ -132,9 +136,9 @@ decodePresents : Decoder (Dict String Present)
 decodePresents =
     let
         go ( id, p ) ps =
-            case decodeValue decoderPresent p of
-                Ok ( des, lnk, tk ) ->
-                    Dict.insert id (Present (Just id) des lnk tk) ps
+            case decodeValue (decoderPresent id) p of
+                Ok present ->
+                    Dict.insert id present ps
 
                 Err err ->
                     ps
@@ -143,12 +147,13 @@ decodePresents =
             |> andThen (L.foldl go Dict.empty >> succeed)
 
 
-decoderPresent : Decoder ( String, Maybe String, Maybe String )
-decoderPresent =
-    map3 (,,)
-        (field "description" string)
-        (maybe <| field "link" string)
-        (maybe <| field "takenBy" string)
+decoderPresent : String -> Decoder Present
+decoderPresent id =
+    succeed (Present <| Just id)
+        |> andMap (field "description" string)
+        |> andMap (maybe <| field "link" string)
+        |> andMap (maybe <| field "takenBy" string)
+        |> andMap (oneOf [ field "purchased" bool, succeed False ])
 
 
 decoderMeta : Decoder UserMeta

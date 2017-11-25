@@ -44,7 +44,7 @@ body, .app {
     }
 }
 #picker {
-    .others, .my-ideas {
+    .others, .my-ideas, .claims {
         overflow-y: auto;
     }
     .my-ideas {
@@ -166,10 +166,18 @@ h1, h2 {
         justify-content: space-between;
     }
 }
+.flex-baseline {
+    align-items: baseline;
+}
 
 .warning {
     color: #ee3333;
 }
 .clickable {
     cursor: pointer;
+}
+
+// override bootstrap
+.badge {
+    font-weight: normal;
 }
