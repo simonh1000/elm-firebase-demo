@@ -9,6 +9,9 @@ function handler({message, payload}, fbToElm) {
         case "RequestMessagingPermission":
             fbmsg.requestMessagingPermission(logger, fbToElm);
             break;
+        // case "UnregisterMessaging":
+        //     fbmsg.unregisterMessaging(logger, fbToElm);
+        //     break;
         case "signin":
             signin(payload.email, payload.password, fbToElm);
             break;
@@ -39,13 +42,13 @@ function handler({message, payload}, fbToElm) {
 }
 
 function logger(msg) {
-    let reg = new RegExp('localhost/');
+    let reg = new RegExp('hampton-xmas');
 
     if (reg.test(window.location.href)) {
-        console.error("[logger]", msg);
-    } else {
         console.log("Sending to rollbar", msg);
         Rollbar.error(msg);
+    } else {
+        console.error("[logger]", msg);
     }
 }
 
@@ -63,18 +66,10 @@ function makeUserObject(user) {
 }
 
 function createAuthListener(fbToElm) {
+    console.log("[createAuthListener] starting");
     firebase.auth()
         .onAuthStateChanged(function(user) {
             console.log("[createAuthListener]", user);
-
-            // firebase.auth()
-            //     .getIdToken()
-            //     .then( token => {
-            //         fbToElm({
-            //         message: "token",
-            //         payload: token
-            //     });
-            // });
 
             if (user) {
                 fbToElm(makeUserObject(user))
@@ -114,6 +109,7 @@ function register(email, password, fbToElm) {
 // Use success here to send message back to Elm. Hopefully this will enable the client
 // to go forward, as otherwise the authstate change does not seem always to be recorded
 function signinGoogle(fbToElm) {
+    console.log("[signinGoogle] start");
     var provider = new firebase.auth.GoogleAuthProvider();
     // firebase.auth().signInWithPopup(provider).then(function(result) {
     firebase.auth().signInWithRedirect(provider)

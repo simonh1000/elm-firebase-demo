@@ -4,7 +4,6 @@ An Elm experiment to use Firebase to provide a real time xmas present idea excha
 
 ## Deploy to Firebase: firebase-tools
 
-
 No update of functions
 **!! assets/mainfest.json / package.json - bump !!**
 ```sh

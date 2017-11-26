@@ -1,7 +1,7 @@
 "use strict";
 
-require('./rollbar');
-require('./sw-installer');
+require("./rollbar");
+require("./sw-installer");
 require("bootstrap-loader");
 require("./styles.scss");
 // require('firebase');
@@ -12,17 +12,18 @@ var app = Elm.Main.fullscreen({
     now: d.getTime()
 });
 
-// Once Elm is running, remove the existing 'app=shell'
+// Once Elm is running, remove the existing 'appshell'
 app.ports.removeAppShell.subscribe(() => {
-    let rm = document.querySelector(".removable")
+    let rm = document.querySelector(".removable");
     if (rm) rm.remove();
 });
 
 // F i r e b a s e
 import config from "./Firebase/fb.config";
+console.log("Using project:",config.projectId);
 firebase.initializeApp(config);
 // Load main firebase handler
-import fb from './Firebase/fb';
+import fb from "./Firebase/fb";
 // Finally, set up Elm to use Firebase handler
 app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));
 
