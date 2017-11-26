@@ -43,4 +43,5 @@ example/dist
 ignore
 /dist
 /src/**/*.config.js
-/src/dist/sw.js
+secrets.js
+yarn.lock

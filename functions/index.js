@@ -1,39 +1,44 @@
-var functions = require('firebase-functions');
+var functions = require("firebase-functions");
 
-const admin = require('firebase-admin');
+const admin = require("firebase-admin");
 admin.initializeApp(functions.config().firebase);
 
-exports.sendNotification = functions.database.ref('/{userId}/presents/{presentId}')
-    .onWrite(event => {
-        // Stop if this is an update to exisiting data
-        if (event.data.previous.exists()) {
-            return;
-        }
+const messaging = require("./messaging");
 
-        return event.data.ref.parent.parent.child('meta/name').once("value")
-            .then(snapshot => {
-                // Grab the current value of what was written to the Realtime Database.
-                let person = snapshot.val();
+// Subscribe to messaging
+exports.subscribe = functions.https.onRequest(messaging.subscribe);
 
-                // Don't show any notifications before ....
-                let endPhase1 = new Date("15 oct 2017");
-                let now = new Date();
-                let present;
-                if (now < endPhase1) {
-                    present = person + " <visible October 15>";
-                } else {
-                    present = event.data.child("description").val();
-                }
+// When present added to database, inform users
+exports.sendNotification = functions.database.ref("/{userId}/presents/{presentId}").onWrite(event => {
+    // Stop if this is an update to exisiting data
+    if (event.data.previous.exists()) {
+        return;
+    }
 
-                var topic = "presents";
-                // console.log(`* ${person} added ${present}`);
-                var payload = {
-                    data: { person, present }
-                };
+    return event.data.ref.parent.parent
+        .child("meta/name")
+        .once("value")
+        .then(snapshot => {
+            // Grab the current value of what was written to the Realtime Database.
+            let person = snapshot.val();
 
-                return admin.messaging().sendToTopic(topic, payload);
-            })
-            .catch(function(error) {
-                console.error("Error sending message:", error);
-            });
-    });
+            // Don't show any notifications before ....
+            let endPhase1 = new Date("15 oct 2017");
+            let now = new Date();
+            let present;
+            if (now < endPhase1) {
+                present = person + " <visible October 15>";
+            } else {
+                present = event.data.child("description").val();
+            }
+
+            var topic = "presents";
+            // console.log(`* ${person} added ${present}`);
+            var payload = {
+                data: { person, present }
+            };
+
+            return admin.messaging().sendToTopic(topic, payload);
+        })
+        .catch(error => console.error("Error sending message:", error));
+});

@@ -32,5 +32,6 @@ self.addEventListener('notificationclick', function(event) {
     console.log('[firebase-messaging-sw] Notification click Received.');
 
     event.notification.close();
+    // Open the app
     event.waitUntil(clients.openWindow('https://hampton-xmas.firebaseapp.com/'));
 });
