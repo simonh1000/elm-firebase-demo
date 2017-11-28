@@ -55,6 +55,7 @@ type alias UserData =
 
 type alias UserMeta =
     { name : String
+    , notifications : Bool
     }
 
 
@@ -158,9 +159,9 @@ decoderPresent id =
 
 decoderMeta : Decoder UserMeta
 decoderMeta =
-    Json.map UserMeta
-        -- (field "uid" string)
+    Json.map2 UserMeta
         (field "name" string)
+        (oneOf [ field "notifications" bool, succeed True ])
 
 
 decoderError : Decoder String

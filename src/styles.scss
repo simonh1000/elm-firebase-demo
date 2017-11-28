@@ -11,16 +11,37 @@ body, .app {
         flex: 0 0 60px;
     }
     .main {
-        display: flex;
-        flex-direction: column;
         flex-grow: 1;
-        overflow: auto;
+        display: flex;
+        align-items: stretch;
+        position: relative;
+        // flex-direction: column;
+        // overflow: auto;
         &.loading {
             justify-content: center;
         }
-        .row {
-            flex: 1 1;
+        .sidebar {
+            position: absolute;
+            width: 100%;
+            background-color: rgba(4,4,4,0.8);
+            height: 100%;
+            z-index: 3;
+            top: 0;
+            margin-left: -100%;
+            transition: margin-left 0.3s ease-in-out;
+            &.open {
+                margin-left: 0;
+            }
+            .sidebar-inner {
+                width: 80%;
+                height: 100%;
+                background-color: rgba(255,255,255,1.0);
+            }
         }
+
+        // .row {
+        //     flex: 1 1;
+        // }
         .my-ideas {
             display: flex;
             flex-direction: column;
@@ -44,6 +65,7 @@ body, .app {
     }
 }
 #picker {
+    overflow: auto;
     .others, .my-ideas, .claims {
         overflow-y: auto;
     }
@@ -81,12 +103,12 @@ header, footer {
     .avatar {
         height: 30px;
         border-radius: 100%;
-        margin-right: 15px;
+        margin-left: 15px;
     }
 }
 .main {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    // padding-top: 20px;
+    // padding-bottom: 20px;
 }
 
 #picker {
@@ -156,6 +178,7 @@ header, footer {
 }
 
 h1, h2 {
+    margin-top: 20px;
     margin-bottom: 20px;
 }
 

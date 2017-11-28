@@ -9,6 +9,7 @@ import Date exposing (Date)
 import Time exposing (Time)
 import Dict exposing (Dict)
 import List as L
+import Common.CoreHelpers exposing (debugALittle)
 import Firebase.Firebase as FB
 import Model as M exposing (..)
 import Bootstrap as B
@@ -45,7 +46,8 @@ init : Flags -> ( Model, Cmd Msg )
 init { now } =
     { blank | isPhase2 = isPhase2 now }
         ! [ FB.setUpAuthListener
-          , FB.requestMessagingPermission
+
+          --   , FB.requestMessagingPermission
           , removeAppShell ""
           ]
 
@@ -64,8 +66,9 @@ type Msg
     | GoogleSignin
     | SwitchTo Page
       --
+    | ToggleNotifications Bool
     | Signout
-    | ToggleDropDown
+    | ToggleSidebar
     | Claim String String
     | Unclaim String String
     | TogglePurchased String String Bool -- other user ref, present ref, new value
@@ -84,8 +87,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case Debug.log "" message of
-        -- case message of
+    case debugALittle message of
         UpdateEmail email ->
             { model | email = email } ! []
 
@@ -112,9 +114,13 @@ update message model =
             setDisplayName userName model ! []
 
         -- Main page
-        ToggleDropDown ->
+        ToggleSidebar ->
             ( { model | showSettings = not model.showSettings }, Cmd.none )
 
+        ToggleNotifications notifications ->
+            ( model, setMeta model.user.uid "notifications" <| E.bool notifications )
+
+        -- , FB.set model.user.uid "notifications" <|E.bool notifications )
         Signout ->
             blank ! [ FB.signout ]
 
@@ -260,7 +266,7 @@ handleSnapshot snapshot model =
                 ( Nothing, Just displayName ) ->
                     -- Either from the registration or the FB Google user data
                     -- we have the username and the database does not know it
-                    ( { model | xmas = xmas }, setMeta model.user.uid displayName )
+                    ( { model | xmas = xmas }, setMeta model.user.uid "name" <| E.string displayName )
 
                 ( Just _, Just _ ) ->
                     -- all subsequent snapshots
@@ -278,32 +284,52 @@ handleSnapshot snapshot model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "app" ] <|
-        (case model.page of
-            Loading ->
-                [ simpleHeader
-                , div [ class "main loading" ] [ img [ src "spinner.svg" ] [] ]
-                ]
+    div [ class "app" ]
+        [ if L.member model.page [] then
+            simpleHeader
+          else
+            viewNavbar model
+        , div [ class <| "main " ++ String.toLower (toString model.page) ] <|
+            case model.page of
+                Loading ->
+                    [ div [ class "loading" ] [ img [ src "spinner.svg" ] [] ] ]
 
-            Login ->
-                [ simpleHeader
-                , viewLogin model
-                ]
+                Login ->
+                    [ viewLogin model ]
 
-            Register ->
-                [ simpleHeader
-                , viewRegister model
-                ]
+                Register ->
+                    [ viewRegister model ]
 
-            _ ->
-                -- Picker + MyClaims
-                [ viewNavbar model
-                , viewPicker model
+                _ ->
+                    [ model.xmas
+                        |> Dict.get model.user.uid
+                        |> Maybe.map (.meta >> .notifications)
+                        |> Maybe.withDefault True
+                        |> sidebar model.showSettings
+                    , viewPicker model
+                    ]
+        , div [ class "container warning" ] [ text model.userMessage ]
+        , viewFooter
+        ]
+
+
+sidebar showSettings notifications =
+    div
+        [ if showSettings then
+            class "sidebar open"
+          else
+            class "sidebar"
+        ]
+        [ ul [ class "sidebar-inner" ]
+            [ li [ class "sidebar-menu-item", onClick (ToggleNotifications <| not notifications) ]
+                [ if notifications then
+                    text "Notifications: On"
+                  else
+                    text "Notifications: Off"
                 ]
-        )
-            ++ [ div [ class "container warning" ] [ text model.userMessage ]
-               , viewFooter
-               ]
+            , li [ class "sidebar-menu-item", onClick Signout ] [ text "Signout" ]
+            ]
+        ]
 
 
 
@@ -318,7 +344,7 @@ viewPicker model =
                 |> Dict.toList
                 |> L.partition (Tuple.first >> ((==) model.user.uid))
     in
-        div [ id "picker", class "main container" ]
+        div [ id "picker", class "container" ]
             [ div [ class "row" ]
                 [ viewMine model mine
                 , if model.page == Picker then
@@ -573,21 +599,19 @@ viewNavbar model =
     header []
         [ div [ class "container" ]
             [ div [ class "flex-h spread" ]
-                [ div [ onClick ToggleDropDown ]
-                    [ case model.user.photoURL of
+                [ div []
+                    [ i [ class "material-icons clickable", onClick ToggleSidebar ] [ text "menu" ] ]
+                , div []
+                    [ model.user.displayName
+                        |> Maybe.map (text >> L.singleton >> strong [])
+                        |> Maybe.withDefault (text "Xmas Present ideas")
+                    , case model.user.photoURL of
                         Just photoURL ->
                             img [ src photoURL, class "avatar", alt "avatar" ] []
 
                         Nothing ->
                             text ""
-                    , model.user.displayName
-                        |> Maybe.map (text >> L.singleton >> strong [])
-                        |> Maybe.withDefault (text "Xmas Present ideas")
                     ]
-                , if model.showSettings then
-                    button [ class "btn btn-outline-warning btn-sm", onClick Signout ] [ text "Signout" ]
-                  else
-                    text ""
                 ]
             ]
         ]
@@ -717,9 +741,9 @@ savePresent model =
             FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
 
 
-setMeta : String -> String -> Cmd msg
-setMeta uid name =
-    FB.set (uid ++ "/meta") (E.object [ ( "name", E.string name ) ])
+setMeta : String -> String -> E.Value -> Cmd msg
+setMeta uid key val =
+    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
 
 
 makeSetPresentRef : String -> String -> String -> String

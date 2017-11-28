@@ -40,9 +40,7 @@ function registerForUpdates(logger) {
                 // Register for topic: presents
                 // Send token to Cloud Function, which uses it to setup messaging subscription
 
-                // let serverUrl = "http://localhost:5000/xmas-f3f6b/us-central1/subscribe?token=" + currentToken;
-                // let serverUrl = "https://us-central1-hampton-xmas.cloudfunctions.net/subscribe?token=" + currentToken;
-                let serverUrl = "https://us-central1-xmas-f3f6b.cloudfunctions.net/subscribe?token=" + currentToken;
+                let serverUrl = config.serverUrl + "?token=" + currentToken;
                 var options = {
                     "Content-Type": "application/json"
                 }
