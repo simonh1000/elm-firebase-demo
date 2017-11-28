@@ -17,7 +17,7 @@ exports.subscribe = function(req, res) {
         // Make the request to Google IID
         var myHeaders = {
             "Content-Type": "application/json",
-            Authorization: "key=" + secrets.devKey
+            Authorization: "key=" + secrets.prodKey
         };
         var options = {
             uri: uri,

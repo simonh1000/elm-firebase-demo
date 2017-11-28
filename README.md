@@ -5,9 +5,12 @@ An Elm experiment to use Firebase to provide a real time xmas present idea excha
 ## Deploy to Firebase: firebase-tools
 
 No update of functions
-**!! assets/mainfest.json / package.json - bump !!**
-```sh
-**!! assets/mainfest.json/package.json - bump !!**
+ - Update assets/mainfest.json
+ - Update package.json
+ - check functions/messaging.js points to prodKey
+ - check fb.config.js uses prod data
+
+```
 npm run prod && firebase deploy --only hosting
 ```
 
