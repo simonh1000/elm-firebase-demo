@@ -62,7 +62,15 @@ self.config = self.config || config;
              - ?takenBy : key1
              - ?purchased : Bool
 ```
+### Normal start up
 
+Elm starts running             Loading            Calls ListenAuthState
+
+Authstate sends back
+"authstate" and user object
+ - if user                     Picker             subscribe "/"
+
+ Snapshot
 
 
 ### Signup flow

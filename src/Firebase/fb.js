@@ -9,9 +9,9 @@ function handler({message, payload}, fbToElm) {
         case "RequestMessagingPermission":
             fbmsg.requestMessagingPermission(logger, fbToElm);
             break;
-        // case "UnregisterMessaging":
-        //     fbmsg.unregisterMessaging(logger, fbToElm);
-        //     break;
+        case "UnregisterMessaging":
+            fbmsg.unregisterMessaging(logger, fbToElm);
+            break;
         case "signin":
             signin(payload.email, payload.password, fbToElm);
             break;

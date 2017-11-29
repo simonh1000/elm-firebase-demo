@@ -10,7 +10,7 @@ import Time exposing (Time)
 import Dict exposing (Dict)
 import List as L
 import Common.CoreHelpers exposing (debugALittle)
-import Firebase.Firebase as FB
+import Firebase.Firebase as FB exposing (FBCommand(..))
 import Model as M exposing (..)
 import Bootstrap as B
 
@@ -46,8 +46,6 @@ init : Flags -> ( Model, Cmd Msg )
 init { now } =
     { blank | isPhase2 = isPhase2 now }
         ! [ FB.setUpAuthListener
-
-          --   , FB.requestMessagingPermission
           , removeAppShell ""
           ]
 
@@ -118,7 +116,15 @@ update message model =
             ( { model | showSettings = not model.showSettings }, Cmd.none )
 
         ToggleNotifications notifications ->
-            ( model, setMeta model.user.uid "notifications" <| E.bool notifications )
+            ( model
+            , Cmd.batch
+                [ setMeta model.user.uid "notifications" <| E.bool notifications
+                , if notifications then
+                    FB.sendToFirebase RequestMessagingPermission
+                  else
+                    FB.sendToFirebase UnregisterMessaging
+                ]
+            )
 
         -- , FB.set model.user.uid "notifications" <|E.bool notifications )
         Signout ->
@@ -181,13 +187,12 @@ update message model =
                 "snapshot" ->
                     handleSnapshot payload model
 
-                "token" ->
-                    -- let
-                    --     _ =
-                    --         Debug.log ""
-                    --             (Json.decodeValue (Json.field "accessToken" <| Jwt.tokenDecoder Jwt.Decoders.firebase) payload)
-                    -- in
-                    ( model, Cmd.none )
+                "token-refresh" ->
+                    let
+                        _ =
+                            Debug.log "token-refresh" payload
+                    in
+                        ( model, Cmd.none )
 
                 "error" ->
                     let
@@ -198,7 +203,11 @@ update message model =
                         { model | userMessage = userMessage } ! []
 
                 _ ->
-                    model ! []
+                    let
+                        _ =
+                            Debug.log "********Unhandled Incoming FBMsg" message
+                    in
+                        model ! []
 
 
 handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
@@ -208,17 +217,19 @@ handleAuthChange val model =
         Ok user ->
             case ( user.displayName, model.user.displayName ) of
                 ( Nothing, Just displayName ) ->
-                    -- This case occurs immediately after new Email registration
+                    -- Have displayName: case occurs immediately after new Email registration
                     ( { model
                         | user = { user | displayName = Just displayName }
                         , page = Picker
                         , userMessage = ""
                       }
-                    , Cmd.batch [ FB.subscribe "/" ]
+                    , FB.subscribe "/"
                     )
 
+                -- (Just _, Nothing) -> standard startup
+                -- (Just _, Just _) -> not sure this is possible
+                -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
                 _ ->
-                    -- (Just displayName, Nothing) ->
                     -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
                     ( { model
                         | user = user
@@ -228,14 +239,6 @@ handleAuthChange val model =
                     , FB.subscribe "/"
                     )
 
-        -- (Nothing, Nothing) ->
-        --     ( { model | userMessage = "Unexpected error: no userName present"
-        --       }
-        --     , FB.subscribe "/"
-        --     )
-        -- ( Nothing, Nothing ) ->
-        --     -- Occurs when a non-Google user reloads page
-        --     ( { model | userMessage = "handleAuthChange missing userName" }, Cmd.none )
         Err "nouser" ->
             ( { model | user = FB.init, page = Login }, Cmd.none )
 
@@ -250,32 +253,46 @@ email/password users
 -}
 handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot snapshot model =
-    case Json.decodeValue decoderXmas snapshot of
-        Ok xmas ->
-            case ( Dict.get model.user.uid xmas, model.user.displayName ) of
-                -- User already registered; copy over userName
-                ( Just userData, Nothing ) ->
-                    ( { model | xmas = xmas }
-                        |> setDisplayName userData.meta.name
-                    , Cmd.none
-                    )
+    let
+        renewNotificationsSub notifications =
+            if notifications then
+                FB.sendToFirebase RequestMessagingPermission
+            else
+                Cmd.none
+    in
+        case Json.decodeValue decoderXmas snapshot of
+            Ok xmas ->
+                case ( Dict.get model.user.uid xmas, model.user.displayName ) of
+                    -- User already registered; copy over userName
+                    ( Just userData, Nothing ) ->
+                        ( { model | xmas = xmas }
+                            |> setDisplayName userData.meta.name
+                        , renewNotificationsSub userData.meta.notifications
+                        )
 
-                ( Nothing, Nothing ) ->
-                    ( { model | userMessage = "Unexpected error - no username present" }, Cmd.none )
+                    ( Nothing, Nothing ) ->
+                        ( { model | userMessage = "Unexpected error - no username present" }
+                        , rollbar <| "Missing username: " ++ (toString <| Dict.get model.user.uid xmas)
+                        )
 
-                ( Nothing, Just displayName ) ->
-                    -- Either from the registration or the FB Google user data
-                    -- we have the username and the database does not know it
-                    ( { model | xmas = xmas }, setMeta model.user.uid "name" <| E.string displayName )
+                    ( Nothing, Just displayName ) ->
+                        -- Either from the registration or the FB Google user data
+                        -- we have the username and the database does not know it
+                        ( { model | xmas = xmas }
+                        , Cmd.batch
+                            [ setMeta model.user.uid "name" <| E.string displayName
+                            , renewNotificationsSub True
+                            ]
+                        )
 
-                ( Just _, Just _ ) ->
-                    -- all subsequent snapshots
-                    ( { model | xmas = xmas }, Cmd.none )
+                    ( Just _, Just _ ) ->
+                        -- all subsequent snapshots
+                        ( { model | xmas = xmas }, Cmd.none )
 
-        Err err ->
-            ( { model | userMessage = "handleSnapshot: " ++ err }
-            , rollbar <| "handleSnapshot: " ++ err
-            )
+            Err err ->
+                ( { model | userMessage = "handleSnapshot: " ++ err }
+                , rollbar <| "handleSnapshot: " ++ err
+                )
 
 
 

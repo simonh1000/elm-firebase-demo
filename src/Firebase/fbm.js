@@ -20,8 +20,9 @@ function requestMessagingPermission(logger, cb) {
 
     messaging.onMessage(function(payload) {
         console.log("[fbm] Message received. ", payload);
+        // Probaly need to renew subscription here
         cb({
-            message: "OnMessage",
+            message: "token-refresh",
             payload: payload
         });
     });
@@ -69,30 +70,30 @@ function registerForUpdates(logger) {
         });
 }
 
-// function unregisterMessaging(logger, fbToElm) {
-//     return firebase
-//         .messaging()
-//         .getToken()
-//         .then(function(currentToken) {
-//             if (currentToken) {
-//                 // DELETE  https://iid.googleapis.com/v1/web/iid/REGISTRATION_TOKEN
-//                 let url = `https://iid.googleapis.com/v1/web/iid/${currentToken}`;
-//
-//                 var options = {
-//                     method: "DELETE"
-//                 };
-//                 var myRequest = new Request(url, options);
-//                 return fetch(myRequest);
-//             }
-//         })
-//         .then(response => {
-//             console.log("unregisterMessaging success", response);
-//         })
-//         .catch(err => {
-//             logger({ function: unregisterMessaging, error: err });
-//         });
-// }
+function unregisterMessaging(logger, fbToElm) {
+    console.log("Attempting to unsubcribe");
+    return firebase.messaging()
+        .getToken()
+        .then(function(currentToken) {
+            if (currentToken) {
+                // DELETE  https://iid.googleapis.com/v1/web/iid/REGISTRATION_TOKEN
+                let url = `https://iid.googleapis.com/v1/web/iid/${currentToken}`;
+
+                var options = {
+                    method: "DELETE"
+                };
+                var myRequest = new Request(url, options);
+                return fetch(myRequest);
+            }
+        })
+        .then(response => {
+            console.log("unregisterMessaging success", response);
+        })
+        .catch(err => {
+            logger({ function: "unregisterMessaging", error: err });
+        });
+}
 
 export default {
-    requestMessagingPermission
+    requestMessagingPermission, unregisterMessaging
 };
