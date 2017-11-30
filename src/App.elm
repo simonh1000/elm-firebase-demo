@@ -100,7 +100,7 @@ update message model =
 
         -- Registration page
         SwitchTo page ->
-            { model | page = page } ! []
+            { model | page = page, showSettings = False } ! []
 
         SubmitRegistration ->
             { model | userMessage = "" } ! [ FB.register model.email model.password ]
@@ -322,7 +322,7 @@ view model =
                         |> Dict.get model.user.uid
                         |> Maybe.map (.meta >> .notifications)
                         |> Maybe.withDefault True
-                        |> sidebar model.showSettings
+                        |> sidebar model.page model.showSettings
                     , viewPicker model
                     ]
         , div [ class "container warning" ] [ text model.userMessage ]
@@ -330,7 +330,7 @@ view model =
         ]
 
 
-sidebar showSettings notifications =
+sidebar page showSettings notifications =
     div
         [ if showSettings then
             class "sidebar open"
@@ -338,12 +338,17 @@ sidebar showSettings notifications =
             class "sidebar"
         ]
         [ ul [ class "sidebar-inner" ]
-            [ li [ class "sidebar-menu-item", onClick (ToggleNotifications <| not notifications) ]
-                [ if notifications then
-                    text "Notifications: On"
-                  else
-                    text "Notifications: Off"
+            [ li [ class "sidebar-menu-item flex-h" ]
+                [ label [ class "switch" ]
+                    [ input [ type_ "checkbox", checked notifications, onCheck ToggleNotifications ] []
+                    , span [ class "slider round" ] []
+                    ]
+                , text "Notifications"
                 ]
+            , if page == Picker then
+                li [ onClick (SwitchTo MyClaims), class "clickable" ] [ text "View my Claims" ]
+              else
+                li [ onClick (SwitchTo Picker), class "clickable" ] [ text "View my Family" ]
             , li [ class "sidebar-menu-item", onClick Signout ] [ text "Signout" ]
             ]
         ]
@@ -412,17 +417,9 @@ viewClaims model others =
             others
                 |> L.map mkItemsForPerson
                 |> div []
-
-        title =
-            div [ class "title flex-h spread flex-baseline" ]
-                [ h2 [] [ text "My Claims" ]
-                , button [ onClick (SwitchTo Picker) ] [ text "My Family" ]
-                ]
     in
         div [ class "claims col-12 col-sm-6" ]
-            [ title
-            , claims
-            ]
+            [ claims ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -433,15 +430,9 @@ viewOthers model others =
                 L.map (viewOther model) others
             else
                 L.map (viewOtherPhase1 model) others
-
-        title =
-            div [ class "flex-h spread flex-baseline" ]
-                [ h2 [] [ text "My Family" ]
-                , button [ onClick (SwitchTo MyClaims) ] [ text "My Claims" ]
-                ]
     in
         div [ class "others col-12 col-sm-6" ]
-            (title :: wishes)
+            wishes
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg

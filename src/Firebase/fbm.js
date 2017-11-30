@@ -52,6 +52,7 @@ function registerForUpdates(logger) {
                         if (response.status < 200 || response.status > 400) {
                             return Promise.reject({msg: "[fbm.registerForUpdates] Bad response", payload: response});
                         }
+                        console.log("[fbm.registerForUpdates] Success", response);
                         return {msg: "[fbm.registerForUpdates] Success", payload: response};
                     });
             } else {
@@ -76,14 +77,16 @@ function unregisterMessaging(logger, fbToElm) {
         .getToken()
         .then(function(currentToken) {
             if (currentToken) {
+              // Make request to cloud function
+              let serverUrl = config.serverUrl
                 // DELETE  https://iid.googleapis.com/v1/web/iid/REGISTRATION_TOKEN
-                let url = `https://iid.googleapis.com/v1/web/iid/${currentToken}`;
-
-                var options = {
-                    method: "DELETE"
-                };
-                var myRequest = new Request(url, options);
-                return fetch(myRequest);
+                // let url = `https://iid.googleapis.com/v1/web/iid/${currentToken}`;
+                //
+                // var options = {
+                //     method: "DELETE"
+                // };
+                // var myRequest = new Request(url, options);
+                // return fetch(myRequest);
             }
         })
         .then(response => {

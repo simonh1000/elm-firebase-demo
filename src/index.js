@@ -4,7 +4,6 @@ require("./rollbar");
 require("./sw-installer");
 require("bootstrap-loader");
 require("./styles.scss");
-// require('firebase');
 
 let d = new Date();
 var Elm = require("./Main");
@@ -19,8 +18,11 @@ app.ports.removeAppShell.subscribe(() => {
 });
 
 // F i r e b a s e
+
+// ********** C O N F I G
 import config from "./Firebase/fb.config";
-console.log("Using project:",config.projectId);
+
+console.log("Using project:", config.projectId);
 firebase.initializeApp(config);
 // Load main firebase handler
 import fb from "./Firebase/fb";
