@@ -318,6 +318,7 @@ view model =
                     [ viewRegister model ]
 
                 _ ->
+                    -- Picker and Claims
                     [ model.xmas
                         |> Dict.get model.user.uid
                         |> Maybe.map (.meta >> .notifications)
@@ -419,7 +420,9 @@ viewClaims model others =
                 |> div []
     in
         div [ class "claims col-12 col-sm-6" ]
-            [ claims ]
+            [ h2 [] [ text "My Claims" ]
+            , claims
+            ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -432,7 +435,7 @@ viewOthers model others =
                 L.map (viewOtherPhase1 model) others
     in
         div [ class "others col-12 col-sm-6" ]
-            wishes
+            (h2 [] [ text "My Family" ] :: wishes)
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
