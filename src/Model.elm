@@ -9,10 +9,9 @@ import Firebase.Firebase as FB
 
 
 type Page
-    = Loading
-      --     | InitAuth
-      --     | Subscribe
-      --     | SetNotifications
+    = InitAuth -- checking auth status
+    | Subscribe -- making snapshot request
+      --   | SetNotifications -- no specific UI consequnces in fact
     | Picker
     | MyClaims
     | Login
@@ -40,7 +39,7 @@ type alias Model =
 
 blank : Model
 blank =
-    { page = Loading
+    { page = InitAuth
     , email = ""
     , password = ""
     , password2 = ""

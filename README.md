@@ -11,7 +11,7 @@ No update of functions
  - check fb.config.js uses prod data
 
 ```
-npm run prod && firebase deploy --only hosting
+yarn prod && firebase deploy --only hosting
 ```
 
 ## Installation

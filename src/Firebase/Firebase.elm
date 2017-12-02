@@ -4,31 +4,58 @@ import Json.Encode as E
 import Json.Decode as Json exposing (..)
 
 
-type alias FBMsg =
-    { message : String
-    , payload : Value
-    }
+type alias PortMsg =
+    { message : String, payload : Value }
 
 
-port elmToFb : FBMsg -> Cmd msg
+port elmToFb : PortMsg -> Cmd msg
 
 
-port fbToElm : (FBMsg -> msg) -> Sub msg
+port fbToElm : (PortMsg -> msg) -> Sub msg
 
 
 
 -- ----------------------------------------------
 -- Subscriptions
 -- ----------------------------------------------
--- type FBResponse
---     = SubscriptionOk
---     | UnsubscribeOk
---     | CFError
 
 
-subscriptions : (FBMsg -> msg) -> Sub msg
+type FBResponse
+    = SubscriptionOk
+    | UnsubscribeOk
+    | NoUserPermission -- user has blocked use
+    | CFError
+    | NewMessage -- from the subscribed service
+    | UnhandledResponse
+
+
+type alias FBMsg =
+    { message : String
+    , payload : Value
+    }
+
+
+subscriptions : (PortMsg -> msg) -> Sub msg
 subscriptions fbMsgHandler =
     fbToElm fbMsgHandler
+
+
+toFBResponse s =
+    case s of
+        "SubscriptionOk" ->
+            SubscriptionOk
+
+        "UnsubscribeOk" ->
+            UnsubscribeOk
+
+        "NoUserPermission" ->
+            NoUserPermission
+
+        "CFError" ->
+            CFError
+
+        _ ->
+            UnhandledResponse
 
 
 
@@ -36,22 +63,34 @@ subscriptions fbMsgHandler =
 
 
 type FBCommand
-    = RequestMessagingPermission String
-    | UnsubscribeMessaging String
+    = StartNotifications String
+    | StopNotifications String
     | ListenAuthState
+
+
+
+-- fbCommandToString : FBCommand -> String
+-- fbCommandToString cmd =
+--     case cmd of
+--     StartNotifications _ ->
+--         "StartNotifications"
+--     StopNotifications _ ->
+--             "StopNotifications"
+--     ListenAuthState ->
+--         "ListenAuthState"
 
 
 sendToFirebase : FBCommand -> Cmd msg
 sendToFirebase cmd =
     case cmd of
-        RequestMessagingPermission userId ->
-            elmToFb <| FBMsg "RequestMessagingPermission" (E.string userId)
+        StartNotifications userId ->
+            elmToFb <| { message = "StartNotifications", payload = E.string userId }
 
-        UnsubscribeMessaging userId ->
-            elmToFb <| FBMsg "UnsubscribeMessaging" (E.string userId)
+        StopNotifications userId ->
+            elmToFb <| { message = "StopNotifications", payload = E.string userId }
 
         _ ->
-            elmToFb <| FBMsg (toString cmd) E.null
+            elmToFb <| { message = toString cmd, payload = E.null }
 
 
 

@@ -2,15 +2,15 @@ import fbmsg from './fbm';
 
 // Elm message handler
 function handler({message, payload}, fbToElm) {
-    console.log(message, payload);
+    // console.log(message, payload);
     switch (message) {
         case "ListenAuthState":
             createAuthListener(fbToElm);
             break;
-        case "RequestMessagingPermission":
+        case "StartNotifications":
             fbmsg.requestMessagingPermission(payload, logger, fbToElm);
             break;
-        case "UnsubscribeMessaging":
+        case "StopNotifications":
             fbmsg.unregisterMessaging(payload, logger, fbToElm);
             break;
         case "signin":
@@ -42,17 +42,6 @@ function handler({message, payload}, fbToElm) {
     }
 }
 
-function logger(msg) {
-    let reg = new RegExp('hampton-xmas');
-
-    if (reg.test(window.location.href)) {
-        console.log("Sending to rollbar", msg);
-        Rollbar.error(msg);
-    } else {
-        console.error("[logger]", msg);
-    }
-}
-
 function makeUserObject(user) {
     return {
         message: "authstate",
@@ -67,10 +56,10 @@ function makeUserObject(user) {
 }
 
 function createAuthListener(fbToElm) {
-    console.log("[createAuthListener] starting");
+    // console.log("[createAuthListener] starting");
     firebase.auth()
         .onAuthStateChanged(function(user) {
-            console.log("[createAuthListener]", user);
+            // console.log("[createAuthListener]", user);
 
             if (user) {
                 fbToElm(makeUserObject(user))
@@ -116,15 +105,17 @@ function signinGoogle(fbToElm) {
     firebase.auth().signInWithRedirect(provider)
         .then(function(result) {
             console.log("Google signin successful")
-            // This gives you a Google Access Token. You can use it to access the Google API.
-            // var token = result.credential.accessToken;
+            // This gives you a Google Access Token, result.credential.accessToken
 
             // Send user details back to Elm
             fbToElm(makeUserObject(result.user));
         })
         .catch(function(error) {
-            console.log(error)
             logger(error);
+            fbToElm({
+                message: "Error",
+                payload: error
+            });
         });
 }
 
@@ -156,6 +147,7 @@ function push(data) {
 function subscribe(fbToElm, _ref) {
     firebase.database().ref(_ref)
         .on('value', snapshot => {
+            // console.log(snapshot);
             fbToElm({
                 message: "snapshot",
                 payload: {
@@ -165,6 +157,18 @@ function subscribe(fbToElm, _ref) {
             });
         });
 }
+
+function logger(msg) {
+    let reg = new RegExp('hampton-xmas');
+
+    if (reg.test(window.location.href)) {
+        console.log("Sending to rollbar", msg);
+        Rollbar.error(msg);
+    } else {
+        console.error("[logger]", msg);
+    }
+}
+
 
 export default {
     createAuthListener, handler, logger

@@ -1,152 +1,68 @@
 $border-color: #ddd;
 // LAYOUT
-.app,
-body {
-    height: 100vh;
-    overflow: hidden;
-}
-
-#picker {
-    // overflow: auto;
-
-    .claims,
-    .my-ideas,
-    .others {
-        overflow-y: auto;
-    }
-
-    .my-ideas {
-        padding-bottom: 20px;
-    }
-}
-
 .app {
+    // repeat settings inlined
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
     header {
         flex: 0 0 60px;
     }
-
-    .main {
-        flex-grow: 1;
-        display: flex;
-        align-items: stretch;
-        position: relative;
-        overflow: hidden;
-        // flex-direction: column;
-        // overflow: auto;
-        &.loading {
-            justify-content: center;
-            align-self: center;
-        }
-        .my-ideas {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .new-present {
-            transition: flex 0.3s ease-out; // note that we're transitioning flex, not height!
-            flex: 0 0;
-        }
-
-        .my-presents {
-            overflow-y: auto;
-        }
-    }
-
     footer {
         flex: 0 0 40px;
     }
-}
-
-#login,
-#register {
-    overflow: auto;
-
-    form {
-        margin-bottom: 15px;
+    .main {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        overflow: hidden;
+        padding-top: 20px;
+        padding-bottom: 20px;
     }
-}
-
-.sidebar {
-    position: absolute;
-    width: 100%;
-    background-color: rgba(4,4,4,0.8);
-    height: 100%;
-    z-index: 3;
-    top: 0;
-    margin-left: -100%;
-    transition: margin-left 0.3s ease-in-out;
-
-    &.open {
-        margin-left: 0;
-    }
-
-    .sidebar-inner {
-        padding: 15px;
-        width: 80%;
-        height: 100%;
-        background-color: rgba(255,255,255,1.0);
-    }
-
-    ul {
-        list-style: none;
-        padding-left: 0;
-
-        li {
-            display: flex;
-            align-items: center;
-            padding-left: 15px;
-            color: #333;
-            border-bottom: 1px solid #aaa;
-            height: 40px;
+    .main.picker, .main.claims {
+        .container {
+            overflow-y: auto;
         }
     }
 }
 
 @media (min-width: 576px) {
-    .main {
-        flex: 1 1;
-        display: flex;
-        flex-direction: column;
-    }
+    .app {
+        .main {
+            flex-direction: column;
+        }
 
-    #picker {
-        overflow-y: hidden;
-        display: flex;
-        flex-direction: column;
-        .my-ideas {
-            padding-bottom: 0;
+        .main.picker, .main.claims {
+            .container {
+                overflow-y: hidden;
+                .row {
+                    height: 100%;
+                    overflow: hidden;
+                }
+            }
+            .my-ideas {
+                padding-bottom: 0;
+            }
+        }
+        .sidebar-inner {
+            margin: 0 auto;
         }
     }
 }
-// OTHER
-body {
-    background-color: #eee;
-}
 
-footer,
-header {
-    width: 100%;
-    background-color: #444;
-    color: white;
-
-    .container,
-    .container > div {
-        height: 100%;
-    }
-
-    .avatar {
-        height: 30px;
-        border-radius: 100%;
-        margin-left: 15px;
-    }
-}
-
-.main {
-    // padding-top: 20px;
-    // padding-bottom: 20px;
-}
 
 #picker {
+    .claims,
+    .my-ideas,
+    .others {
+        overflow-y: auto;
+    }
+    .my-ideas {
+        padding-bottom: 20px;
+    }
     .person {
         background-color: white;
         margin-bottom: 15px;
@@ -172,6 +88,115 @@ header {
                 font-size: 14px;
             }
         }
+    }
+}
+
+.app {
+    .main {
+        position: relative;
+
+        // Spinner centered
+        &.initauth, &.subscribe {
+            justify-content: center;
+            align-items: center;
+        }
+
+        .new-present {
+            transition: flex 0.3s ease-out; // note that we're transitioning flex, not height!
+            flex: 0 0;
+        }
+
+        .my-presents {
+            overflow-y: auto;
+        }
+    }
+}
+
+#login,
+#register {
+    overflow: auto;
+
+    form {
+        margin-bottom: 15px;
+    }
+}
+
+.sidebar {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    display: flex;
+
+    margin-left: -100%;
+    transition: margin-left 0.3s ease-in-out;
+
+    &.open {
+        margin-left: 0;
+    }
+
+    .sidebar-inner {
+        padding: 15px;
+        width: 80%;
+        height: 100%;
+        background-color: white;
+    }
+    .sidebar-remainder {
+        width: 20%;
+        background-color: rgba(4,4,4,0.8);
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 0;
+
+        li {
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            color: #333;
+            border-bottom: 1px solid #aaa;
+            height: 60px;
+            .left-element {
+                display: inline-block;
+                width: 80px
+            }
+        }
+    }
+}
+
+// OTHER
+body {
+    background-color: #eee;
+}
+
+footer,
+header {
+    width: 100%;
+    background-color: #444;
+    color: white;
+
+    .container,
+    .container > div {
+        height: 100%;
+    }
+
+    .avatar {
+        height: 30px;
+        border-radius: 100%;
+        margin-left: 15px;
+    }
+}
+// ....
+.section {
+    background-color: white;
+    padding: 10px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+
+    input {
+        background-color: #ddd;
     }
 }
 
@@ -208,21 +233,10 @@ header {
         }
     }
 }
-// ....
-.section {
-    background-color: white;
-    padding: 10px;
-    border-radius: 3px;
-    border: 1px solid #ddd;
-
-    input {
-        background-color: #ddd;
-    }
-}
 
 h1,
 h2 {
-    margin-top: 20px;
+    // margin-top: 20px;
     margin-bottom: 20px;
 }
 

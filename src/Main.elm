@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Html
 import Firebase.Firebase as FB
-import App exposing (..)
+import App exposing (init, update, view, Msg(..))
 
 
 main =
