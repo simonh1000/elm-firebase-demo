@@ -1,7 +1,13 @@
 var functions = require("firebase-functions");
 
 const admin = require("firebase-admin");
-admin.initializeApp(functions.config().firebase);
+var serviceAccount = require("./xmas-f3f6b-adminsdk.json");
+//
+// admin.initializeApp(functions.config().firebase);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://xmas-f3f6b.firebaseio.com"
+});
 
 const messaging = require("./messaging");
 

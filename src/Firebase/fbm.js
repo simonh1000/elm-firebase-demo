@@ -3,7 +3,7 @@ import config from "./fb.config";
 // See also /assets/firebase-messaging.js
 
 // Triggr pop-up that asks for permission
-function requestMessagingPermission(logger, cb) {
+function requestMessagingPermission(userId, logger, cb) {
     // Create within function because firebase may not otherwise be initialised
     const messaging = firebase.messaging();
 
@@ -11,11 +11,17 @@ function requestMessagingPermission(logger, cb) {
         .requestPermission()
         .then(function() {
             console.log("[fbm] Notification permission granted.");
-            return registerForUpdates(logger);
+            return registerForUpdates(userId, logger);
         })
-        .catch(function(err) {
-            // If denied by user
-            console.log("[fbm] Unable to get permission to notify.", err);
+        .then(({msg, payload}) => {
+            console.log(msg, payload);
+            cb(msg);
+        })
+        .catch(err => {
+            logger({
+                "message": "[fbm] Error",
+                "payload": err
+            });
         });
 
     messaging.onMessage(function(payload) {
@@ -31,8 +37,9 @@ function requestMessagingPermission(logger, cb) {
 // Inspired by https://github.com/firebase/quickstart-js/blob/master/messaging/index.html
 // Get Instance ID token. Initially this makes a network call, once retrieved
 // subsequent calls to getToken will return from cache.
-function registerForUpdates(logger) {
+function registerForUpdates(userId, logger) {
     const messaging = firebase.messaging();
+    console.log("[fbm userId]", userId);
 
     // This method returns null when permission has not been granted.
     return messaging.getToken()
@@ -41,13 +48,21 @@ function registerForUpdates(logger) {
                 // Register for topic: presents
                 // Send token to Cloud Function, which uses it to setup messaging subscription
 
-                let serverUrl = config.serverUrl + "?token=" + currentToken;
+                var myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+
+                let body = JSON.stringify({
+                    "userId": userId,
+                    "token": currentToken
+                });
                 var options = {
-                    "Content-Type": "application/json"
-                }
+                    "method": "POST",
+                    "headers": myHeaders,
+                    "body": body
+                };
                 console.log("[fbm.registerForUpdates: currentToken]", currentToken, options);
 
-                return fetch(serverUrl, options)
+                return fetch(config.serverUrl, options)
                     .then(function(response) {
                         if (response.status < 200 || response.status > 400) {
                             return Promise.reject({msg: "[fbm.registerForUpdates] Bad response", payload: response});
@@ -60,15 +75,6 @@ function registerForUpdates(logger) {
                 return Promise.resolve({msg: "[fbm] No Instance ID token available. Request permission to generate one.", payload: null});
             }
         })
-        .then(({msg, payload}) => {
-            console.log(msg, payload);
-        })
-        .catch(err => {
-            logger({
-                "message": "[fbm.registerForUpdates] Error",
-                "payload": err
-            });
-        });
 }
 
 function unregisterMessaging(logger, fbToElm) {

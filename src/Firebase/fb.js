@@ -2,12 +2,13 @@ import fbmsg from './fbm';
 
 // Elm message handler
 function handler({message, payload}, fbToElm) {
+    console.log(message, payload);
     switch (message) {
         case "ListenAuthState":
             createAuthListener(fbToElm);
             break;
         case "RequestMessagingPermission":
-            fbmsg.requestMessagingPermission(logger, fbToElm);
+            fbmsg.requestMessagingPermission(payload, logger, fbToElm);
             break;
         case "UnregisterMessaging":
             fbmsg.unregisterMessaging(logger, fbToElm);

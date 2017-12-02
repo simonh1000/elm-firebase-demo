@@ -30,13 +30,17 @@ subscriptions fbMsgHandler =
 
 
 type FBCommand
-    = RequestMessagingPermission
+    = RequestMessagingPermission String
     | UnregisterMessaging
+    | ListenAuthState
 
 
 sendToFirebase : FBCommand -> Cmd msg
 sendToFirebase cmd =
     case cmd of
+        RequestMessagingPermission userId ->
+            elmToFb <| FBMsg "RequestMessagingPermission" (E.string userId)
+
         _ ->
             elmToFb <| FBMsg (toString cmd) E.null
 
@@ -47,7 +51,7 @@ sendToFirebase cmd =
 
 setUpAuthListener : Cmd msg
 setUpAuthListener =
-    elmToFb <| FBMsg "ListenAuthState" E.null
+    sendToFirebase ListenAuthState
 
 
 type alias FBUser =

@@ -10,10 +10,17 @@ import Firebase.Firebase as FB
 
 type Page
     = Loading
-    | Login
-    | Register
+      --     | InitAuth
+      --     | Subscribe
+      --     | SetNotifications
     | Picker
     | MyClaims
+    | Login
+    | Register
+
+
+
+-- type InitStatus
 
 
 type alias Model =
