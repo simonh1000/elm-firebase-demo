@@ -17,7 +17,13 @@ port fbToElm : (FBMsg -> msg) -> Sub msg
 
 
 
+-- ----------------------------------------------
 -- Subscriptions
+-- ----------------------------------------------
+-- type FBResponse
+--     = SubscriptionOk
+--     | UnsubscribeOk
+--     | CFError
 
 
 subscriptions : (FBMsg -> msg) -> Sub msg
@@ -26,12 +32,12 @@ subscriptions fbMsgHandler =
 
 
 
---
+-- Outgoing messages
 
 
 type FBCommand
     = RequestMessagingPermission String
-    | UnregisterMessaging
+    | UnsubscribeMessaging String
     | ListenAuthState
 
 
@@ -40,6 +46,9 @@ sendToFirebase cmd =
     case cmd of
         RequestMessagingPermission userId ->
             elmToFb <| FBMsg "RequestMessagingPermission" (E.string userId)
+
+        UnsubscribeMessaging userId ->
+            elmToFb <| FBMsg "UnsubscribeMessaging" (E.string userId)
 
         _ ->
             elmToFb <| FBMsg (toString cmd) E.null

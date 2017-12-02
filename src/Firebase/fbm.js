@@ -1,5 +1,6 @@
 import config from "./fb.config";
 
+const CFError = "CFError"
 // See also /assets/firebase-messaging.js
 
 // Triggr pop-up that asks for permission
@@ -13,25 +14,51 @@ function requestMessagingPermission(userId, logger, cb) {
             console.log("[fbm] Notification permission granted.");
             return registerForUpdates(userId, logger);
         })
-        .then(({msg, payload}) => {
-            console.log(msg, payload);
-            cb(msg);
+        .then( res => res.json() )
+        .then(body => {
+            console.log("[fbm.requestMessagingPermission] Success", body);
+            cb(body);
         })
         .catch(err => {
             logger({
-                "message": "[fbm] Error",
+                "message": CFError,
                 "payload": err
             });
         });
 
     messaging.onMessage(function(payload) {
         console.log("[fbm] Message received. ", payload);
-        // Probaly need to renew subscription here
-        cb({
-            message: "token-refresh",
-            payload: payload
-        });
+
+        // Renew subscription
+        // if payload == "new token" {
+        //     registerForUpdates(userId, logger)
+        //     .then( res => res.json() )
+        //     .then(body => {
+        //         console.log("[fbm.requestMessagingPermission] Success", body);
+        //         cb(body);
+        //     })
+        //     .catch(err => {
+        //         logger({
+        //             "message": CFError,
+        //             "payload": err
+        //         });
+        // }
     });
+}
+
+function makeRequest(userId, token) {
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    let body = JSON.stringify({
+        "userId": userId,
+        "token": token
+    });
+    return {
+        "method": "POST",
+        "headers": myHeaders,
+        "body": body
+    };
 }
 
 // Inspired by https://github.com/firebase/quickstart-js/blob/master/messaging/index.html
@@ -47,59 +74,50 @@ function registerForUpdates(userId, logger) {
             if (currentToken) {
                 // Register for topic: presents
                 // Send token to Cloud Function, which uses it to setup messaging subscription
-
-                var myHeaders = new Headers();
-                myHeaders.append("Content-Type", "application/json");
-
-                let body = JSON.stringify({
-                    "userId": userId,
-                    "token": currentToken
-                });
-                var options = {
-                    "method": "POST",
-                    "headers": myHeaders,
-                    "body": body
-                };
                 console.log("[fbm.registerForUpdates: currentToken]", currentToken, options);
+                let options = makeRequest(userId, currentToken);
 
-                return fetch(config.serverUrl, options)
+                return fetch(config.serverUrl + "subscribe", options)
                     .then(function(response) {
                         if (response.status < 200 || response.status > 400) {
-                            return Promise.reject({msg: "[fbm.registerForUpdates] Bad response", payload: response});
+                            return Promise.reject({message: "CFError", payload: response});
                         }
-                        console.log("[fbm.registerForUpdates] Success", response);
-                        return {msg: "[fbm.registerForUpdates] Success", payload: response};
+                        return response;
                     });
             } else {
                 // Show permission request.
-                return Promise.resolve({msg: "[fbm] No Instance ID token available. Request permission to generate one.", payload: null});
+                return Promise.resolve({message: "NoUserPermission", payload: null});
             }
         })
 }
 
-function unregisterMessaging(logger, fbToElm) {
+function unregisterMessaging(userId, logger, fbToElm) {
     console.log("Attempting to unsubcribe");
     return firebase.messaging()
         .getToken()
         .then(function(currentToken) {
             if (currentToken) {
-              // Make request to cloud function
-              let serverUrl = config.serverUrl
-                // DELETE  https://iid.googleapis.com/v1/web/iid/REGISTRATION_TOKEN
-                // let url = `https://iid.googleapis.com/v1/web/iid/${currentToken}`;
-                //
-                // var options = {
-                //     method: "DELETE"
-                // };
-                // var myRequest = new Request(url, options);
-                // return fetch(myRequest);
+                let options = makeRequest(userId, currentToken);
+
+                return fetch(config.serverUrl + "unsubscribe", options)
+                    .then(function(response) {
+                        if (response.status < 200 || response.status > 400) {
+                            return Promise.reject({message: "CFError", payload: response});
+                        }
+                        return response.json();
+                    });
             }
         })
         .then(response => {
             console.log("unregisterMessaging success", response);
+            fbToElm(response);
         })
         .catch(err => {
             logger({ function: "unregisterMessaging", error: err });
+            fbToElm({
+                message: CFError,
+                payload: err
+            })
         });
 }
 

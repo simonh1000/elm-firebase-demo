@@ -122,7 +122,7 @@ update message model =
                 , if notifications then
                     FB.sendToFirebase <| RequestMessagingPermission model.user.uid
                   else
-                    FB.sendToFirebase UnregisterMessaging
+                    FB.sendToFirebase <| UnsubscribeMessaging model.user.uid
                 ]
             )
 
@@ -193,6 +193,17 @@ update message model =
                             Debug.log "token-refresh" payload
                     in
                         ( model, Cmd.none )
+
+                "SubscriptionOk" ->
+                    ( model, Cmd.none )
+
+                "CFError" ->
+                    let
+                        userMessage =
+                            Json.decodeValue decoderError payload
+                                |> Result.withDefault model.userMessage
+                    in
+                        { model | userMessage = userMessage } ! []
 
                 "error" ->
                     let
