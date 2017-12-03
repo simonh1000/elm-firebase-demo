@@ -21,7 +21,7 @@ messaging.setBackgroundMessageHandler(function(payload) {
     const notificationOptions = {
         body: 'Added new idea: ' + payload.data.present,
         icon: '/images/icons/present-192x192.png',
-        click_action: 'https://hampton-xmas.firebaseapp.com/'
+        click_action: self.config.url
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
@@ -33,5 +33,5 @@ self.addEventListener('notificationclick', function(event) {
 
     event.notification.close();
     // Open the app
-    event.waitUntil(clients.openWindow('https://hampton-xmas.firebaseapp.com/'));
+    event.waitUntil(clients.openWindow(self.config.ur));
 });

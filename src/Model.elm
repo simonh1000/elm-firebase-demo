@@ -85,21 +85,20 @@ blankPresent =
 
 
 
--- Model update helpers
+--
 
 
-updateEditor : (Present -> Present) -> Model -> Model
-updateEditor fn model =
-    { model | editor = fn model.editor }
+prettyPrint : Page -> String
+prettyPrint p =
+    case p of
+        InitAuth ->
+            "Checking credentials"
 
+        Subscribe ->
+            "Getting presents data"
 
-setDisplayName : String -> Model -> Model
-setDisplayName displayName model =
-    let
-        user =
-            model.user
-    in
-        { model | user = { user | displayName = Just displayName } }
+        _ ->
+            toString p
 
 
 

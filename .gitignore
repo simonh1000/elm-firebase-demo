@@ -43,5 +43,6 @@ example/dist
 ignore
 /dist
 /src/**/*.config.js
+functions/*.adminsdk.json
 secrets.js
 yarn.lock

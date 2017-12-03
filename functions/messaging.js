@@ -16,7 +16,7 @@ exports.subscribe = function subscribe(req, res) {
                 // https://firebase.google.com/docs/reference/admin/node/admin.messaging.MessagingTopicManagementResponse
                 res.status(200).send({
                     message: "SubscriptionOk",
-                    payload: response
+                    payload: topic
                 });
             })
             .catch(err => {
@@ -37,10 +37,10 @@ exports.unsubscribe = function(req, res) {
         admin.messaging().unsubscribeFromTopic(token, topic)
             .then(response => {
                 // https://firebase.google.com/docs/reference/admin/node/admin.messaging.MessagingTopicManagementResponse
-                console.log("unsubscribe success", response);
+                console.log("UnsubscribeOk", response);
                 res.status(200).send({
                     message: "UnsubscribeOk",
-                    payload: response
+                    payload: topic
                 });
             })
             .catch(err => {

@@ -25,7 +25,7 @@ function requestMessagingPermission(userId, logger, cb) {
 
     messaging
         .requestPermission()
-        .then( () => registerForUpdates(userId, logger) )
+        .then( () => connectNotificationHandler(logger, "subscribe", userId) )
         .then( body => cb(body) )
         .catch(err => {
             logger({
@@ -44,31 +44,27 @@ function requestMessagingPermission(userId, logger, cb) {
 
     // Handle messages received while on the app page
     messaging.onMessage(function(payload) {
-        console.log("[fbm] Message received. ", payload);
+        console.log("[fbm] onMessage received, but unhandled.", payload);
     });
 }
 
-
-// Inspired by https://github.com/firebase/quickstart-js/blob/master/messaging/index.html
-// Get Instance ID token. Initially this makes a network call, once retrieved
-// subsequent calls to getToken will return from cache.
-function registerForUpdates(userId, logger) {
+function connectNotificationHandler(logger, mode, userId) {
     const messaging = firebase.messaging();
 
     // This method returns null when permission has not been granted.
     return messaging.getToken()
         .then(function(currentToken) {
             if (currentToken) {
-                // Register for topic: presents
-                // Send token to Cloud Function, which uses it to setup messaging subscription
-                // console.log("[fbm.registerForUpdates: currentToken]", currentToken, options);
                 let options = makeRequest(userId, currentToken);
+                console.log("[fbm.connectNotificationHandler: currentToken]", mode, options);
 
-                return fetch(config.serverUrl + "subscribe", options)
+                // Send token to Cloud Function, which uses it to setup messaging subscription
+                return fetch(config.serverUrl + mode, options)
                     .then(function(response) {
                         if (response.status < 200 || response.status > 400) {
                             return Promise.reject({message: "CFError", payload: response});
                         }
+                        console.log("[connectNotificationHandler success]", mode, response);
                         return response.json();
                     });
             } else {
@@ -80,30 +76,13 @@ function registerForUpdates(userId, logger) {
 
 function unregisterMessaging(userId, logger, fbToElm) {
     console.log("Attempting to unsubscribe");
-    return firebase.messaging()
-        .getToken()
-        .then(function(currentToken) {
-            if (currentToken) {
-                let options = makeRequest(userId, currentToken);
-
-                return fetch(config.serverUrl + "unsubscribe", options)
-                    .then(function(response) {
-                        if (response.status < 200 || response.status > 400) {
-                            return Promise.reject({message: "CFError", payload: response});
-                        }
-                        return response.json();
-                    });
-            } else {
-                // Show permission request.
-                return Promise.resolve({message: "NoUserPermission", payload: null});
-            }
-        })
+    connectNotificationHandler(logger, "unsubscribe", userId)
         .then(response => {
-            // console.log("unregisterMessaging success", response);
+            console.log("unregisterMessaging success", response);
             fbToElm(response);
         })
         .catch(err => {
-            logger({ function: "unregisterMessaging", error: err });
+            logger({ function: "unregisterMessaging", "error": err });
             fbToElm({
                 message: CFError,
                 payload: err

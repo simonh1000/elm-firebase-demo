@@ -1,18 +1,20 @@
-$border-color: #ddd;
-// LAYOUT
+$border-color: #ddd; // LAYOUT  ++ see css for larger screens
+
 .app {
     // repeat settings inlined
     height: 100vh;
     display: flex;
     flex-direction: column;
-
     overflow: hidden;
+
     header {
         flex: 0 0 60px;
     }
+
     footer {
         flex: 0 0 40px;
     }
+
     .main {
         flex-grow: 1;
         display: flex;
@@ -22,37 +24,14 @@ $border-color: #ddd;
         padding-top: 20px;
         padding-bottom: 20px;
     }
-    .main.picker, .main.claims {
+
+    .main.myclaims,
+    .main.picker {
         .container {
             overflow-y: auto;
         }
     }
 }
-
-@media (min-width: 576px) {
-    .app {
-        .main {
-            flex-direction: column;
-        }
-
-        .main.picker, .main.claims {
-            .container {
-                overflow-y: hidden;
-                .row {
-                    height: 100%;
-                    overflow: hidden;
-                }
-            }
-            .my-ideas {
-                padding-bottom: 0;
-            }
-        }
-        .sidebar-inner {
-            margin: 0 auto;
-        }
-    }
-}
-
 
 #picker {
     .claims,
@@ -60,9 +39,11 @@ $border-color: #ddd;
     .others {
         overflow-y: auto;
     }
+
     .my-ideas {
         padding-bottom: 20px;
     }
+
     .person {
         background-color: white;
         margin-bottom: 15px;
@@ -94,9 +75,9 @@ $border-color: #ddd;
 .app {
     .main {
         position: relative;
-
         // Spinner centered
-        &.initauth, &.subscribe {
+        &.initauth,
+        &.subscribe {
             justify-content: center;
             align-items: center;
         }
@@ -120,7 +101,7 @@ $border-color: #ddd;
         margin-bottom: 15px;
     }
 }
-
+// plus see css for larger screens
 .sidebar {
     position: absolute;
     top: 0;
@@ -128,7 +109,6 @@ $border-color: #ddd;
     height: 100%;
     z-index: 3;
     display: flex;
-
     margin-left: -100%;
     transition: margin-left 0.3s ease-in-out;
 
@@ -142,6 +122,7 @@ $border-color: #ddd;
         height: 100%;
         background-color: white;
     }
+
     .sidebar-remainder {
         width: 20%;
         background-color: rgba(4,4,4,0.8);
@@ -152,20 +133,56 @@ $border-color: #ddd;
         padding-left: 0;
 
         li {
-            display: flex;
-            align-items: center;
-            padding-left: 15px;
+            padding-left: 5px;
             color: #333;
             border-bottom: 1px solid #aaa;
             height: 60px;
+
             .left-element {
                 display: inline-block;
-                width: 80px
+                width: 80px;
             }
         }
     }
 }
+@media (min-width: 576px) {
+    .app {
+        .main {
+            flex-direction: column;
+        }
 
+        #picker {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main.claims,
+        .main.picker {
+            .container {
+                overflow-y: hidden;
+
+                .row {
+                    height: 100%;
+                    overflow: hidden;
+                }
+            }
+
+            .my-ideas {
+                padding-bottom: 0;
+            }
+        }
+
+        .sidebar-inner {
+            width: auto;
+            flex: 0 1 400px;
+            margin: 0 auto;
+        }
+
+        .sidebar-remainder {
+            flex: 1 1;
+        }
+    }
+}
 // OTHER
 body {
     background-color: #eee;
@@ -189,6 +206,7 @@ header {
     }
 }
 // ....
+
 .section {
     background-color: white;
     padding: 10px;
@@ -261,65 +279,42 @@ h2 {
     cursor: pointer;
 }
 // override bootstrap
+
 .badge {
     font-weight: normal;
 }
 /* The switch - the box around the slider */
+// binding toggle
+
 .switch {
     position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-    margin-right: 15px;
-    margin-bottom: 0;
-    /* Hide default HTML checkbox */
-    input {
-        display: none;
-    }
-    /* The slider */
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        -webkit-transition: 0.4s;
-        transition: 0.4s;
-    }
+    flex-shrink: 0;
+    background: grey;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    height: 20px;
+    width: 30px;
+    border-radius: 2px;
+    margin-right: 6px;
 
-    .slider:before {
-        position: absolute;
+    &:before {
         content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        -webkit-transition: 0.4s;
-        transition: 0.4s;
+        position: absolute;
+        z-index: 1;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 16px;
+        border-radius: 1px;
+        background: white;
+        transition: all 0.3s ease-in-out;
     }
+}
 
-    input:checked + .slider {
-        background-color: #2196F3;
-    }
+.switch.on {
+    background: blue;
 
-    input:focus + .slider {
-        box-shadow: 0 0 1px #2196F3;
-    }
-
-    input:checked + .slider:before {
-        -webkit-transform: translateX(26px);
-        -ms-transform: translateX(26px);
-        transform: translateX(26px);
-    }
-    /* Rounded sliders */
-    .slider.round {
-        border-radius: 34px;
-    }
-
-    .slider.round:before {
-        border-radius: 50%;
+    &:before {
+        left: 13px;
     }
 }

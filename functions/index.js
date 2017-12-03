@@ -1,17 +1,22 @@
 var functions = require("firebase-functions");
 
 const admin = require("firebase-admin");
-var serviceAccount = require("./xmas-f3f6b-adminsdk.json");
-//
-// admin.initializeApp(functions.config().firebase);
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://xmas-f3f6b.firebaseio.com"
-});
 
+var secrets = require("./secrets");
 const messaging = require("./messaging");
 
-// Subscribe to messaging
+// Set to dev / prod
+var credentials = "./dev-adminsdk.json";
+var dbUrl = secrets.devUrl
+
+
+var serviceAccount = require(credentials);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: dbUrl
+});
+
+// Messaging HTTP functions
 exports.subscribe = functions.https.onRequest(messaging.subscribe);
 exports.unsubscribe = functions.https.onRequest(messaging.unsubscribe);
 
@@ -48,8 +53,8 @@ exports.sendNotification = functions.database.ref("/{userId}/presents/{presentId
             // https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_topic
             return admin.messaging().sendToTopic(topic, payload);
         })
-        .then(() => {
-            console.log("Message(s) sent");
+        .then( response => {
+            console.log("Message(s) sent", response);
         })
         .catch(error => console.error("Error sending message:", error));
 });
