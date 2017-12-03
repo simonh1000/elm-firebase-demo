@@ -1,13 +1,12 @@
-var functions = require("firebase-functions");
-
+const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
-var secrets = require("./secrets");
+const secrets = require("./secrets");
 const messaging = require("./messaging");
 
 // Set to dev / prod
-var credentials = "./dev-adminsdk.json";
-var dbUrl = secrets.devUrl
+var credentials = "./prod.adminsdk.json";
+var dbUrl = secrets.prodUrl
 
 
 var serviceAccount = require(credentials);

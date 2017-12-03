@@ -602,7 +602,7 @@ viewMine model lst =
     in
         div [ class "my-ideas col-sm-6" ]
             [ h2 []
-                [ text "My suggestions"
+                [ text "My Suggestions"
 
                 -- , button [ onClick Expander ] [ text "expand" ]
                 ]
@@ -690,7 +690,7 @@ simpleHeader : Html msg
 simpleHeader =
     header []
         [ div [ class "container flex-h" ]
-            [ h4 [ class "truncate" ] [ text "Xmas 2017 coordination" ] ]
+            [ h4 [] [ text "Xmas 2017" ] ]
         ]
 
 
@@ -699,8 +699,10 @@ viewNavbar model =
     header []
         [ div [ class "container" ]
             [ div [ class "flex-h spread" ]
-                [ div []
-                    [ matIconMsg ToggleSidebar "menu" ]
+                [ div [ class "flex-h" ]
+                    [ matIconMsg ToggleSidebar "menu"
+                    , h4 [] [ text "Xmas 2017" ]
+                    ]
                 , div []
                     [ model.user.displayName
                         |> Maybe.map (text >> L.singleton >> strong [])

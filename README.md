@@ -4,11 +4,16 @@ An Elm experiment to use Firebase to provide a real time xmas present idea excha
 
 ## Deploy to Firebase: firebase-tools
 
-No update of functions
+Check the following are pointing to production assets:
+
+ - functions/index.js
+ - src/Firebase/fb.config.js
+ - src/Firebase/fbsw.config.js
+ - database.rules.json
+ `firebase use default`
+
  - Update assets/mainfest.json
  - Update package.json
- - check functions/messaging.js points to prodKey
- - check fb.config.js uses prod data
 
 ```
 yarn prod && firebase deploy --only hosting
@@ -32,15 +37,21 @@ var config = {
 export default config;
 ```
 
-`/src/Firebase/fbsw.config.js`
-https://console.firebase.google.com/project/\<projid\>/settings/cloudmessaging/
-
-```js
-var config = {
-  messagingSenderId: "123456"
-};
-self.config = self.config || config;
+## src/Firebase/fbsw.config.js
 ```
+var prod = {
+  messagingSenderId: "58123453",
+  url: "https://xxxxxxx.firebaseapp.com/"
+};
+self.config = self.config || dev;
+```
+
+.... and connect the cloud functions code to the admin sdk, following https://firebase.google.com/docs/admin/setup
+
+## Changelog
+
+ - 2.1.0:
+
 
 ## ToDo
 
@@ -62,6 +73,7 @@ self.config = self.config || config;
              - ?takenBy : key1
              - ?purchased : Bool
 ```
+
 ### Normal start up
 
 Elm starts running             Loading            Calls ListenAuthState

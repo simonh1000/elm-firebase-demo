@@ -1,4 +1,7 @@
 $border-color: #ddd; // LAYOUT  ++ see css for larger screens
+$green: #0a691f;
+$red: #880d0d;
+$bkg-colour: #ddd;
 
 .app {
     // repeat settings inlined
@@ -185,14 +188,23 @@ $border-color: #ddd; // LAYOUT  ++ see css for larger screens
 }
 // OTHER
 body {
-    background-color: #eee;
+    background-color: $bkg-colour;
 }
 
 footer,
 header {
     width: 100%;
-    background-color: #444;
-    color: white;
+    background-color: $green;
+    &, a, h4 {
+        color: white;
+    }
+    a:hover {
+        color: #ddd;
+    }
+    h4 {
+        margin-left: 15px;
+        margin-bottom: 0;
+    }
 
     .container,
     .container > div {
@@ -252,10 +264,11 @@ header {
     }
 }
 
-h1,
-h2 {
-    // margin-top: 20px;
+h1, h2 {
     margin-bottom: 20px;
+}
+h1, h2, h3, h4 {
+    color: $red;
 }
 
 .flex-h {
@@ -289,7 +302,7 @@ h2 {
 .switch {
     position: relative;
     flex-shrink: 0;
-    background: grey;
+    background: $red;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     height: 20px;
@@ -312,7 +325,7 @@ h2 {
 }
 
 .switch.on {
-    background: blue;
+    background: $green;
 
     &:before {
         left: 13px;

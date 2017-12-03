@@ -43,9 +43,6 @@
     "webpack-merge": "^4.1.0"
   },
   "dependencies": {
-    "bootstrap": "^4.0.0-beta",
-    "cors": "^2.8.4",
-    "firebase-admin": "^5.5.1",
-    "firebase-functions": "^0.7.3"
+    "bootstrap": "^4.0.0-beta"
   }
 }
