@@ -41,6 +41,7 @@ $bkg-colour: #ddd;
     .my-ideas,
     .others {
         overflow-y: auto;
+        max-height: 100%;
     }
 
     .my-ideas {
