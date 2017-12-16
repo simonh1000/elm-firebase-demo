@@ -599,8 +599,15 @@ viewMine model lst =
 
                 _ ->
                     text <| "error" ++ toString lst
+
+        cls =
+            if model.page == MyClaims then
+                -- for MyClaims, don't show LHS on small devices
+                class "my-ideas d-none d-sm-block col-sm-6"
+            else
+                class "my-ideas col-sm-6"
     in
-        div [ class "my-ideas col-sm-6" ]
+        div [ cls ]
             [ h2 []
                 [ text "My Suggestions"
 

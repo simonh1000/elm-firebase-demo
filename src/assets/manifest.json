@@ -1,11 +1,11 @@
 {
   "name": "Xmas Presents",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "short_name": "Presents",
   "lang": "en-GB",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#448aff",
+  "theme_color": "#0a691f",
   "background_color": "#ffffff",
   "icons": [
     {
