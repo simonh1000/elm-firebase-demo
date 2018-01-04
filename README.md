@@ -36,6 +36,11 @@ var config = {
 };
 export default config;
 ```
+## Test functions locally
+
+```
+yarn localfunctions
+```
 
 ## src/Firebase/fbsw.config.js
 ```

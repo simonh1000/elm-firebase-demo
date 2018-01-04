@@ -10,7 +10,8 @@
     "build": "webpack",
     "prod": "webpack -p",
     "dist": "cd dist && angular-http-server",
-    "postinstall": "elm-package install -y"
+    "postinstall": "elm-package install -y",
+    "localfunctions": "firebase serve --only functions" 
   },
   "repository": {
     "type": "git",
