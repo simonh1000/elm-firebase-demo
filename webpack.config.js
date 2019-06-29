@@ -110,14 +110,14 @@ if (MODE === "development") {
         },
         devServer: {
             inline: true,
-            stats: "errors-only",
+            stats: 'errors-only',
             contentBase: path.join(__dirname, "src/assets"),
             historyApiFallback: true,
-            // feel free to delete this section if you don't need anything like this
             before(app) {
-                // on port 3000
-                app.get("/test", function(req, res) {
-                    res.json({ result: "OK" });
+                // Make fbsw.config.js available
+                app.get('/Firebase/:fname', (req, res) => {
+                    console.log("[devserver] Firebase directory", req.params.fname)
+                    res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
                 });
             }
         }

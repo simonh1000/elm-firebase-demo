@@ -1,10 +1,9 @@
 port module App exposing (Flags, Msg(..), init, update, view)
 
 import Bootstrap as B
-import Browser.Navigation exposing (Key)
 import Common.CoreHelpers exposing (debugALittle)
 import Dict exposing (Dict)
-import Firebase.Firebase as FB exposing (FBCommand(..), subscribe)
+import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -14,7 +13,6 @@ import Json.Encode as E
 import List as L
 import Model as M exposing (..)
 import Time exposing (Posix)
-import Url exposing (Url)
 
 
 port removeAppShell : String -> Cmd msg
@@ -46,9 +44,9 @@ init { now } =
 
 checkIfPhase2 : Int -> Bool
 checkIfPhase2 now =
-    case Iso8601.toTime "15 oct 2019" of
+    case Debug.log "" <| Iso8601.toTime "2018-10-01" of
         Ok endPhase1 ->
-            now > Time.posixToMillis endPhase1
+            (now * 1000) > Time.posixToMillis endPhase1
 
         Err _ ->
             False
@@ -572,7 +570,7 @@ viewOthers model others =
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
-viewOtherPhase1 model ( userRef, { meta, presents } ) =
+viewOtherPhase1 _ ( _, { meta, presents } ) =
     div [ class "person section" ]
         [ div [] [ text <| meta.name ++ ": " ++ Debug.toString (Dict.size presents) ++ " suggestion(s)" ] ]
 
