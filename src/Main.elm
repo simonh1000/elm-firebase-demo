@@ -1,15 +1,18 @@
 module Main exposing (main)
 
-import Html
+import App exposing (Msg(..), init, update, view)
+import Browser
 import Firebase.Firebase as FB
-import App exposing (init, update, view, Msg(..))
 
 
 main =
-    Html.programWithFlags
+    Browser.document
         { init = init
         , update = update
-        , view = view
+        , view = \m -> { title = "", body = [ view m ] }
         , subscriptions =
             always (FB.subscriptions FBMsgHandler)
+
+        --        , onUrlRequest = \_ -> NoOp
+        --        , onUrlChange = \_ -> NoOp
         }

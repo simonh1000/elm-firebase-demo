@@ -80,7 +80,8 @@ function signin(email, password, fbToElm) {
         })
         .catch(function(err) {
             fbToElm({message: "error", payload: err});
-            Rollbar.info(err);
+            console.error(err);
+            // Rollbar.info(err);
         });
 }
 

@@ -6,9 +6,9 @@ require("bootstrap-loader");
 require("./styles.scss");
 
 let d = new Date();
-var Elm = require("./Main");
-var app = Elm.Main.fullscreen({
-    now: d.getTime()
+const {Elm} = require('./Main');
+var app = Elm.Main.init({
+    flags: {now: d.getTime()}
 });
 
 // Once Elm is running, remove the existing 'appshell'

@@ -1,18 +1,20 @@
-port module App exposing (..)
+port module App exposing (Flags, Msg(..), init, update, view)
 
 import Bootstrap as B
+import Browser.Navigation exposing (Key)
 import Common.CoreHelpers exposing (debugALittle)
-import Date exposing (Date)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..), subscribe)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Iso8601
 import Json.Decode as Json exposing (Value)
 import Json.Encode as E
 import List as L
 import Model as M exposing (..)
-import Time exposing (Time)
+import Time exposing (Posix)
+import Url exposing (Url)
 
 
 port removeAppShell : String -> Cmd msg
@@ -26,23 +28,13 @@ port rollbar : String -> Cmd msg
 
 
 type alias Flags =
-    { now : Time }
-
-
-isPhase2 : Time -> Bool
-isPhase2 now =
-    case Date.fromString "15 oct 2017" |> Result.map Date.toTime of
-        Ok endPhase1 ->
-            now > endPhase1
-
-        Err _ ->
-            False
+    { now : Int }
 
 
 init : Flags -> ( Model, Cmd Msg )
 init { now } =
     ( { blank
-        | isPhase2 = isPhase2 now
+        | isPhase2 = checkIfPhase2 now
         , page = InitAuth
       }
     , Cmd.batch
@@ -50,6 +42,16 @@ init { now } =
         , removeAppShell ""
         ]
     )
+
+
+checkIfPhase2 : Int -> Bool
+checkIfPhase2 now =
+    case Iso8601.toTime "15 oct 2019" of
+        Ok endPhase1 ->
+            now > Time.posixToMillis endPhase1
+
+        Err _ ->
+            False
 
 
 
@@ -83,35 +85,52 @@ type Msg
     | EditPresent Present
       -- Subscriptions
     | FBMsgHandler FB.FBMsg
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         UpdateEmail email ->
-            { model | email = email } ! []
+            ( { model | email = email }
+            , Cmd.none
+            )
 
         UpdatePassword password ->
-            { model | password = password } ! []
+            ( { model | password = password }
+            , Cmd.none
+            )
 
         Submit ->
-            { model | userMessage = "", page = InitAuth } ! [ FB.signin model.email model.password ]
+            ( { model | userMessage = "", page = InitAuth }
+            , FB.signin model.email model.password
+            )
 
         GoogleSignin ->
-            { model | userMessage = "", page = InitAuth } ! [ FB.signinGoogle ]
+            ( { model | userMessage = "", page = InitAuth }
+            , FB.signinGoogle
+            )
 
         -- Registration page
         SwitchTo page ->
-            { model | page = page, showSettings = False } ! []
+            ( { model | page = page, showSettings = False }
+            , Cmd.none
+            )
 
         SubmitRegistration ->
-            { model | userMessage = "" } ! [ FB.register model.email model.password ]
+            ( { model | userMessage = "" }
+            , FB.register model.email model.password
+            )
 
         UpdatePassword2 password2 ->
-            { model | password2 = password2 } ! []
+            ( { model | password2 = password2 }
+            , Cmd.none
+            )
 
         UpdateUsername userName ->
-            setDisplayName userName model ! []
+            ( setDisplayName userName model
+            , Cmd.none
+            )
 
         -- Main page
         ToggleSidebar ->
@@ -120,6 +139,7 @@ update message model =
         ToggleNotifications notifications ->
             if notifications then
                 ( { model | userMessage = "Attempting to subscribe" }, FB.sendToFirebase <| StartNotifications model.user.uid )
+
             else
                 ( { model | userMessage = "Attempting to unsubscribe" }
                 , FB.sendToFirebase <| StopNotifications model.user.uid
@@ -127,10 +147,14 @@ update message model =
 
         -- , FB.set model.user.uid "notifications" <|E.bool notifications )
         Signout ->
-            blank ! [ FB.signout ]
+            ( blank
+            , FB.signout
+            )
 
         Claim otherRef presentRef ->
-            model ! [ claim model.user.uid otherRef presentRef ]
+            ( model
+            , claim model.user.uid otherRef presentRef
+            )
 
         Unclaim otherRef presentRef ->
             ( model
@@ -146,45 +170,60 @@ update message model =
             ( model, purchase otherRef presentRef newValue )
 
         UpdateNewPresent description ->
-            updateEditor (\ed -> { ed | description = description }) model ! []
+            ( updateEditor (\ed -> { ed | description = description }) model
+            , Cmd.none
+            )
 
         UpdateNewPresentLink link ->
-            updateEditor
+            ( updateEditor
                 (\ed ->
                     { ed
                         | link =
                             if link == "" then
                                 Nothing
+
                             else
                                 Just link
                     }
                 )
                 model
-                ! []
+            , Cmd.none
+            )
 
         SubmitNewPresent ->
-            { model | editor = blankPresent } ! [ savePresent model ]
+            ( { model | editor = blankPresent }
+            , savePresent model
+            )
 
         CancelEditor ->
-            { model | editor = blankPresent } ! []
+            ( { model | editor = blankPresent }
+            , Cmd.none
+            )
 
         DeletePresent uid ->
-            { model | editor = blankPresent } ! [ delete model uid ]
+            ( { model | editor = blankPresent }
+            , delete model uid
+            )
 
         -- New present form
         Expander ->
             ( { model | editorCollapsed = not model.editorCollapsed }, Cmd.none )
 
         EditPresent newPresent ->
-            updateEditor (\_ -> newPresent) model ! []
+            ( updateEditor (\_ -> newPresent) model
+            , Cmd.none
+            )
 
-        FBMsgHandler { message, payload } ->
-            case message of
+        NoOp ->
+            ( model, Cmd.none )
+
+        FBMsgHandler msg ->
+            case msg.message of
                 "authstate" ->
-                    handleAuthChange payload model
+                    handleAuthChange msg.payload model
 
                 "snapshot" ->
-                    handleSnapshot payload model
+                    handleSnapshot msg.payload model
 
                 "SubscriptionOk" ->
                     -- After Cloud Function returns successfully, update db to persist preference
@@ -201,32 +240,38 @@ update message model =
                 "CFError" ->
                     let
                         userMessage =
-                            Json.decodeValue decoderError payload
+                            Json.decodeValue decoderError msg.payload
                                 |> Result.withDefault model.userMessage
                     in
-                        { model | userMessage = userMessage } ! []
+                    ( { model | userMessage = userMessage }
+                    , Cmd.none
+                    )
 
                 "error" ->
                     let
                         userMessage =
-                            Json.decodeValue decoderError payload
+                            Json.decodeValue decoderError msg.payload
                                 |> Result.withDefault model.userMessage
                     in
-                        { model | userMessage = userMessage } ! []
+                    ( { model | userMessage = userMessage }
+                    , Cmd.none
+                    )
 
                 "token-refresh" ->
                     let
                         _ =
-                            Debug.log "token-refresh" payload
+                            Debug.log "token-refresh" msg.payload
                     in
-                        ( model, Cmd.none )
+                    ( model, Cmd.none )
 
                 _ ->
                     let
                         _ =
                             Debug.log "********Unhandled Incoming FBMsg" message
                     in
-                        model ! []
+                    ( model
+                    , Cmd.none
+                    )
 
 
 
@@ -244,12 +289,12 @@ setDisplayName displayName model =
         user =
             model.user
     in
-        { model | user = { user | displayName = Just displayName } }
+    { model | user = { user | displayName = Just displayName } }
 
 
 handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
 handleAuthChange val model =
-    case Json.decodeValue FB.decodeAuthState val |> Result.andThen identity of
+    case Json.decodeValue FB.decodeAuthState val |> Result.mapError Json.errorToString |> Result.andThen identity of
         -- If user exists, then subscribe to db changes
         Ok user ->
             let
@@ -259,21 +304,21 @@ handleAuthChange val model =
                         , userMessage = ""
                     }
             in
-                case ( user.displayName, model.user.displayName ) of
-                    ( Nothing, Just displayName ) ->
-                        -- Have displayName: case occurs immediately after new Email registration
-                        ( { newModel | user = { user | displayName = Just displayName } }
-                        , FB.subscribe "/"
-                        )
+            case ( user.displayName, model.user.displayName ) of
+                ( Nothing, Just displayName ) ->
+                    -- Have displayName: case occurs immediately after new Email registration
+                    ( { newModel | user = { user | displayName = Just displayName } }
+                    , FB.subscribe "/"
+                    )
 
-                    -- (Just _, Nothing) -> standard startup
-                    -- (Just _, Just _) -> not sure this is possible
-                    -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
-                    _ ->
-                        -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
-                        ( { newModel | user = user }
-                        , FB.subscribe "/"
-                        )
+                -- (Just _, Nothing) -> standard startup
+                -- (Just _, Just _) -> not sure this is possible
+                -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
+                _ ->
+                    -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
+                    ( { newModel | user = user }
+                    , FB.subscribe "/"
+                    )
 
         Err "nouser" ->
             ( { model | user = FB.init, page = Login }, Cmd.none )
@@ -296,6 +341,7 @@ handleSnapshot snapshot model =
         newPage =
             if L.member model.page [ InitAuth, Subscribe ] then
                 Picker
+
             else
                 model.page
 
@@ -311,40 +357,40 @@ handleSnapshot snapshot model =
                 ( True, False ) ->
                     FB.sendToFirebase <| StopNotifications model.user.uid
     in
-        case Json.decodeValue decoderXmas snapshot of
-            Ok xmas ->
-                case ( Dict.get model.user.uid xmas, model.user.displayName ) of
-                    -- User already registered; copy userName to model (whether needed or not)
-                    ( Just userData, _ ) ->
-                        ( { model | xmas = xmas, page = newPage } |> setDisplayName userData.meta.name
-                        , handleSubscribe userData.meta.notifications
-                        )
+    case Json.decodeValue decoderXmas snapshot of
+        Ok xmas ->
+            case ( Dict.get model.user.uid xmas, model.user.displayName ) of
+                -- User already registered; copy userName to model (whether needed or not)
+                ( Just userData, _ ) ->
+                    ( { model | xmas = xmas, page = newPage } |> setDisplayName userData.meta.name
+                    , handleSubscribe userData.meta.notifications
+                    )
 
-                    ( Nothing, Just displayName ) ->
-                        -- This is a new user as we have the username and the database does not know it
-                        -- so we need to set up notifications
-                        ( { model | xmas = xmas, page = newPage }
-                        , Cmd.batch
-                            [ setMeta model.user.uid "name" <| E.string displayName
-                            , handleSubscribe True
-                            ]
-                        )
+                ( Nothing, Just displayName ) ->
+                    -- This is a new user as we have the username and the database does not know it
+                    -- so we need to set up notifications
+                    ( { model | xmas = xmas, page = newPage }
+                    , Cmd.batch
+                        [ setMeta model.user.uid "name" <| E.string displayName
+                        , handleSubscribe True
+                        ]
+                    )
 
-                    ( Nothing, Nothing ) ->
-                        ( { model | userMessage = "Unexpected error - no display name present" }
-                        , rollbar <| "Missing username for: " ++ model.user.uid
-                        )
+                ( Nothing, Nothing ) ->
+                    ( { model | userMessage = "Unexpected error - no display name present" }
+                    , rollbar <| "Missing username for: " ++ model.user.uid
+                    )
 
-            -- ( Just userData, Just _ ) ->
-            --     -- all subsequent snapshots
-            --     ( { model | xmas = xmas }
-            --     , renewNotificationsSub userData.meta.notifications
-            --       -- , Cmd.none
-            --     )
-            Err err ->
-                ( { model | userMessage = "handleSnapshot: " ++ err }
-                , rollbar <| "handleSnapshot: " ++ err
-                )
+        -- ( Just userData, Just _ ) ->
+        --     -- all subsequent snapshots
+        --     ( { model | xmas = xmas }
+        --     , renewNotificationsSub userData.meta.notifications
+        --       -- , Cmd.none
+        --     )
+        Err err ->
+            ( { model | userMessage = "handleSnapshot: " ++ Json.errorToString err }
+            , rollbar <| "handleSnapshot: " ++ Json.errorToString err
+            )
 
 
 
@@ -363,37 +409,38 @@ view model =
                 ]
             ]
     in
-        div [ class "app" ]
-            [ if L.member model.page [ InitAuth, Subscribe, Login, Register ] then
-                simpleHeader
-              else
-                viewNavbar model
-            , div [ class <| "main " ++ String.toLower (toString model.page) ] <|
-                case model.page of
-                    InitAuth ->
-                        spinner
+    div [ class "app" ]
+        [ if L.member model.page [ InitAuth, Subscribe, Login, Register ] then
+            simpleHeader
 
-                    Subscribe ->
-                        spinner
+          else
+            viewNavbar model
+        , div [ class <| "main " ++ String.toLower (Debug.toString model.page) ] <|
+            case model.page of
+                InitAuth ->
+                    spinner
 
-                    Login ->
-                        [ viewLogin model ]
+                Subscribe ->
+                    spinner
 
-                    Register ->
-                        [ viewRegister model ]
+                Login ->
+                    [ viewLogin model ]
 
-                    _ ->
-                        -- Picker and Claims
-                        [ model.xmas
-                            |> Dict.get model.user.uid
-                            |> Maybe.map (.meta >> .notifications)
-                            |> Maybe.withDefault True
-                            |> sidebar model
-                        , viewPicker model
-                        ]
-            , div [ class "container warning" ] [ text model.userMessage ]
-            , viewFooter
-            ]
+                Register ->
+                    [ viewRegister model ]
+
+                _ ->
+                    -- Picker and Claims
+                    [ model.xmas
+                        |> Dict.get model.user.uid
+                        |> Maybe.map (.meta >> .notifications)
+                        |> Maybe.withDefault True
+                        |> sidebar model
+                    , viewPicker model
+                    ]
+        , div [ class "container warning" ] [ text model.userMessage ]
+        , viewFooter
+        ]
 
 
 sidebar : Model -> Bool -> Html Msg
@@ -401,6 +448,7 @@ sidebar { userMessage, page, showSettings } notifications =
     div
         [ if showSettings then
             class "sidebar open"
+
           else
             class "sidebar"
         ]
@@ -417,6 +465,7 @@ sidebar { userMessage, page, showSettings } notifications =
                     [ span [ class "left-element" ] [ matIcon "card_giftcard" ]
                     , text "View my Claims"
                     ]
+
               else
                 li [ onClick (SwitchTo Picker), class "sidebar-menu-item flex-h clickable" ]
                     [ span [ class "left-element" ] [ matIcon "people" ]
@@ -433,6 +482,7 @@ switcher : (Bool -> msg) -> Bool -> Html msg
 switcher toggler isOn =
     if isOn then
         div [ class "switch on", onClick (toggler <| not isOn) ] []
+
     else
         div [ class "switch off", onClick (toggler <| not isOn) ] []
 
@@ -447,17 +497,18 @@ viewPicker model =
         ( mine, others ) =
             model.xmas
                 |> Dict.toList
-                |> L.partition (Tuple.first >> ((==) model.user.uid))
+                |> L.partition (Tuple.first >> (==) model.user.uid)
     in
-        div [ id "picker", class "container" ]
-            [ div [ class "row" ]
-                [ viewMine model mine
-                , if model.page == Picker then
-                    viewOthers model others
-                  else
-                    viewClaims model others
-                ]
+    div [ id "picker", class "container" ]
+        [ div [ class "row" ]
+            [ viewMine model mine
+            , if model.page == Picker then
+                viewOthers model others
+
+              else
+                viewClaims model others
             ]
+        ]
 
 
 
@@ -472,36 +523,38 @@ viewClaims model others =
                 ( status, cls ) =
                     if present.purchased then
                         ( "Purchased", class "btn btn-success btn-sm" )
+
                     else
                         ( "Claimed", class "btn btn-warning btn-sm" )
             in
-                li [ class "present flex-h spread" ]
-                    [ makeDescription present
-                    , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
-                    ]
+            li [ class "present flex-h spread" ]
+                [ makeDescription present
+                , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
+                ]
 
         mkItemsForPerson ( oRef, other ) =
             let
                 claimsForPerson =
                     Dict.filter (\_ v -> v.takenBy == Just model.user.uid) other.presents
             in
-                if Dict.isEmpty claimsForPerson then
-                    text ""
-                else
-                    div [ class "person section" ]
-                        [ h4 [] [ text other.meta.name ]
-                        , claimsForPerson
-                            |> Dict.map (mkItem oRef)
-                            |> Dict.values
-                            |> ul []
-                        ]
+            if Dict.isEmpty claimsForPerson then
+                text ""
+
+            else
+                div [ class "person section" ]
+                    [ h4 [] [ text other.meta.name ]
+                    , claimsForPerson
+                        |> Dict.map (mkItem oRef)
+                        |> Dict.values
+                        |> ul []
+                    ]
     in
-        div [ class "claims col-12 col-sm-6" ]
-            [ h2 [] [ text "My Claims" ]
-            , others
-                |> L.map mkItemsForPerson
-                |> div []
-            ]
+    div [ class "claims col-12 col-sm-6" ]
+        [ h2 [] [ text "My Claims" ]
+        , others
+            |> L.map mkItemsForPerson
+            |> div []
+        ]
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -510,17 +563,18 @@ viewOthers model others =
         wishes =
             if model.isPhase2 then
                 L.map (viewOther model) others
+
             else
                 L.map (viewOtherPhase1 model) others
     in
-        div [ class "others col-12 col-sm-6" ]
-            (h2 [] [ text "My Family" ] :: wishes)
+    div [ class "others col-12 col-sm-6" ]
+        (h2 [] [ text "My Family" ] :: wishes)
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
 viewOtherPhase1 model ( userRef, { meta, presents } ) =
     div [ class "person section" ]
-        [ div [] [ text <| meta.name ++ ": " ++ toString (Dict.size presents) ++ " suggestion(s)" ] ]
+        [ div [] [ text <| meta.name ++ ": " ++ Debug.toString (Dict.size presents) ++ " suggestion(s)" ] ]
 
 
 viewOther : Model -> ( String, UserData ) -> Html Msg
@@ -538,6 +592,7 @@ viewOther model ( userRef, { meta, presents } ) =
                                 ]
                                 [ text "Claimed" ]
                             ]
+
                     else
                         li [ class "present flex-h" ]
                             [ makeDescription present
@@ -559,15 +614,15 @@ viewOther model ( userRef, { meta, presents } ) =
                 |> Dict.map viewPresent
                 |> Dict.values
     in
-        case ps of
-            [] ->
-                text ""
+    case ps of
+        [] ->
+            text ""
 
-            _ ->
-                div [ class "person section" ]
-                    [ h4 [] [ text meta.name ]
-                    , ul [] ps
-                    ]
+        _ ->
+            div [ class "person section" ]
+                [ h4 [] [ text meta.name ]
+                , ul [] ps
+                ]
 
 
 badge : String -> String -> Html msg
@@ -589,8 +644,8 @@ viewMine model lst =
                         [] ->
                             text "Time to add you first idea!"
 
-                        lst ->
-                            lst
+                        lst_ ->
+                            lst_
                                 |> L.map viewMyPresentIdea
                                 |> ul []
 
@@ -598,24 +653,25 @@ viewMine model lst =
                     text "Time to add you first idea!"
 
                 _ ->
-                    text <| "error" ++ toString lst
+                    text <| "error" ++ Debug.toString lst
 
         cls =
             if model.page == MyClaims then
                 -- for MyClaims, don't show LHS on small devices
                 class "my-ideas d-none d-sm-block col-sm-6"
+
             else
                 class "my-ideas col-sm-6"
     in
-        div [ cls ]
-            [ h2 []
-                [ text "My Suggestions"
+    div [ cls ]
+        [ h2 []
+            [ text "My Suggestions"
 
-                -- , button [ onClick Expander ] [ text "expand" ]
-                ]
-            , viewNewIdeaForm model
-            , div [ class "my-presents section" ] [ mypresents ]
+            -- , button [ onClick Expander ] [ text "expand" ]
             ]
+        , viewNewIdeaForm model
+        , div [ class "my-presents section" ] [ mypresents ]
+        ]
 
 
 viewNewIdeaForm : Model -> Html Msg
@@ -629,36 +685,37 @@ viewNewIdeaForm { editor, isPhase2 } =
                 ]
                 [ text txt ]
     in
-        div [ class "new-present section" ]
-            [ h4 []
-                [ case editor.uid of
-                    Just _ ->
-                        text "Editor"
+    div [ class "new-present section" ]
+        [ h4 []
+            [ case editor.uid of
+                Just _ ->
+                    text "Editor"
 
-                    Nothing ->
-                        text "New suggestion"
-                ]
-            , div [ id "new-present-form" ]
-                [ B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
-                , editor.link
-                    |> Maybe.withDefault ""
-                    |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
-                , div [ class "flex-h spread" ]
-                    [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
-                    , case ( editor.uid, isPhase2 ) of
-                        ( Just uid, False ) ->
-                            button [ class "btn btn-danger", onClick (DeletePresent uid) ] [ text "Delete*" ]
-
-                        _ ->
-                            text ""
-                    , button [ class "btn btn-success", onClick SubmitNewPresent, disabled <| editor.description == "" ] [ text "Save" ]
-                    ]
-                , if isJust editor.uid then
-                    p [] [ text "* Warning: someone may already have commited to buy this!" ]
-                  else
-                    text ""
-                ]
+                Nothing ->
+                    text "New suggestion"
             ]
+        , div [ id "new-present-form" ]
+            [ B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
+            , editor.link
+                |> Maybe.withDefault ""
+                |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
+            , div [ class "flex-h spread" ]
+                [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
+                , case ( editor.uid, isPhase2 ) of
+                    ( Just uid, False ) ->
+                        button [ class "btn btn-danger", onClick (DeletePresent uid) ] [ text "Delete*" ]
+
+                    _ ->
+                        text ""
+                , button [ class "btn btn-success", onClick SubmitNewPresent, disabled <| editor.description == "" ] [ text "Save" ]
+                ]
+            , if isJust editor.uid then
+                p [] [ text "* Warning: someone may already have commited to buy this!" ]
+
+              else
+                text ""
+            ]
+        ]
 
 
 viewMyPresentIdea : Present -> Html Msg
@@ -690,7 +747,7 @@ matIcon icon =
 
 matIconMsg : Msg -> String -> Html Msg
 matIconMsg msg icon =
-    i [ class "material-icons clickable", onClick msg, style [ ( "user-select", "none" ) ] ] [ text icon ]
+    i [ class "material-icons clickable", onClick msg, style "user-select" "none" ] [ text icon ]
 
 
 simpleHeader : Html msg
@@ -779,25 +836,25 @@ viewRegister model =
         isDisabled =
             model.password == "" || model.password /= model.password2 || username == ""
     in
-        div [ id "register", class "main container" ]
-            [ h1 [] [ text "Register" ]
-            , Html.form
-                [ onSubmit SubmitRegistration, class "section" ]
-                [ B.inputWithLabel UpdateUsername "Your Name" "name" username
-                , B.inputWithLabel UpdateEmail "Email" "email" model.email
-                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
-                , div [ class "flex-h spread" ]
-                    [ span [ onClick (SwitchTo Login) ] [ text "Login" ]
-                    , button
-                        [ type_ "submit"
-                        , class "btn btn-primary"
-                        , disabled isDisabled
-                        ]
-                        [ text "Register" ]
+    div [ id "register", class "main container" ]
+        [ h1 [] [ text "Register" ]
+        , Html.form
+            [ onSubmit SubmitRegistration, class "section" ]
+            [ B.inputWithLabel UpdateUsername "Your Name" "name" username
+            , B.inputWithLabel UpdateEmail "Email" "email" model.email
+            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+            , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
+            , div [ class "flex-h spread" ]
+                [ span [ onClick (SwitchTo Login) ] [ text "Login" ]
+                , button
+                    [ type_ "submit"
+                    , class "btn btn-primary"
+                    , disabled isDisabled
                     ]
+                    [ text "Register" ]
                 ]
             ]
+        ]
 
 
 

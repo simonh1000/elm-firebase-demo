@@ -1,11 +1,11 @@
-module Model exposing (..)
+module Model exposing (Model, Page(..), Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent, prettyPrint)
 
+import Common.CoreHelpers exposing (andMap)
+import Dict exposing (Dict)
+import Firebase.Firebase as FB
 import Json.Decode as Json exposing (..)
 import Json.Encode as E
-import Dict exposing (Dict)
 import List as L
-import Common.CoreHelpers exposing (andMap)
-import Firebase.Firebase as FB
 
 
 type Page
@@ -97,8 +97,17 @@ prettyPrint p =
         Subscribe ->
             "Getting presents data"
 
-        _ ->
-            toString p
+        Picker ->
+            "Picker"
+
+        MyClaims ->
+            "MyClaims"
+
+        Login ->
+            "Login"
+
+        Register ->
+            "Register"
 
 
 
@@ -149,8 +158,8 @@ decodePresents =
                 Err err ->
                     ps
     in
-        keyValuePairs value
-            |> andThen (L.foldl go Dict.empty >> succeed)
+    keyValuePairs value
+        |> andThen (L.foldl go Dict.empty >> succeed)
 
 
 decoderPresent : String -> Decoder Present
@@ -192,11 +201,11 @@ encodePresent { description, link, takenBy } =
                 Nothing ->
                     commonData
     in
-        dataToEncode
-            |> L.filterMap encodeMaybe
-            |> E.object
+    dataToEncode
+        |> L.filterMap encodeMaybe
+        |> E.object
 
 
 encodeMaybe : ( String, Maybe String ) -> Maybe ( String, E.Value )
 encodeMaybe ( s, v ) =
-    Maybe.map (E.string >> ((,) s)) v
+    Maybe.map (E.string >> (\b -> ( s, b ))) v

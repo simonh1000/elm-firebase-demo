@@ -1,7 +1,7 @@
-port module Firebase.Firebase exposing (..)
+port module Firebase.Firebase exposing (FBCommand(..), FBMsg, FBResponse(..), FBUser, PortMsg, decodeAuthState, elmToFb, encodeCredentials, fbToElm, init, push, register, remove, sendToFirebase, set, setUpAuthListener, signin, signinGoogle, signout, subscribe, subscriptions, toFBResponse, userDecoder)
 
-import Json.Encode as E
 import Json.Decode as Json exposing (..)
+import Json.Encode as E
 
 
 type alias PortMsg =
@@ -90,7 +90,7 @@ sendToFirebase cmd =
             elmToFb <| { message = "StopNotifications", payload = E.string userId }
 
         _ ->
-            elmToFb <| { message = toString cmd, payload = E.null }
+            elmToFb <| { message = Debug.toString cmd, payload = E.null }
 
 
 
