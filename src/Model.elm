@@ -1,5 +1,6 @@
-module Model exposing (Model, Page(..), Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent, prettyPrint)
+module Model exposing (Model, Page(..), Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent)
 
+import Auth
 import Common.CoreHelpers exposing (andMap)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
@@ -8,25 +9,13 @@ import Json.Encode as E
 import List as L
 
 
-type Page
-    = InitAuth -- checking auth status
-    | Subscribe -- making snapshot request
-      --   | SetNotifications -- no specific UI consequnces in fact
-    | Picker
-    | MyClaims
-    | Login
-    | Register
-
-
 
 -- type InitStatus
 
 
 type alias Model =
     { page : Page
-    , email : String
-    , password : String
-    , password2 : String
+    ,
     , user : FB.FBUser
     , xmas : Dict String UserData
     , userMessage : String
@@ -40,9 +29,7 @@ type alias Model =
 blank : Model
 blank =
     { page = InitAuth
-    , email = ""
-    , password = ""
-    , password2 = ""
+    , auth=  Auth.blank
     , user = FB.init
     , xmas = Dict.empty
     , userMessage = ""

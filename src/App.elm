@@ -1,4 +1,4 @@
-port module App exposing (Flags, Msg(..), init, update, view)
+module App exposing (Flags, Msg(..), init, update, view)
 
 import Bootstrap as B
 import Common.CoreHelpers exposing (debugALittle)
@@ -12,44 +12,6 @@ import Json.Decode as Json exposing (Value)
 import Json.Encode as E
 import List as L
 import Model as M exposing (..)
-import Time exposing (Posix)
-
-
-port removeAppShell : String -> Cmd msg
-
-
-port rollbar : String -> Cmd msg
-
-
-
---
-
-
-type alias Flags =
-    { now : Int }
-
-
-init : Flags -> ( Model, Cmd Msg )
-init { now } =
-    ( { blank
-        | isPhase2 = checkIfPhase2 now
-        , page = InitAuth
-      }
-    , Cmd.batch
-        [ FB.setUpAuthListener
-        , removeAppShell ""
-        ]
-    )
-
-
-checkIfPhase2 : Int -> Bool
-checkIfPhase2 now =
-    case Debug.log "" <| Iso8601.toTime "2018-10-01" of
-        Ok endPhase1 ->
-            (now * 1000) > Time.posixToMillis endPhase1
-
-        Err _ ->
-            False
 
 
 
@@ -57,14 +19,7 @@ checkIfPhase2 now =
 
 
 type Msg
-    = UpdateEmail String
-    | UpdatePassword String
-    | UpdatePassword2 String
-    | UpdateUsername String
-    | Submit
-    | SubmitRegistration
-    | GoogleSignin
-    | SwitchTo Page
+    = SwitchTo Page
       --
     | ToggleNotifications Bool
     | Signout
@@ -89,44 +44,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        UpdateEmail email ->
-            ( { model | email = email }
-            , Cmd.none
-            )
-
-        UpdatePassword password ->
-            ( { model | password = password }
-            , Cmd.none
-            )
-
-        Submit ->
-            ( { model | userMessage = "", page = InitAuth }
-            , FB.signin model.email model.password
-            )
-
-        GoogleSignin ->
-            ( { model | userMessage = "", page = InitAuth }
-            , FB.signinGoogle
-            )
-
         -- Registration page
         SwitchTo page ->
             ( { model | page = page, showSettings = False }
-            , Cmd.none
-            )
-
-        SubmitRegistration ->
-            ( { model | userMessage = "" }
-            , FB.register model.email model.password
-            )
-
-        UpdatePassword2 password2 ->
-            ( { model | password2 = password2 }
-            , Cmd.none
-            )
-
-        UpdateUsername userName ->
-            ( setDisplayName userName model
             , Cmd.none
             )
 
@@ -288,107 +208,6 @@ setDisplayName displayName model =
             model.user
     in
     { model | user = { user | displayName = Just displayName } }
-
-
-handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
-handleAuthChange val model =
-    case Json.decodeValue FB.decodeAuthState val |> Result.mapError Json.errorToString |> Result.andThen identity of
-        -- If user exists, then subscribe to db changes
-        Ok user ->
-            let
-                newModel =
-                    { model
-                        | page = Subscribe
-                        , userMessage = ""
-                    }
-            in
-            case ( user.displayName, model.user.displayName ) of
-                ( Nothing, Just displayName ) ->
-                    -- Have displayName: case occurs immediately after new Email registration
-                    ( { newModel | user = { user | displayName = Just displayName } }
-                    , FB.subscribe "/"
-                    )
-
-                -- (Just _, Nothing) -> standard startup
-                -- (Just _, Just _) -> not sure this is possible
-                -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
-                _ ->
-                    -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
-                    ( { newModel | user = user }
-                    , FB.subscribe "/"
-                    )
-
-        Err "nouser" ->
-            ( { model | user = FB.init, page = Login }, Cmd.none )
-
-        Err err ->
-            ( { model | user = FB.init, page = Login, userMessage = err }
-            , rollbar <| "handleAuthChange " ++ err
-            )
-
-
-{-| If snapshot lacks displayName, then add it to the DB
-Now we have the (possible) notifications preference, so use that
-
-FIXME we are renewing subscriptions everytime a subscription comes in
-
--}
-handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
-handleSnapshot snapshot model =
-    let
-        newPage =
-            if L.member model.page [ InitAuth, Subscribe ] then
-                Picker
-
-            else
-                model.page
-
-        handleSubscribe notifications =
-            -- don't redo notifications (un)subscription once in Picker/Claims
-            case ( L.member model.page [ InitAuth, Subscribe ], notifications ) of
-                ( False, _ ) ->
-                    Cmd.none
-
-                ( True, True ) ->
-                    FB.sendToFirebase <| StartNotifications model.user.uid
-
-                ( True, False ) ->
-                    FB.sendToFirebase <| StopNotifications model.user.uid
-    in
-    case Json.decodeValue decoderXmas snapshot of
-        Ok xmas ->
-            case ( Dict.get model.user.uid xmas, model.user.displayName ) of
-                -- User already registered; copy userName to model (whether needed or not)
-                ( Just userData, _ ) ->
-                    ( { model | xmas = xmas, page = newPage } |> setDisplayName userData.meta.name
-                    , handleSubscribe userData.meta.notifications
-                    )
-
-                ( Nothing, Just displayName ) ->
-                    -- This is a new user as we have the username and the database does not know it
-                    -- so we need to set up notifications
-                    ( { model | xmas = xmas, page = newPage }
-                    , Cmd.batch
-                        [ setMeta model.user.uid "name" <| E.string displayName
-                        , handleSubscribe True
-                        ]
-                    )
-
-                ( Nothing, Nothing ) ->
-                    ( { model | userMessage = "Unexpected error - no display name present" }
-                    , rollbar <| "Missing username for: " ++ model.user.uid
-                    )
-
-        -- ( Just userData, Just _ ) ->
-        --     -- all subsequent snapshots
-        --     ( { model | xmas = xmas }
-        --     , renewNotificationsSub userData.meta.notifications
-        --       -- , Cmd.none
-        --     )
-        Err err ->
-            ( { model | userMessage = "handleSnapshot: " ++ Json.errorToString err }
-            , rollbar <| "handleSnapshot: " ++ Json.errorToString err
-            )
 
 
 
@@ -748,14 +567,6 @@ matIconMsg msg icon =
     i [ class "material-icons clickable", onClick msg, style "user-select" "none" ] [ text icon ]
 
 
-simpleHeader : Html msg
-simpleHeader =
-    header []
-        [ div [ class "container flex-h" ]
-            [ h4 [] [ text "Xmas 2017" ] ]
-        ]
-
-
 viewNavbar : Model -> Html Msg
 viewNavbar model =
     header []
@@ -795,67 +606,6 @@ viewFooter =
 
 
 --
-
-
-viewLogin : Model -> Html Msg
-viewLogin model =
-    div [ id "login", class "main container" ]
-        [ div [ class "section google" ]
-            [ h4 [] [ text "Quick Sign in (recommended)..." ]
-            , img
-                [ src "images/google_signin.png"
-                , onClick GoogleSignin
-                , alt "Click to sigin with Google"
-                ]
-                []
-            ]
-        , div [ class "section" ]
-            [ h4 [] [ text "...Or with email address" ]
-            , Html.form
-                [ onSubmit Submit ]
-                [ B.inputWithLabel UpdateEmail "Email" "email" model.email
-                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                , button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                ]
-            , button [ class "btn btn-default", onClick (SwitchTo Register) ]
-                [ strong [] [ text "New?" ]
-                , text " Register email address"
-                ]
-            ]
-        ]
-
-
-viewRegister : Model -> Html Msg
-viewRegister model =
-    let
-        username =
-            Maybe.withDefault "" model.user.displayName
-
-        isDisabled =
-            model.password == "" || model.password /= model.password2 || username == ""
-    in
-    div [ id "register", class "main container" ]
-        [ h1 [] [ text "Register" ]
-        , Html.form
-            [ onSubmit SubmitRegistration, class "section" ]
-            [ B.inputWithLabel UpdateUsername "Your Name" "name" username
-            , B.inputWithLabel UpdateEmail "Email" "email" model.email
-            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-            , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
-            , div [ class "flex-h spread" ]
-                [ span [ onClick (SwitchTo Login) ] [ text "Login" ]
-                , button
-                    [ type_ "submit"
-                    , class "btn btn-primary"
-                    , disabled isDisabled
-                    ]
-                    [ text "Register" ]
-                ]
-            ]
-        ]
-
-
-
 --
 
 

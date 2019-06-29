@@ -1,4 +1,4 @@
-$border-color: #ddd; // LAYOUT  ++ see css for larger screens
+$border-color: #ddd; // LAYOUT ++ see css for larger screens
 $green: #0a691f;
 $red: #880d0d;
 $bkg-colour: #ddd;
@@ -15,7 +15,7 @@ $bkg-colour: #ddd;
     }
 
     footer {
-        flex: 0 0 40px;
+        flex: 0 0 60px;
     }
 
     .main {
@@ -24,6 +24,8 @@ $bkg-colour: #ddd;
         flex-direction: column;
         align-items: stretch;
         overflow: hidden;
+        padding-left: 10px;
+        padding-right: 10px;
         padding-top: 20px;
         padding-bottom: 20px;
     }
@@ -76,26 +78,26 @@ $bkg-colour: #ddd;
     }
 }
 
-.app {
-    .main {
-        position: relative;
-        // Spinner centered
-        &.initauth,
-        &.subscribe {
-            justify-content: center;
-            align-items: center;
-        }
-
-        .new-present {
-            transition: flex 0.3s ease-out; // note that we're transitioning flex, not height!
-            flex: 0 0;
-        }
-
-        .my-presents {
-            overflow-y: auto;
-        }
-    }
-}
+//.app {
+//    .main {
+//        position: relative;
+//        // Spinner centered
+//        &.initauth,
+//        &.subscribe {
+//            justify-content: center;
+//            align-items: center;
+//        }
+//
+//        .new-present {
+//            transition: flex 0.3s ease-out; // note that we're transitioning flex, not height!
+//            flex: 0 0;
+//        }
+//
+//        .my-presents {
+//            overflow-y: auto;
+//        }
+//    }
+//}
 
 #login,
 #register {
@@ -149,6 +151,7 @@ $bkg-colour: #ddd;
         }
     }
 }
+
 @media (min-width: 576px) {
     .app {
         .main {
@@ -192,7 +195,6 @@ body {
     background-color: $bkg-colour;
 }
 
-footer,
 header {
     width: 100%;
     background-color: $green;
@@ -216,6 +218,25 @@ header {
         height: 30px;
         border-radius: 100%;
         margin-left: 15px;
+    }
+}
+
+footer {
+    background-color: #eee;
+    &.tabs {
+        display: flex;
+        flex-direction: row;
+        .tab {
+            padding: 10px;
+            flex-basis: 0;
+            flex-grow: 1;
+        }
+        .tab.active {
+            background-color: #fff;
+        }
+        .tab + .tab {
+            border-left: 1px solid #ccc;
+        }
     }
 }
 // ....
@@ -331,4 +352,9 @@ h1, h2, h3, h4 {
     &:before {
         left: 13px;
     }
+}
+
+// Bootstrap overrides
+.form-group label {
+    font-size: smaller;
 }
