@@ -1,7 +1,6 @@
 port module Main exposing (main)
 
---import App exposing (Msg(..), init, update, view)
-
+import App
 import Auth
 import Browser
 import Common.CoreHelpers exposing (debugALittle, recoverResult)
@@ -14,6 +13,7 @@ import Iso8601
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import List as L
+import Model as AppM exposing (decoderXmas)
 import Time exposing (Posix)
 
 
@@ -29,6 +29,7 @@ port rollbar : String -> Cmd msg
 
 type alias Model =
     { auth : Auth.Model
+    , app : AppM.Model
     , page : Page
     , user : FB.FBUser
     , userMessage : Maybe String
@@ -38,6 +39,7 @@ type alias Model =
 blank : Model
 blank =
     { auth = Auth.blank
+    , app = AppM.blank
     , page = InitAuth
     , user = FB.init
     , userMessage = Nothing
@@ -72,6 +74,7 @@ init { now } =
 
 type Msg
     = AuthMsg Auth.Msg
+    | AppMsg App.Msg
     | Signin String String
     | SigninGoogle
     | Register String String
@@ -97,6 +100,13 @@ update message model =
                     Auth.update config msg model.auth
             in
             ( { model | auth = auth }, c )
+
+        AppMsg msg ->
+            let
+                ( app, c ) =
+                    App.update msg model.app
+            in
+            ( { model | app = app }, Cmd.map AppMsg c )
 
         FBMsgHandler msg ->
             case msg.message of
@@ -201,61 +211,61 @@ FIXME we are renewing subscriptions everytime a subscription comes in
 -}
 handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot snapshot model =
-    --    let
-    --        newPage =
-    --            if L.member model.page [ InitAuth, Subscribe ] then
-    --                Picker
-    --
-    --            else
-    --                model.page
-    --
-    --        handleSubscribe notifications =
-    --            -- don't redo notifications (un)subscription once in Picker/Claims
-    --            case ( L.member model.page [ InitAuth, Subscribe ], notifications ) of
-    --                ( False, _ ) ->
-    --                    Cmd.none
-    --
-    --                ( True, True ) ->
-    --                    FB.sendToFirebase <| StartNotifications model.user.uid
-    --
-    --                ( True, False ) ->
-    --                    FB.sendToFirebase <| StopNotifications model.user.uid
-    --    in
-    --    case Decode.decodeValue decoderXmas snapshot of
-    --        Ok xmas ->
-    --            case ( Dict.get model.user.uid xmas, model.user.displayName ) of
-    --                -- User already registered; copy userName to model (whether needed or not)
-    --                ( Just userData, _ ) ->
-    --                    ( { model | xmas = xmas, page = newPage } |> setDisplayName userData.meta.name
-    --                    , handleSubscribe userData.meta.notifications
-    --                    )
-    --
-    --                ( Nothing, Just displayName ) ->
-    --                    -- This is a new user as we have the username and the database does not know it
-    --                    -- so we need to set up notifications
-    --                    ( { model | xmas = xmas, page = newPage }
-    --                    , Cmd.batch
-    --                        [ setMeta model.user.uid "name" <| Encode.string displayName
-    --                        , handleSubscribe True
-    --                        ]
-    --                    )
-    --
-    --                ( Nothing, Nothing ) ->
-    --                    ( { model | userMessage = "Unexpected error - no display name present" }
-    --                    , rollbar <| "Missing username for: " ++ model.user.uid
-    --                    )
-    --
-    --        -- ( Just userData, Just _ ) ->
-    --        --     -- all subsequent snapshots
-    --        --     ( { model | xmas = xmas }
-    --        --     , renewNotificationsSub userData.meta.notifications
-    --        --       -- , Cmd.none
-    --        --     )
-    --        Err err ->
-    --            ( { model | userMessage = "handleSnapshot: " ++ Decode.errorToString err }
-    --            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
-    --            )
-    ( model, Cmd.none )
+    let
+        newPage =
+            if L.member model.page [ InitAuth, Subscribing ] then
+                AppPage
+
+            else
+                model.page
+
+        handleSubscribe notifications =
+            -- don't redo notifications (un)subscription once in Picker/Claims
+            case ( L.member model.page [ InitAuth, Subscribing ], notifications ) of
+                ( False, _ ) ->
+                    Cmd.none
+
+                ( True, True ) ->
+                    FB.sendToFirebase <| StartNotifications model.user.uid
+
+                ( True, False ) ->
+                    FB.sendToFirebase <| StopNotifications model.user.uid
+    in
+    case Decode.decodeValue AppM.decoderXmas snapshot of
+        Ok xmas ->
+            ( { model | page = newPage }, Cmd.none )
+
+        --                case ( Dict.get model.user.uid xmas, model.user.displayName ) of
+        --                    -- User already registered; copy userName to model (whether needed or not)
+        --                    ( Just userData, _ ) ->
+        --                        ( { model | xmas = xmas, page = newPage } |> setDisplayName userData.meta.name
+        --                        , handleSubscribe userData.meta.notifications
+        --                        )
+        --
+        --                    ( Nothing, Just displayName ) ->
+        --                        -- This is a new user as we have the username and the database does not know it
+        --                        -- so we need to set up notifications
+        --                        ( { model | xmas = xmas, page = newPage }
+        --                        , Cmd.batch
+        --                            [ setMeta model.user.uid "name" <| Encode.string displayName
+        --                            , handleSubscribe True
+        --                            ]
+        --                        )
+        --
+        --                    ( Nothing, Nothing ) ->
+        --                        ( { model | userMessage = Just <| "Unexpected error - no display name present" }
+        --                        , rollbar <| "Missing username for: " ++ model.user.uid
+        --                        )
+        -- ( Just userData, Just _ ) ->
+        --     -- all subsequent snapshots
+        --     ( { model | xmas = xmas }
+        --     , renewNotificationsSub userData.meta.notifications
+        --       -- , Cmd.none
+        --     )
+        Err err ->
+            ( { model | userMessage = Just <| "handleSnapshot: " ++ Decode.errorToString err }
+            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
+            )
 
 
 decoderError : Decoder String
@@ -297,7 +307,7 @@ view model =
 
         --                Register ->
         --                    [ viewRegister model ]
-        _ ->
+        AppPage ->
             -- Picker and Claims
             --                    [ model.xmas
             --                        |> Dict.get model.user.uid
@@ -306,7 +316,7 @@ view model =
             --                        |> sidebar model
             --                    , viewPicker model
             --                    ]
-            text "tbc"
+            App.view model.app |> Html.map AppMsg
 
 
 
@@ -318,7 +328,7 @@ type Page
     | Subscribing -- making snapshot request
       --   | SetNotifications -- no specific UI consequences in fact
     | AuthPage
-    | MainPage
+    | AppPage
 
 
 

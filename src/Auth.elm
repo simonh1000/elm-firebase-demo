@@ -113,17 +113,6 @@ update config message model =
 
 view : Model -> Html Msg
 view model =
-    let
-        mkTab tab =
-            let
-                ( icon, txt ) =
-                    stringFromTab tab
-            in
-            div [ class <| addSuffixIf (tab == model.tab) "tab" " active", onClick <| SwitchTab tab ]
-                [ ViewHelpers.matIcon icon
-                , text txt
-                ]
-    in
     div [ class "app" ]
         [ ViewHelpers.simpleHeader
         , case model.tab of
@@ -133,7 +122,7 @@ view model =
             RegisterTab ->
                 viewRegister model
         , [ LoginTab, RegisterTab ]
-            |> L.map mkTab
+            |> L.map (\tab -> ViewHelpers.mkTab SwitchTab tab model.tab <| stringFromTab tab)
             |> footer [ class "tabs" ]
         ]
 

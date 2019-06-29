@@ -1,7 +1,8 @@
-module App exposing (Flags, Msg(..), init, update, view)
+module App exposing (Msg(..), update, view)
 
 import Bootstrap as B
 import Common.CoreHelpers exposing (debugALittle)
+import Common.ViewHelpers as ViewHelpers
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
@@ -19,7 +20,7 @@ import Model as M exposing (..)
 
 
 type Msg
-    = SwitchTo Page
+    = SwitchTab AppTab
       --
     | ToggleNotifications Bool
     | Signout
@@ -36,17 +37,18 @@ type Msg
       -- My presents list
     | Expander
     | EditPresent Present
-      -- Subscriptions
-    | FBMsgHandler FB.FBMsg
-    | NoOp
+
+
+
+-- Subscriptions
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         -- Registration page
-        SwitchTo page ->
-            ( { model | page = page, showSettings = False }
+        SwitchTab tab ->
+            ( { model | tab = tab, showSettings = False }
             , Cmd.none
             )
 
@@ -132,67 +134,63 @@ update message model =
             , Cmd.none
             )
 
-        NoOp ->
-            ( model, Cmd.none )
-
-        FBMsgHandler msg ->
-            case msg.message of
-                "authstate" ->
-                    handleAuthChange msg.payload model
-
-                "snapshot" ->
-                    handleSnapshot msg.payload model
-
-                "SubscriptionOk" ->
-                    -- After Cloud Function returns successfully, update db to persist preference
-                    ( { model | userMessage = "" }
-                    , setMeta model.user.uid "notifications" <| E.bool True
-                    )
-
-                "UnsubscribeOk" ->
-                    -- After Cloud Function returns successfully, update db to persist preference
-                    ( { model | userMessage = "" }
-                    , setMeta model.user.uid "notifications" <| E.bool False
-                    )
-
-                "CFError" ->
-                    let
-                        userMessage =
-                            Json.decodeValue decoderError msg.payload
-                                |> Result.withDefault model.userMessage
-                    in
-                    ( { model | userMessage = userMessage }
-                    , Cmd.none
-                    )
-
-                "error" ->
-                    let
-                        userMessage =
-                            Json.decodeValue decoderError msg.payload
-                                |> Result.withDefault model.userMessage
-                    in
-                    ( { model | userMessage = userMessage }
-                    , Cmd.none
-                    )
-
-                "token-refresh" ->
-                    let
-                        _ =
-                            Debug.log "token-refresh" msg.payload
-                    in
-                    ( model, Cmd.none )
-
-                _ ->
-                    let
-                        _ =
-                            Debug.log "********Unhandled Incoming FBMsg" message
-                    in
-                    ( model
-                    , Cmd.none
-                    )
 
 
-
+--        FBMsgHandler msg ->
+--            case msg.message of
+--                "authstate" ->
+--                    handleAuthChange msg.payload model
+--
+--                "snapshot" ->
+--                    handleSnapshot msg.payload model
+--
+--                "SubscriptionOk" ->
+--                    -- After Cloud Function returns successfully, update db to persist preference
+--                    ( { model | userMessage = "" }
+--                    , setMeta model.user.uid "notifications" <| E.bool True
+--                    )
+--
+--                "UnsubscribeOk" ->
+--                    -- After Cloud Function returns successfully, update db to persist preference
+--                    ( { model | userMessage = "" }
+--                    , setMeta model.user.uid "notifications" <| E.bool False
+--                    )
+--
+--                "CFError" ->
+--                    let
+--                        userMessage =
+--                            Json.decodeValue decoderError msg.payload
+--                                |> Result.withDefault model.userMessage
+--                    in
+--                    ( { model | userMessage = userMessage }
+--                    , Cmd.none
+--                    )
+--
+--                "error" ->
+--                    let
+--                        userMessage =
+--                            Json.decodeValue decoderError msg.payload
+--                                |> Result.withDefault model.userMessage
+--                    in
+--                    ( { model | userMessage = userMessage }
+--                    , Cmd.none
+--                    )
+--
+--                "token-refresh" ->
+--                    let
+--                        _ =
+--                            Debug.log "token-refresh" msg.payload
+--                    in
+--                    ( model, Cmd.none )
+--
+--                _ ->
+--                    let
+--                        _ =
+--                            Debug.log "********Unhandled Incoming FBMsg" message
+--                    in
+--                    ( model
+--                    , Cmd.none
+--                    )
 -- Model update helpers
 
 
@@ -218,50 +216,33 @@ setDisplayName displayName model =
 
 view : Model -> Html Msg
 view model =
-    let
-        spinner =
-            [ div [ class "loading" ]
-                [ img [ src "spinner.svg" ] []
-                , div [] [ text <| prettyPrint model.page ]
-                ]
-            ]
-    in
     div [ class "app" ]
-        [ if L.member model.page [ InitAuth, Subscribe, Login, Register ] then
-            simpleHeader
+        [ viewNavbar model
+        , div [ class <| "main " ++ String.toLower (Debug.toString model.tab) ] <|
+            case model.tab of
+                MainList ->
+                    [ text "list" ]
 
-          else
-            viewNavbar model
-        , div [ class <| "main " ++ String.toLower (Debug.toString model.page) ] <|
-            case model.page of
-                InitAuth ->
-                    spinner
+                MyItems ->
+                    [ text "items" ]
 
-                Subscribe ->
-                    spinner
+                MyClaims ->
+                    [ text "claims" ]
 
-                Login ->
-                    [ viewLogin model ]
-
-                Register ->
-                    [ viewRegister model ]
-
-                _ ->
-                    -- Picker and Claims
-                    [ model.xmas
-                        |> Dict.get model.user.uid
-                        |> Maybe.map (.meta >> .notifications)
-                        |> Maybe.withDefault True
-                        |> sidebar model
-                    , viewPicker model
-                    ]
+        --                    -- Picker and Claims
+        --                    [ model.xmas
+        --                        |> Dict.get model.user.uid
+        --                        |> Maybe.map (.meta >> .notifications)
+        --                        |> Maybe.withDefault True
+        --                        |> sidebar model
+        --                    , viewPicker model
         , div [ class "container warning" ] [ text model.userMessage ]
-        , viewFooter
+        , viewFooter model.tab
         ]
 
 
 sidebar : Model -> Bool -> Html Msg
-sidebar { userMessage, page, showSettings } notifications =
+sidebar { userMessage, showSettings } notifications =
     div
         [ if showSettings then
             class "sidebar open"
@@ -277,17 +258,6 @@ sidebar { userMessage, page, showSettings } notifications =
                     ]
                 , div [] [ text userMessage ]
                 ]
-            , if page == Picker then
-                li [ onClick (SwitchTo MyClaims), class "sidebar-menu-item flex-h clickable" ]
-                    [ span [ class "left-element" ] [ matIcon "card_giftcard" ]
-                    , text "View my Claims"
-                    ]
-
-              else
-                li [ onClick (SwitchTo Picker), class "sidebar-menu-item flex-h clickable" ]
-                    [ span [ class "left-element" ] [ matIcon "people" ]
-                    , text "View my Family"
-                    ]
             , li [ class "sidebar-menu-item flex-h", onClick Signout ]
                 [ span [ class "left-element" ] [ matIcon "power_settings_new" ], text "Signout" ]
             ]
@@ -319,11 +289,12 @@ viewPicker model =
     div [ id "picker", class "container" ]
         [ div [ class "row" ]
             [ viewMine model mine
-            , if model.page == Picker then
-                viewOthers model others
 
-              else
-                viewClaims model others
+            --            , if model.page == Picker then
+            --                viewOthers model others
+            --
+            --              else
+            --                viewClaims model others
             ]
         ]
 
@@ -473,12 +444,12 @@ viewMine model lst =
                     text <| "error" ++ Debug.toString lst
 
         cls =
-            if model.page == MyClaims then
-                -- for MyClaims, don't show LHS on small devices
-                class "my-ideas d-none d-sm-block col-sm-6"
+            --            if model.page == MyClaims then
+            -- for MyClaims, don't show LHS on small devices
+            class "my-ideas d-none d-sm-block col-sm-6"
 
-            else
-                class "my-ideas col-sm-6"
+        --            else
+        --                class "my-ideas col-sm-6"
     in
     div [ cls ]
         [ h2 []
@@ -592,20 +563,14 @@ viewNavbar model =
         ]
 
 
-viewFooter : Html msg
-viewFooter =
-    footer []
-        [ div [ class "container" ]
-            [ div [ class "flex-h spread" ]
-                [ a [ href "https://simonh1000.github.io/" ] [ text "Simon Hampton" ]
-                , a [ href "https://github.com/simonh1000/elm-firebase-demo" ] [ text "Code" ]
-                ]
-            ]
-        ]
+viewFooter : AppTab -> Html Msg
+viewFooter tab =
+    [ MainList, MyItems, MyClaims ]
+        |> L.map (\t -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
+        |> footer [ class "tabs" ]
 
 
 
---
 --
 
 

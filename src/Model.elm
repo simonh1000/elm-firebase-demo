@@ -1,4 +1,4 @@
-module Model exposing (Model, Page(..), Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent)
+module Model exposing (AppTab(..), Model, Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent, stringFromTab)
 
 import Auth
 import Common.CoreHelpers exposing (andMap)
@@ -14,8 +14,7 @@ import List as L
 
 
 type alias Model =
-    { page : Page
-    ,
+    { tab : AppTab
     , user : FB.FBUser
     , xmas : Dict String UserData
     , userMessage : String
@@ -28,8 +27,7 @@ type alias Model =
 
 blank : Model
 blank =
-    { page = InitAuth
-    , auth=  Auth.blank
+    { tab = MainList
     , user = FB.init
     , xmas = Dict.empty
     , userMessage = ""
@@ -38,6 +36,24 @@ blank =
     , isPhase2 = False
     , showSettings = False
     }
+
+
+type AppTab
+    = MainList
+    | MyItems
+    | MyClaims
+
+
+stringFromTab tab =
+    case tab of
+        MainList ->
+            ( "cross", "List" )
+
+        MyItems ->
+            ( "cross", "My Suggestions" )
+
+        MyClaims ->
+            ( "cross", "My Claims" )
 
 
 type alias UserData =
@@ -69,32 +85,6 @@ blankPresent =
     , takenBy = Nothing
     , purchased = False
     }
-
-
-
---
-
-
-prettyPrint : Page -> String
-prettyPrint p =
-    case p of
-        InitAuth ->
-            "Checking credentials"
-
-        Subscribe ->
-            "Getting presents data"
-
-        Picker ->
-            "Picker"
-
-        MyClaims ->
-            "MyClaims"
-
-        Login ->
-            "Login"
-
-        Register ->
-            "Register"
 
 
 
