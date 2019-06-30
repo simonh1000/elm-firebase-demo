@@ -23,57 +23,60 @@ $bkg-colour: #ddd;
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
         padding-left: 10px;
         padding-right: 10px;
-        padding-top: 20px;
-        padding-bottom: 20px;
+    }
+    .main {
+        margin-top: 10px;
+        margin-bottom: 10px;
     }
 
-    .main.myclaims,
-    .main.picker {
-        .container {
-            overflow-y: auto;
-        }
-    }
+//    .main.myclaims,
+//    .main.picker {
+//        .container {
+//            overflow-y: auto;
+//        }
+//    }
 }
 
-#picker {
-    .claims,
-    .my-ideas,
-    .others {
-        overflow-y: auto;
-        max-height: 100%;
-    }
+//#picker {
+//    .claims,
+//    .my-ideas,
+//    .others {
+//        overflow-y: auto;
+//        max-height: 100%;
+//    }
+//
+//    .my-ideas {
+//        padding-bottom: 20px;
+//    }
+//
+//    .person {
+//        background-color: white;
+//        margin-bottom: 15px;
+//    }
+//
+//    .new-present {
+//        margin-bottom: 20px;
+//    }
+//
+//}
+ul.present-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
 
-    .my-ideas {
-        padding-bottom: 20px;
-    }
+    li.present {
+        // height: 34px;
+        justify-content: space-between;
+        margin-bottom: -1px;
+        border: 1px solid $border-color;
+        padding: 5px;
 
-    .person {
-        background-color: white;
-        margin-bottom: 15px;
-    }
-
-    .new-present {
-        margin-bottom: 20px;
-    }
-
-    ul {
-        list-style: none;
-        padding-left: 0;
-        margin-bottom: 0;
-
-        li.present {
-            // height: 34px;
-            justify-content: space-between;
-            margin-bottom: -1px;
-            border: 1px solid $border-color;
-            padding: 5px;
-
-            span {
-                font-size: 14px;
-            }
+        span {
+            font-size: 14px;
         }
     }
 }
@@ -227,12 +230,16 @@ footer {
         display: flex;
         flex-direction: row;
         .tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 10px;
             flex-basis: 0;
             flex-grow: 1;
         }
         .tab.active {
             background-color: #fff;
+            color: #53d43e;
         }
         .tab + .tab {
             border-left: 1px solid #ccc;
@@ -246,6 +253,7 @@ footer {
     padding: 10px;
     border-radius: 3px;
     border: 1px solid #ddd;
+    margin-bottom: 20px;
 
     input {
         background-color: #ddd;

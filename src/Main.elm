@@ -3,17 +3,15 @@ port module Main exposing (main)
 import App
 import Auth
 import Browser
-import Common.CoreHelpers exposing (debugALittle, recoverResult, updateAndThen)
+import Common.CoreHelpers exposing (addCmd, debugALittle, recoverResult, updateAndThen)
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Iso8601
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import List as L
 import Model as AppM
-import Time exposing (Posix)
 
 
 port removeAppShell : String -> Cmd msg
@@ -52,12 +50,8 @@ type alias Flags =
 
 
 init : Flags -> ( Model, Cmd Msg )
-init { now } =
-    ( { blank
-        | page = InitAuth
-
-        --        , isPhase2 = checkIfPhase2 now
-      }
+init _ =
+    ( { blank | page = InitAuth }
     , Cmd.batch
         [ FB.setUpAuthListener
         , removeAppShell ""
@@ -158,18 +152,22 @@ update message model =
             ( model, Cmd.none )
 
 
+{-| the user information is richer for a google login than for an email login
+-}
 handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
 handleAuthChange val model =
     case Decode.decodeValue FB.decodeAuthState val |> Result.mapError Decode.errorToString |> Result.andThen identity of
-        -- If user exists, then subscribe to db changes
         Ok user ->
             let
                 displayName =
                     case ( user.displayName, model.auth.displayName /= "" ) of
+                        -- just after registering for email login
                         ( Nothing, True ) ->
                             Just model.auth.displayName
 
                         _ ->
+                            -- (Nothing, False) -> email login, but we expect the displayName will be in snapshot
+                            -- (Just _, _) -> google login
                             user.displayName
 
                 newModel =
@@ -178,21 +176,9 @@ handleAuthChange val model =
                         , userMessage = Nothing
                     }
             in
+            -- If user exists, then subscribe to db changes
             ( newModel, FB.subscribe "/" )
 
-        --            case ( user.displayName, model.user.displayName ) of
-        --                ( Nothing, Just displayName ) ->
-        --                    -- Have displayName: case occurs immediately after new Email registration
-        --
-        --                -- (Just _, Nothing) -> standard startup
-        --                -- (Just _, Just _) -> not sure this is possible
-        --                -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
-        --                _ ->
-        --                    -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
-        --                    ( { newModel | user = user }
-        --                    , FB.subscribe "/"
-        --                    )
-        --
         Err "nouser" ->
             ( { model | page = AuthPage }, Cmd.none )
 
@@ -217,6 +203,7 @@ handleSnapshot payload model =
     case model.page of
         Subscribing user ->
             update (AppMsg <| App.HandleSnapshot (Just user) payload) newModel
+                |> addCmd (Cmd.map AppMsg App.initCmd)
 
         AppPage ->
             update (AppMsg <| App.HandleSnapshot Nothing payload) newModel
@@ -262,8 +249,6 @@ view model =
         AuthPage ->
             Auth.view model.auth |> Html.map AuthMsg
 
-        --                Register ->
-        --                    [ viewRegister model ]
         AppPage ->
             -- Picker and Claims
             --                    [ model.xmas
@@ -288,22 +273,15 @@ type Page
 
 
 
---
-
-
-checkIfPhase2 : Int -> Bool
-checkIfPhase2 now =
-    case Debug.log "" <| Iso8601.toTime "2018-10-01" of
-        Ok endPhase1 ->
-            (now * 1000) > Time.posixToMillis endPhase1
-
-        Err _ ->
-            False
-
-
-
---
 -- CMDs
+
+
+setMeta : String -> String -> Encode.Value -> Cmd msg
+setMeta uid key val =
+    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
+
+
+
 --claim : String -> String -> String -> Cmd msg
 --claim uid otherRef presentRef =
 --    FB.set
@@ -337,19 +315,9 @@ checkIfPhase2 now =
 --
 --        Nothing ->
 --            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
-
-
-setMeta : String -> String -> Encode.Value -> Cmd msg
-setMeta uid key val =
-    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
-
-
-makeSetPresentRef : String -> String -> String -> String
-makeSetPresentRef str otherRef presentRef =
-    [ otherRef, "presents", presentRef, str ] |> String.join "/"
-
-
-
+--makeSetPresentRef : String -> String -> String -> String
+--makeSetPresentRef str otherRef presentRef =
+--    [ otherRef, "presents", presentRef, str ] |> String.join "/"
 --
 
 

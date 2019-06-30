@@ -36,7 +36,7 @@ mkTab msgConstructor tab selectedTab ( icon, txt ) =
         , onClick <| msgConstructor tab
         ]
         [ matIcon icon
-        , text txt
+        , small [] [ text txt ]
         ]
 
 

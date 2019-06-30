@@ -1,4 +1,4 @@
-module App exposing (Msg(..), update, view)
+module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
 import Common.CoreHelpers exposing (debugALittle)
@@ -8,10 +8,13 @@ import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Iso8601
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import List as L
 import Model as M exposing (..)
+import Task
+import Time exposing (Posix)
 
 
 
@@ -39,6 +42,7 @@ type Msg
     | EditPresent Present
       -- used by Main
     | HandleSnapshot (Maybe FB.FBUser) Value
+    | ConfirmIsPhase2 Bool
 
 
 
@@ -141,6 +145,9 @@ update message model =
         HandleSnapshot mbUser value ->
             handleSnapshot mbUser value model
 
+        ConfirmIsPhase2 isPhase2 ->
+            ( { model | isPhase2 = isPhase2 }, Cmd.none )
+
 
 {-| If snapshot lacks displayName, then add it to the DB
 Now we have the (possible) notifications preference, so use that
@@ -230,11 +237,11 @@ view model =
         [ viewNavbar model
         , div [ class <| "main " ++ String.toLower (Debug.toString model.tab) ] <|
             case model.tab of
-                MainList ->
-                    [ viewOthers model others ]
+                Family ->
+                    [ viewFamily model others ]
 
-                MyItems ->
-                    [ viewMine model mine ]
+                MySuggestions ->
+                    [ viewMySuggestions model mine ]
 
                 MyClaims ->
                     [ viewClaims model others ]
@@ -247,38 +254,17 @@ view model =
         --                        |> sidebar model
         --                    , viewPicker model
         , model.userMessage
-            |> Maybe.map (\txt -> div [ class "container warning" ] [ text txt ])
-            |> Maybe.withDefault (text "")
-        , viewFooter model.tab
+            |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
+            |> Maybe.withDefault (viewFooter model.tab)
         ]
 
 
 
--- Main Page
---viewPicker : Model -> Html Msg
---viewPicker model =
---    let
---        ( mine, others ) =
---            model.xmas
---                |> Dict.toList
---                |> L.partition (Tuple.first >> (==) model.user.uid)
---    in
---    div [ id "picker", class "container" ]
---        [ div [ class "row" ]
---            [ viewMine model mine
---
---            --            , if model.page == Picker then
---            --                viewOthers model others
---            --
---            --              else
---            --                viewClaims model others
---            ]
---        ]
--- MainList
+-- MainList / Family
 
 
-viewOthers : Model -> List ( String, UserData ) -> Html Msg
-viewOthers model others =
+viewFamily : Model -> List ( String, UserData ) -> Html Msg
+viewFamily model others =
     let
         wishes =
             if model.isPhase2 then
@@ -287,8 +273,7 @@ viewOthers model others =
             else
                 L.map (viewOtherPhase1 model) others
     in
-    div [ class "others col-12 col-sm-6" ]
-        (h2 [] [ text "My Family" ] :: wishes)
+    div [ class "others col-12 col-sm-6" ] wishes
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
@@ -300,34 +285,33 @@ viewOtherPhase1 _ ( _, { meta, presents } ) =
 viewOther : Model -> ( String, UserData ) -> Html Msg
 viewOther model ( userRef, { meta, presents } ) =
     let
+        mkPresent present htm =
+            li [ class "present flex-h" ]
+                [ makeDescription present
+                , htm
+                ]
+
         viewPresent presentRef present =
             case present.takenBy of
                 Just id ->
                     if model.user.uid == id then
-                        li [ class "present flex-h" ]
-                            [ makeDescription present
-                            , button
+                        mkPresent present <|
+                            button
                                 [ class "btn btn-success btn-sm"
                                 , onClick <| Unclaim userRef presentRef
                                 ]
                                 [ text "Claimed" ]
-                            ]
 
                     else
-                        li [ class "present flex-h" ]
-                            [ makeDescription present
-                            , badge "warning" "Taken"
-                            ]
+                        mkPresent present <| badge "warning" "Taken"
 
                 Nothing ->
-                    li [ class "present flex-h" ]
-                        [ makeDescription present
-                        , button
+                    mkPresent present <|
+                        button
                             [ class "btn btn-primary btn-sm"
                             , onClick <| Claim userRef presentRef
                             ]
                             [ text "Claim" ]
-                        ]
 
         ps =
             presents
@@ -341,7 +325,7 @@ viewOther model ( userRef, { meta, presents } ) =
         _ ->
             div [ class "person section" ]
                 [ h4 [] [ text meta.name ]
-                , ul [] ps
+                , ul [ class "present-list" ] ps
                 ]
 
 
@@ -349,9 +333,15 @@ viewOther model ( userRef, { meta, presents } ) =
 -- MyIdeas
 
 
-viewMine : Model -> List ( String, UserData ) -> Html Msg
-viewMine model lst =
+viewMySuggestions : Model -> List ( String, UserData ) -> Html Msg
+viewMySuggestions model lst =
     let
+        viewPresent present =
+            li [ class "present flex-h spread" ]
+                [ makeDescription present
+                , matIconMsg (EditPresent present) "pencil-outline"
+                ]
+
         mypresents =
             case lst of
                 [ ( _, { presents } ) ] ->
@@ -361,8 +351,8 @@ viewMine model lst =
 
                         lst_ ->
                             lst_
-                                |> L.map viewMyPresentIdea
-                                |> ul []
+                                |> L.map viewPresent
+                                |> ul [ class "present-list" ]
 
                 [] ->
                     text "Time to add you first idea!"
@@ -371,15 +361,10 @@ viewMine model lst =
                     text <| "error" ++ Debug.toString lst
 
         cls =
-            class "my-ideas col-sm-6"
+            class "main suggestions col-sm-6"
     in
     div [ cls ]
-        [ h2 []
-            [ text "My Suggestions"
-
-            -- , button [ onClick Expander ] [ text "expand" ]
-            ]
-        , viewNewIdeaForm model
+        [ viewNewIdeaForm model
         , div [ class "my-presents section" ] [ mypresents ]
         ]
 
@@ -420,19 +405,11 @@ viewNewIdeaForm { editor, isPhase2 } =
                 , button [ class "btn btn-success", onClick SubmitNewPresent, disabled <| editor.description == "" ] [ text "Save" ]
                 ]
             , if isJust editor.uid then
-                p [] [ text "* Warning: someone may already have commited to buy this!" ]
+                p [] [ text "* Warning: someone may already have committed to buy this!" ]
 
               else
                 text ""
             ]
-        ]
-
-
-viewMyPresentIdea : Present -> Html Msg
-viewMyPresentIdea present =
-    li [ class "present flex-h spread" ]
-        [ makeDescription present
-        , matIconMsg (EditPresent present) "mode_edit"
         ]
 
 
@@ -481,7 +458,7 @@ viewClaims model others =
                     , claimsForPerson
                         |> Dict.map (mkItem oRef)
                         |> Dict.values
-                        |> ul []
+                        |> ul [ class "present-list" ]
                     ]
     in
     div [ class "claims col-12 col-sm-6" ]
@@ -523,7 +500,7 @@ viewNavbar model =
 
 viewFooter : AppTab -> Html Msg
 viewFooter tab =
-    [ MainList, MyItems, MyClaims ]
+    [ Family, MySuggestions, MyClaims ]
         |> L.map (\t -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
         |> footer [ class "tabs" ]
 
@@ -613,3 +590,19 @@ setMeta uid key val =
 makeSetPresentRef : String -> String -> String -> String
 makeSetPresentRef str otherRef presentRef =
     [ otherRef, "presents", presentRef, str ] |> String.join "/"
+
+
+initCmd =
+    Time.now
+        |> Task.map checkIfPhase2
+        |> Task.perform ConfirmIsPhase2
+
+
+checkIfPhase2 : Posix -> Bool
+checkIfPhase2 now =
+    case Debug.log "" <| Iso8601.toTime "2018-10-01" of
+        Ok endPhase1 ->
+            Time.posixToMillis now > Time.posixToMillis endPhase1
+
+        Err _ ->
+            False

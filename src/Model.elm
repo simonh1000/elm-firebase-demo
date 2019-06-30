@@ -26,7 +26,7 @@ type alias Model =
 
 blank : Model
 blank =
-    { tab = MainList
+    { tab = Family
     , user = FB.init
     , xmas = Dict.empty
     , userMessage = Nothing
@@ -38,21 +38,21 @@ blank =
 
 
 type AppTab
-    = MainList
-    | MyItems
+    = Family
+    | MySuggestions
     | MyClaims
 
 
 stringFromTab tab =
     case tab of
-        MainList ->
-            ( "cross", "List" )
+        Family ->
+            ( "account-group", "Family" )
 
-        MyItems ->
-            ( "cross", "My Suggestions" )
+        MySuggestions ->
+            ( "account", "Suggestions" )
 
         MyClaims ->
-            ( "cross", "My Claims" )
+            ( "file-document-box-check-outline", "Claims" )
 
 
 type alias UserData =
