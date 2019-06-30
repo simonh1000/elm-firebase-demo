@@ -32,7 +32,10 @@ matIconMsg msg icon =
 
 mkTab msgConstructor tab selectedTab ( icon, txt ) =
     div
-        [ class <| addSuffixIf (tab == selectedTab) "tab" " active"
+        [ "tab"
+            |> addSuffixIf (tab == selectedTab) " active"
+            |> addSuffixIf (txt == "") " narrow"
+            |> class
         , onClick <| msgConstructor tab
         ]
         [ matIcon icon

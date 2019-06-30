@@ -3,14 +3,13 @@ port module Main exposing (main)
 import App
 import Auth
 import Browser
-import Common.CoreHelpers exposing (addCmd, debugALittle, recoverResult, updateAndThen)
+import Common.CoreHelpers exposing (addCmd, debugALittle, recoverResult)
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
-import List as L
 import Model as AppM
 
 
@@ -49,7 +48,7 @@ type alias Flags =
     { now : Int }
 
 
-init : Flags -> ( Model, Cmd Msg )
+init : () -> ( Model, Cmd Msg )
 init _ =
     ( { blank | page = InitAuth }
     , Cmd.batch
@@ -224,15 +223,17 @@ decoderError =
 view : Model -> Html Msg
 view model =
     let
+        wrap htm =
+            div [ class <| "app " ++ String.toLower (stringFromPage model.page) ] htm
+
         spinner txt =
-            div [ class <| "app " ++ String.toLower (Debug.toString model.page) ]
-                [ ViewHelpers.simpleHeader
-                , div [ class "loading" ]
-                    [ img [ src "spinner.svg" ] []
-                    , div [] [ text txt ]
-                    ]
-                , userMessage
+            [ ViewHelpers.simpleHeader
+            , div [ class "main loading" ]
+                [ img [ src "spinner.svg" ] []
+                , div [] [ text txt ]
                 ]
+            , userMessage
+            ]
 
         userMessage =
             model.userMessage
@@ -241,13 +242,13 @@ view model =
     in
     case model.page of
         InitAuth ->
-            spinner "Checking credentials"
+            spinner "Checking credentials" |> wrap
 
         Subscribing _ ->
-            spinner "Getting presents data"
+            spinner "Getting presents data" |> wrap
 
         AuthPage ->
-            Auth.view model.auth |> Html.map AuthMsg
+            Auth.view model.auth |> wrap |> Html.map AuthMsg
 
         AppPage ->
             -- Picker and Claims
@@ -258,7 +259,7 @@ view model =
             --                        |> sidebar model
             --                    , viewPicker model
             --                    ]
-            App.view model.app |> Html.map AppMsg
+            App.view model.app |> wrap |> Html.map AppMsg
 
 
 
@@ -270,6 +271,21 @@ type Page
     | Subscribing FB.FBUser -- making snapshot request
     | AuthPage
     | AppPage
+
+
+stringFromPage page =
+    case page of
+        InitAuth ->
+            "InitAuth"
+
+        Subscribing _ ->
+            "Subscribing"
+
+        AuthPage ->
+            "AuthPage"
+
+        AppPage ->
+            "AppPage"
 
 
 

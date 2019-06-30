@@ -85,8 +85,8 @@ ifThenElse cond yes no =
         no
 
 
-addSuffixIf bool prefix suffix =
-    ifThenElse bool (prefix ++ suffix) prefix
+addSuffixIf bool suffix default =
+    ifThenElse bool (default ++ suffix) default
 
 
 {-| map the 3rd element of a tuple

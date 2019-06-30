@@ -33,14 +33,49 @@ $bkg-colour: #ddd;
         margin-bottom: 10px;
     }
 
-//    .main.myclaims,
-//    .main.picker {
-//        .container {
-//            overflow-y: auto;
-//        }
-//    }
 }
 
+.initauth, .subscribing {
+    .loading {
+        justify-content: center;
+        align-items: center;
+    }
+    img {
+        margin-bottom: 20px;
+    }
+}
+// ****************************
+// Auth page
+// ****************************
+.authpage {
+    overflow: auto;
+
+    form {
+        margin-bottom: 15px;
+    }
+}
+
+// ****************************
+// App page
+// ****************************
+
+ul.present-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+
+    li.present {
+        // height: 34px;
+        justify-content: space-between;
+        margin-bottom: -1px;
+        border: 1px solid $border-color;
+        padding: 5px;
+
+        span {
+            font-size: 14px;
+        }
+    }
+}
 //#picker {
 //    .claims,
 //    .my-ideas,
@@ -63,23 +98,6 @@ $bkg-colour: #ddd;
 //    }
 //
 //}
-ul.present-list {
-    list-style: none;
-    padding-left: 0;
-    margin-bottom: 0;
-
-    li.present {
-        // height: 34px;
-        justify-content: space-between;
-        margin-bottom: -1px;
-        border: 1px solid $border-color;
-        padding: 5px;
-
-        span {
-            font-size: 14px;
-        }
-    }
-}
 
 //.app {
 //    .main {
@@ -101,22 +119,8 @@ ul.present-list {
 //        }
 //    }
 //}
-
-#login,
-#register {
-    overflow: auto;
-
-    form {
-        margin-bottom: 15px;
-    }
-}
 // plus see css for larger screens
 .sidebar {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
     display: flex;
     margin-left: -100%;
     transition: margin-left 0.3s ease-in-out;
@@ -193,7 +197,10 @@ ul.present-list {
         }
     }
 }
-// OTHER
+// ****************************
+// Common
+// ****************************
+
 body {
     background-color: $bkg-colour;
 }
@@ -226,6 +233,7 @@ header {
 
 footer {
     background-color: #eee;
+
     &.tabs {
         display: flex;
         flex-direction: row;
@@ -233,9 +241,13 @@ footer {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             padding: 10px;
-            flex-basis: 0;
+            flex-basis: 50px;
             flex-grow: 1;
+            &.narrow {
+                flex-grow: 0;
+            }
         }
         .tab.active {
             background-color: #fff;

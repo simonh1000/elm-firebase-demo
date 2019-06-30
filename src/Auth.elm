@@ -38,10 +38,10 @@ type AuthTab
 stringFromTab tab =
     case tab of
         LoginTab ->
-            ( "cross", "Login" )
+            ( "login", "Login" )
 
         RegisterTab ->
-            ( "cross", "Register" )
+            ( "account-plus", "Register" )
 
 
 
@@ -112,20 +112,19 @@ update config message model =
             )
 
 
-view : Model -> Html Msg
+view : Model -> List (Html Msg)
 view model =
-    div [ class "app" ]
-        [ ViewHelpers.simpleHeader
-        , case model.tab of
-            LoginTab ->
-                viewLogin model
+    [ ViewHelpers.simpleHeader
+    , case model.tab of
+        LoginTab ->
+            viewLogin model
 
-            RegisterTab ->
-                viewRegister model
-        , [ LoginTab, RegisterTab ]
-            |> L.map (\tab -> ViewHelpers.mkTab SwitchTab tab model.tab <| stringFromTab tab)
-            |> footer [ class "tabs" ]
-        ]
+        RegisterTab ->
+            viewRegister model
+    , [ LoginTab, RegisterTab ]
+        |> L.map (\tab -> ViewHelpers.mkTab SwitchTab tab model.tab <| stringFromTab tab)
+        |> footer [ class "tabs" ]
+    ]
 
 
 viewLogin : Model -> Html Msg
@@ -165,8 +164,7 @@ viewRegister model =
     in
     div [ id "register", class "main" ]
         [ div [ class "section" ]
-            [ h1 [] [ text "Register" ]
-            , Html.form
+            [ Html.form
                 [ onSubmit SubmitRegistration ]
                 [ B.inputWithLabel UpdateUsername "Name" "name" model.displayName
                 , B.inputWithLabel UpdateEmail "Email" "email" model.email

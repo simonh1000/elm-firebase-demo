@@ -8,7 +8,7 @@ require("./styles.scss");
 let d = new Date();
 const {Elm} = require('./Main');
 var app = Elm.Main.init({
-    flags: {now: d.getTime()}
+    flags: {}
 });
 
 // Once Elm is running, remove the existing 'appshell'

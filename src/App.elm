@@ -1,7 +1,7 @@
 module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
-import Common.CoreHelpers exposing (debugALittle)
+import Common.CoreHelpers exposing (debugALittle, isJust)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
@@ -225,7 +225,7 @@ setDisplayName displayName model =
 -- ---------------------------------------
 
 
-view : Model -> Html Msg
+view : Model -> List (Html Msg)
 view model =
     let
         ( mine, others ) =
@@ -233,30 +233,32 @@ view model =
                 |> Dict.toList
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
-    div [ class "app" ]
-        [ viewNavbar model
-        , div [ class <| "main " ++ String.toLower (Debug.toString model.tab) ] <|
-            case model.tab of
-                Family ->
-                    [ viewFamily model others ]
+    [ viewNavbar model
+    , div [ class <| "main " ++ String.toLower (Debug.toString model.tab) ] <|
+        case model.tab of
+            Family ->
+                [ viewFamily model others ]
 
-                MySuggestions ->
-                    [ viewMySuggestions model mine ]
+            MySuggestions ->
+                [ viewMySuggestions model mine ]
 
-                MyClaims ->
-                    [ viewClaims model others ]
+            MyClaims ->
+                [ viewClaims model others ]
 
-        --                    -- Picker and Claims
-        --                    [ model.xmas
-        --                        |> Dict.get model.user.uid
-        --                        |> Maybe.map (.meta >> .notifications)
-        --                        |> Maybe.withDefault True
-        --                        |> sidebar model
-        --                    , viewPicker model
-        , model.userMessage
-            |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
-            |> Maybe.withDefault (viewFooter model.tab)
-        ]
+            Settings ->
+                [ viewSettings model True ]
+
+    --                    -- Picker and Claims
+    --                    [ model.xmas
+    --                        |> Dict.get model.user.uid
+    --                        |> Maybe.map (.meta >> .notifications)
+    --                        |> Maybe.withDefault True
+    --                        |> sidebar model
+    --                    , viewPicker model
+    , model.userMessage
+        |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
+        |> Maybe.withDefault (viewFooter model.tab)
+    ]
 
 
 
@@ -461,12 +463,9 @@ viewClaims model others =
                         |> ul [ class "present-list" ]
                     ]
     in
-    div [ class "claims col-12 col-sm-6" ]
-        [ h2 [] [ text "My Claims" ]
-        , others
-            |> L.map mkItemsForPerson
-            |> div []
-        ]
+    others
+        |> L.map mkItemsForPerson
+        |> div [ class "claims col-12 col-sm-6" ]
 
 
 
@@ -498,35 +497,14 @@ viewNavbar model =
         ]
 
 
-viewFooter : AppTab -> Html Msg
-viewFooter tab =
-    [ Family, MySuggestions, MyClaims ]
-        |> L.map (\t -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
-        |> footer [ class "tabs" ]
-
-
 
 --
 
 
-isJust : Maybe a -> Bool
-isJust =
-    Maybe.map (\_ -> True) >> Maybe.withDefault False
-
-
-
---
-
-
-sidebar : Model -> Bool -> Html Msg
-sidebar { userMessage, showSettings } notifications =
+viewSettings : Model -> Bool -> Html Msg
+viewSettings { userMessage, showSettings } notifications =
     div
-        [ if showSettings then
-            class "sidebar open"
-
-          else
-            class "sidebar"
-        ]
+        [ class "main settings" ]
         [ ul [ class "sidebar-inner" ]
             [ li [ class "sidebar-menu-item" ]
                 [ div [ class "flex-h" ]
@@ -541,6 +519,13 @@ sidebar { userMessage, showSettings } notifications =
             ]
         , div [ class "sidebar-remainder", onClick ToggleSidebar ] []
         ]
+
+
+viewFooter : AppTab -> Html Msg
+viewFooter tab =
+    [ Family, MySuggestions, MyClaims, Settings ]
+        |> L.map (\t -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
+        |> footer [ class "tabs" ]
 
 
 

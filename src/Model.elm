@@ -41,6 +41,7 @@ type AppTab
     = Family
     | MySuggestions
     | MyClaims
+    | Settings
 
 
 stringFromTab tab =
@@ -53,6 +54,9 @@ stringFromTab tab =
 
         MyClaims ->
             ( "file-document-box-check-outline", "Claims" )
+
+        Settings ->
+            ( "settings", "" )
 
 
 type alias UserData =
