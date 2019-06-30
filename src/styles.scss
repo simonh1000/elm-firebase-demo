@@ -15,7 +15,7 @@ $bkg-colour: #ddd;
     }
 
     footer {
-        flex: 0 0 60px;
+        flex: 0 0 50px;
     }
 
     .main {
@@ -53,7 +53,37 @@ $bkg-colour: #ddd;
     form {
         margin-bottom: 15px;
     }
+    .google {
+        margin-bottom: 30px;
+        border: 1px solid $border-color;
+
+        img {
+            height: 45px;
+        }
+    }
+
+    form {
+        margin-top: 15px;
+    }
+    @media (min-width: 576px) {
+        margin: 0 auto;
+        padding-top: 50px;
+
+        h1 {
+            text-align: center;
+        }
+
+        .section {
+            width: 400px;
+            margin: 15px auto;
+        }
+
+        .container {
+            width: 400px;
+        }
+    }
 }
+
 
 // ****************************
 // App page
@@ -165,36 +195,36 @@ ul.present-list {
             flex-direction: column;
         }
 
-        #picker {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .main.claims,
-        .main.picker {
-            .container {
-                overflow-y: hidden;
-
-                .row {
-                    height: 100%;
-                    overflow: hidden;
-                }
-            }
-
-            .my-ideas {
-                padding-bottom: 0;
-            }
-        }
-
-        .sidebar-inner {
-            width: auto;
-            flex: 0 1 400px;
-            margin: 0 auto;
-        }
-
-        .sidebar-remainder {
-            flex: 1 1;
-        }
+//        #picker {
+//            display: flex;
+//            flex-direction: column;
+//        }
+//
+//        .main.claims,
+//        .main.picker {
+//            .container {
+//                overflow-y: hidden;
+//
+//                .row {
+//                    height: 100%;
+//                    overflow: hidden;
+//                }
+//            }
+//
+//            .my-ideas {
+//                padding-bottom: 0;
+//            }
+//        }
+//
+//        .sidebar-inner {
+//            width: auto;
+//            flex: 0 1 400px;
+//            margin: 0 auto;
+//        }
+//
+//        .sidebar-remainder {
+//            flex: 1 1;
+//        }
     }
 }
 // ****************************
@@ -206,6 +236,7 @@ body {
 }
 
 header {
+    padding: 10px;
     width: 100%;
     background-color: $green;
     &, a, h4 {
@@ -215,14 +246,13 @@ header {
         color: #ddd;
     }
     h4 {
-        margin-left: 15px;
         margin-bottom: 0;
     }
 
-    .container,
-    .container > div {
-        height: 100%;
-    }
+//    .container,
+//    .container > div {
+//        height: 100%;
+//    }
 
     .avatar {
         height: 30px;
@@ -242,7 +272,7 @@ footer {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px;
+            padding: 5px 5px;
             flex-basis: 50px;
             flex-grow: 1;
             &.narrow {
@@ -272,39 +302,6 @@ footer {
     }
 }
 
-#login,
-#register {
-    .google {
-        margin-bottom: 30px;
-        border: 1px solid $border-color;
-
-        img {
-            height: 45px;
-        }
-    }
-
-    form {
-        margin-top: 15px;
-    }
-    @media (min-width: 576px) {
-        margin: 0 auto;
-        padding-top: 50px;
-
-        h1 {
-            text-align: center;
-        }
-
-        .section {
-            width: 400px;
-            margin: 15px auto;
-        }
-
-        .container {
-            width: 400px;
-        }
-    }
-}
-
 h1, h2 {
     margin-bottom: 20px;
 }
@@ -316,15 +313,18 @@ h1, h2, h3, h4 {
     display: flex;
     align-items: center;
 
-    &.spread {
-        justify-content: space-between;
-    }
+}
+.flex-spread {
+    justify-content: space-between;
 }
 
 .flex-baseline {
     align-items: baseline;
 }
 
+.success {
+    color: $green;
+}
 .warning {
     color: #ee3333;
 }
@@ -336,43 +336,10 @@ h1, h2, h3, h4 {
 
 .badge {
     font-weight: normal;
-}
-/* The switch - the box around the slider */
-// binding toggle
-
-.switch {
-    position: relative;
-    flex-shrink: 0;
-    background: $red;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    height: 20px;
-    width: 30px;
-    border-radius: 2px;
-    margin-right: 6px;
-
-    &:before {
-        content: "";
-        position: absolute;
-        z-index: 1;
-        top: 2px;
-        left: 2px;
-        width: 14px;
-        height: 16px;
-        border-radius: 1px;
-        background: white;
-        transition: all 0.3s ease-in-out;
+    &.bg-danger, &.bg-success {
+        color: white;
     }
 }
-
-.switch.on {
-    background: $green;
-
-    &:before {
-        left: 13px;
-    }
-}
-
 // Bootstrap overrides
 .form-group label {
     font-size: smaller;

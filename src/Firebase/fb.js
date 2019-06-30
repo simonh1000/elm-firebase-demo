@@ -157,7 +157,18 @@ function subscribe(fbToElm, _ref) {
                 }
             });
         });
+
+    // adds ability to keep track of whether online
+    firebase.database().ref(_ref).child('.info/connected').on('value', function(connectedSnap) {
+      if (connectedSnap.val() === true) {
+            console.log("/* we're connected! */");
+      } else {
+            console.log("/* we're disconnected! */")
+      }
+    });
 }
+
+
 
 function logger(msg) {
     let reg = new RegExp('hampton-xmas');

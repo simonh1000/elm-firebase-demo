@@ -20,7 +20,6 @@ type alias Model =
     , editor : Present
     , editorCollapsed : Bool
     , isPhase2 : Bool
-    , showSettings : Bool
     }
 
 
@@ -33,7 +32,6 @@ blank =
     , editor = blankPresent
     , editorCollapsed = True
     , isPhase2 = False
-    , showSettings = False
     }
 
 

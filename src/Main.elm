@@ -102,17 +102,18 @@ update message model =
                 "snapshot" ->
                     handleSnapshot msg.payload model
 
-                --                "SubscriptionOk" ->
-                --                    -- After Cloud Function returns successfully, update db to persist preference
-                --                    ( { model | userMessage = Nothing }
-                --                    , setMeta model.user.uid "notifications" <| Encode.bool True
-                --                    )
-                --
-                --                "UnsubscribeOk" ->
-                --                    -- After Cloud Function returns successfully, update db to persist preference
-                --                    ( { model | userMessage = Nothing }
-                --                    , setMeta model.user.uid "notifications" <| Encode.bool False
-                --                    )
+                "SubscriptionOk" ->
+                    -- After Cloud Function returns successfully, update db to persist preference
+                    ( model
+                    , setMeta model.app.user.uid "notifications" <| Encode.bool True
+                    )
+
+                "UnsubscribeOk" ->
+                    -- After Cloud Function returns successfully, update db to persist preference
+                    ( model
+                    , setMeta model.app.user.uid "notifications" <| Encode.bool False
+                    )
+
                 "CFError" ->
                     let
                         userMessage =
@@ -223,8 +224,10 @@ decoderError =
 view : Model -> Html Msg
 view model =
     let
-        wrap htm =
-            div [ class <| "app " ++ String.toLower (stringFromPage model.page) ] htm
+        userMessage =
+            model.userMessage
+                |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
+                |> Maybe.withDefault (text "")
 
         spinner txt =
             [ ViewHelpers.simpleHeader
@@ -235,10 +238,8 @@ view model =
             , userMessage
             ]
 
-        userMessage =
-            model.userMessage
-                |> Maybe.map (\txt -> div [ class "container warning" ] [ text txt ])
-                |> Maybe.withDefault (text "")
+        wrap htm =
+            div [ class <| "app " ++ String.toLower (stringFromPage model.page) ] htm
     in
     case model.page of
         InitAuth ->
@@ -251,14 +252,6 @@ view model =
             Auth.view model.auth |> wrap |> Html.map AuthMsg
 
         AppPage ->
-            -- Picker and Claims
-            --                    [ model.xmas
-            --                        |> Dict.get model.user.uid
-            --                        |> Maybe.map (.meta >> .notifications)
-            --                        |> Maybe.withDefault True
-            --                        |> sidebar model
-            --                    , viewPicker model
-            --                    ]
             App.view model.app |> wrap |> Html.map AppMsg
 
 

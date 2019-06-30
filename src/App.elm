@@ -23,10 +23,7 @@ import Time exposing (Posix)
 
 type Msg
     = SwitchTab AppTab
-      --
-    | ToggleNotifications Bool
-    | Signout
-    | ToggleSidebar
+    | ConfirmIsPhase2 Bool
       -- MainList
     | Claim String String
     | Unclaim String String
@@ -40,9 +37,11 @@ type Msg
       -- My presents list
     | Expander
     | EditPresent Present
+      -- Settings
+    | ToggleNotifications Bool -- turn on/off subscription for notifications of changes
+    | Signout
       -- used by Main
     | HandleSnapshot (Maybe FB.FBUser) Value
-    | ConfirmIsPhase2 Bool
 
 
 
@@ -54,17 +53,14 @@ update message model =
     case message of
         -- Registration page
         SwitchTab tab ->
-            ( { model | tab = tab, showSettings = False }
-            , Cmd.none
-            )
+            ( { model | tab = tab }, Cmd.none )
 
         -- Main page
-        ToggleSidebar ->
-            ( { model | showSettings = not model.showSettings }, Cmd.none )
-
         ToggleNotifications notifications ->
             if notifications then
-                ( { model | userMessage = Just "Attempting to subscribe" }, FB.sendToFirebase <| StartNotifications model.user.uid )
+                ( { model | userMessage = Just "Attempting to subscribe" }
+                , FB.sendToFirebase <| StartNotifications model.user.uid
+                )
 
             else
                 ( { model | userMessage = Just "Attempting to unsubscribe" }
@@ -140,13 +136,11 @@ update message model =
             , Cmd.none
             )
 
-        --        HandleAuthChange value ->
-        --            handleAuthChange value model
-        HandleSnapshot mbUser value ->
-            handleSnapshot mbUser value model
-
         ConfirmIsPhase2 isPhase2 ->
             ( { model | isPhase2 = isPhase2 }, Cmd.none )
+
+        HandleSnapshot mbUser value ->
+            handleSnapshot mbUser value model
 
 
 {-| If snapshot lacks displayName, then add it to the DB
@@ -161,7 +155,12 @@ handleSnapshot mbUser snapshot model =
         Ok xmas ->
             let
                 newModel =
-                    { model | xmas = xmas, user = mbUser |> Maybe.withDefault model.user }
+                    { model
+                        | xmas = xmas
+                        , user = mbUser |> Maybe.withDefault model.user
+                        , -- if we got a snapshot then no need to show progress/error
+                          userMessage = Nothing
+                    }
             in
             case ( Dict.get newModel.user.uid xmas, newModel.user.displayName ) of
                 -- User already registered; copy userName to model (whether needed or not)
@@ -234,10 +233,10 @@ view model =
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
     [ viewNavbar model
-    , div [ class <| "main " ++ String.toLower (Debug.toString model.tab) ] <|
+    , div [ class <| "main " ++ String.toLower (Tuple.second <| stringFromTab model.tab) ] <|
         case model.tab of
             Family ->
-                [ viewFamily model others ]
+                viewFamily model others
 
             MySuggestions ->
                 [ viewMySuggestions model mine ]
@@ -246,15 +245,11 @@ view model =
                 [ viewClaims model others ]
 
             Settings ->
-                [ viewSettings model True ]
-
-    --                    -- Picker and Claims
-    --                    [ model.xmas
-    --                        |> Dict.get model.user.uid
-    --                        |> Maybe.map (.meta >> .notifications)
-    --                        |> Maybe.withDefault True
-    --                        |> sidebar model
-    --                    , viewPicker model
+                model.xmas
+                    |> Dict.get model.user.uid
+                    |> Maybe.map (.meta >> .notifications)
+                    |> Maybe.withDefault True
+                    |> viewSettings model
     , model.userMessage
         |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
         |> Maybe.withDefault (viewFooter model.tab)
@@ -265,7 +260,7 @@ view model =
 -- MainList / Family
 
 
-viewFamily : Model -> List ( String, UserData ) -> Html Msg
+viewFamily : Model -> List ( String, UserData ) -> List (Html Msg)
 viewFamily model others =
     let
         wishes =
@@ -275,7 +270,7 @@ viewFamily model others =
             else
                 L.map (viewOtherPhase1 model) others
     in
-    div [ class "others col-12 col-sm-6" ] wishes
+    wishes
 
 
 viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
@@ -287,12 +282,6 @@ viewOtherPhase1 _ ( _, { meta, presents } ) =
 viewOther : Model -> ( String, UserData ) -> Html Msg
 viewOther model ( userRef, { meta, presents } ) =
     let
-        mkPresent present htm =
-            li [ class "present flex-h" ]
-                [ makeDescription present
-                , htm
-                ]
-
         viewPresent presentRef present =
             case present.takenBy of
                 Just id ->
@@ -472,52 +461,63 @@ viewClaims model others =
 --
 
 
-viewNavbar : Model -> Html Msg
-viewNavbar model =
-    header []
-        [ div [ class "container" ]
-            [ div [ class "flex-h spread" ]
-                [ div [ class "flex-h" ]
-                    [ ViewHelpers.matIconMsg ToggleSidebar "menu"
-                    , h4 [] [ text "Xmas 2017" ]
-                    ]
-                , div []
-                    [ model.user.displayName
-                        |> Maybe.map (text >> L.singleton >> strong [])
-                        |> Maybe.withDefault (text "Xmas Present ideas")
-                    , case model.user.photoURL of
-                        Just photoURL ->
-                            img [ src photoURL, class "avatar", alt "avatar" ] []
+viewSettings : Model -> Bool -> List (Html Msg)
+viewSettings _ notifications =
+    [ div [ class "section" ]
+        [ h4 [] [ text "Settings" ]
+        , ul [ class "present-list" ]
+            [ mkPresentTmpl
+                [ div [] [ text "Notifications" ]
+                , span [ onClick (ToggleNotifications <| not notifications) ]
+                    [ if notifications then
+                        badge " bg-success" "on"
 
-                        Nothing ->
-                            text ""
+                      else
+                        badge " bg-danger" "off"
                     ]
+                ]
+            , mkPresentTmpl
+                [ div [ class "text-danger" ] [ text "Signout" ]
+                , div [ class "text-danger" ] [ matIconMsg Signout "logout" ]
                 ]
             ]
         ]
+
+    --                , div [] [ text userMessage ]
+    --        , div [ class "sidebar-remainder", onClick ToggleSidebar ] []
+    ]
+
+
+mkPresent present htm =
+    mkPresentTmpl
+        [ makeDescription present
+        , htm
+        ]
+
+
+mkPresentTmpl htms =
+    li [ class "present flex-h" ] htms
 
 
 
 --
 
 
-viewSettings : Model -> Bool -> Html Msg
-viewSettings { userMessage, showSettings } notifications =
-    div
-        [ class "main settings" ]
-        [ ul [ class "sidebar-inner" ]
-            [ li [ class "sidebar-menu-item" ]
-                [ div [ class "flex-h" ]
-                    [ span [ class "left-element" ] [ switcher ToggleNotifications notifications ]
-                    , text "Notifications"
-                    ]
+viewNavbar : Model -> Html Msg
+viewNavbar model =
+    header [ class "flex-h flex-aligned flex-spread" ]
+        [ h4 [] [ text "Xmas 2017" ]
+        , div [ class "flex-h flex-aligned" ]
+            [ model.user.displayName
+                |> Maybe.map (text >> L.singleton >> strong [])
+                |> Maybe.withDefault (text "Xmas Present ideas")
+            , case model.user.photoURL of
+                Just photoURL ->
+                    img [ src photoURL, class "avatar", alt "avatar" ] []
 
-                --                , div [] [ text userMessage ]
-                ]
-            , li [ class "sidebar-menu-item flex-h", onClick Signout ]
-                [ span [ class "left-element" ] [ matIcon "power_settings_new" ], text "Signout" ]
+                Nothing ->
+                    text ""
             ]
-        , div [ class "sidebar-remainder", onClick ToggleSidebar ] []
         ]
 
 

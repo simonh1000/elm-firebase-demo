@@ -1,4 +1,4 @@
-module Common.ViewHelpers exposing (badge, matIcon, matIconMsg, mkTab, simpleHeader, switcher)
+module Common.ViewHelpers exposing (badge, matIcon, matIconMsg, mkTab, simpleHeader)
 
 import Common.CoreHelpers exposing (addSuffixIf)
 import Html exposing (..)
@@ -46,12 +46,3 @@ mkTab msgConstructor tab selectedTab ( icon, txt ) =
 badge : String -> String -> Html msg
 badge cl t =
     span [ class <| "badge badge-" ++ cl ] [ text t ]
-
-
-switcher : (Bool -> msg) -> Bool -> Html msg
-switcher toggler isOn =
-    if isOn then
-        div [ class "switch on", onClick (toggler <| not isOn) ] []
-
-    else
-        div [ class "switch off", onClick (toggler <| not isOn) ] []
