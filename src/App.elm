@@ -2,14 +2,12 @@ module App exposing (Msg(..), update, view)
 
 import Bootstrap as B
 import Common.CoreHelpers exposing (debugALittle)
-import Common.ViewHelpers as ViewHelpers
+import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Iso8601
-import Json.Decode as Json exposing (Value)
 import Json.Encode as E
 import List as L
 import Model as M exposing (..)
@@ -25,10 +23,11 @@ type Msg
     | ToggleNotifications Bool
     | Signout
     | ToggleSidebar
+      -- MainList
     | Claim String String
     | Unclaim String String
     | TogglePurchased String String Bool -- other user ref, present ref, new value
-      -- Editor
+      -- MyIdeas
     | UpdateNewPresent String
     | UpdateNewPresentLink String
     | SubmitNewPresent
@@ -37,6 +36,8 @@ type Msg
       -- My presents list
     | Expander
     | EditPresent Present
+      -- used by Main
+    | HandleSnapshot
 
 
 
@@ -81,7 +82,7 @@ update message model =
             , Cmd.batch
                 [ unclaim otherRef presentRef
 
-                -- must also set as unpurchased
+                -- must also set as un-purchased
                 , purchase otherRef presentRef False
                 ]
             )
@@ -133,6 +134,9 @@ update message model =
             ( updateEditor (\_ -> newPresent) model
             , Cmd.none
             )
+
+        HandleSnapshot ->
+            ( model, Cmd.none )
 
 
 
@@ -216,18 +220,24 @@ setDisplayName displayName model =
 
 view : Model -> Html Msg
 view model =
+    let
+        ( mine, others ) =
+            model.xmas
+                |> Dict.toList
+                |> L.partition (Tuple.first >> (==) model.user.uid)
+    in
     div [ class "app" ]
         [ viewNavbar model
         , div [ class <| "main " ++ String.toLower (Debug.toString model.tab) ] <|
             case model.tab of
                 MainList ->
-                    [ text "list" ]
+                    [ viewOthers model others ]
 
                 MyItems ->
-                    [ text "items" ]
+                    [ viewMine model mine ]
 
                 MyClaims ->
-                    [ text "claims" ]
+                    [ viewClaims model others ]
 
         --                    -- Picker and Claims
         --                    [ model.xmas
@@ -241,108 +251,28 @@ view model =
         ]
 
 
-sidebar : Model -> Bool -> Html Msg
-sidebar { userMessage, showSettings } notifications =
-    div
-        [ if showSettings then
-            class "sidebar open"
-
-          else
-            class "sidebar"
-        ]
-        [ ul [ class "sidebar-inner" ]
-            [ li [ class "sidebar-menu-item" ]
-                [ div [ class "flex-h" ]
-                    [ span [ class "left-element" ] [ switcher ToggleNotifications notifications ]
-                    , text "Notifications"
-                    ]
-                , div [] [ text userMessage ]
-                ]
-            , li [ class "sidebar-menu-item flex-h", onClick Signout ]
-                [ span [ class "left-element" ] [ matIcon "power_settings_new" ], text "Signout" ]
-            ]
-        , div [ class "sidebar-remainder", onClick ToggleSidebar ] []
-        ]
-
-
-switcher : (Bool -> msg) -> Bool -> Html msg
-switcher toggler isOn =
-    if isOn then
-        div [ class "switch on", onClick (toggler <| not isOn) ] []
-
-    else
-        div [ class "switch off", onClick (toggler <| not isOn) ] []
-
-
 
 -- Main Page
-
-
-viewPicker : Model -> Html Msg
-viewPicker model =
-    let
-        ( mine, others ) =
-            model.xmas
-                |> Dict.toList
-                |> L.partition (Tuple.first >> (==) model.user.uid)
-    in
-    div [ id "picker", class "container" ]
-        [ div [ class "row" ]
-            [ viewMine model mine
-
-            --            , if model.page == Picker then
-            --                viewOthers model others
-            --
-            --              else
-            --                viewClaims model others
-            ]
-        ]
-
-
-
--- RHS
-
-
-viewClaims : Model -> List ( String, UserData ) -> Html Msg
-viewClaims model others =
-    let
-        mkItem oRef presentRef present =
-            let
-                ( status, cls ) =
-                    if present.purchased then
-                        ( "Purchased", class "btn btn-success btn-sm" )
-
-                    else
-                        ( "Claimed", class "btn btn-warning btn-sm" )
-            in
-            li [ class "present flex-h spread" ]
-                [ makeDescription present
-                , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
-                ]
-
-        mkItemsForPerson ( oRef, other ) =
-            let
-                claimsForPerson =
-                    Dict.filter (\_ v -> v.takenBy == Just model.user.uid) other.presents
-            in
-            if Dict.isEmpty claimsForPerson then
-                text ""
-
-            else
-                div [ class "person section" ]
-                    [ h4 [] [ text other.meta.name ]
-                    , claimsForPerson
-                        |> Dict.map (mkItem oRef)
-                        |> Dict.values
-                        |> ul []
-                    ]
-    in
-    div [ class "claims col-12 col-sm-6" ]
-        [ h2 [] [ text "My Claims" ]
-        , others
-            |> L.map mkItemsForPerson
-            |> div []
-        ]
+--viewPicker : Model -> Html Msg
+--viewPicker model =
+--    let
+--        ( mine, others ) =
+--            model.xmas
+--                |> Dict.toList
+--                |> L.partition (Tuple.first >> (==) model.user.uid)
+--    in
+--    div [ id "picker", class "container" ]
+--        [ div [ class "row" ]
+--            [ viewMine model mine
+--
+--            --            , if model.page == Picker then
+--            --                viewOthers model others
+--            --
+--            --              else
+--            --                viewClaims model others
+--            ]
+--        ]
+-- MainList
 
 
 viewOthers : Model -> List ( String, UserData ) -> Html Msg
@@ -413,13 +343,8 @@ viewOther model ( userRef, { meta, presents } ) =
                 ]
 
 
-badge : String -> String -> Html msg
-badge cl t =
-    span [ class <| "badge badge-" ++ cl ] [ text t ]
 
-
-
--- RHS
+-- MyIdeas
 
 
 viewMine : Model -> List ( String, UserData ) -> Html Msg
@@ -444,12 +369,7 @@ viewMine model lst =
                     text <| "error" ++ Debug.toString lst
 
         cls =
-            --            if model.page == MyClaims then
-            -- for MyClaims, don't show LHS on small devices
-            class "my-ideas d-none d-sm-block col-sm-6"
-
-        --            else
-        --                class "my-ideas col-sm-6"
+            class "my-ideas col-sm-6"
     in
     div [ cls ]
         [ h2 []
@@ -525,17 +445,53 @@ makeDescription { description, link } =
 
 
 
+-- MyClaims
+
+
+viewClaims : Model -> List ( String, UserData ) -> Html Msg
+viewClaims model others =
+    let
+        mkItem oRef presentRef present =
+            let
+                ( status, cls ) =
+                    if present.purchased then
+                        ( "Purchased", class "btn btn-success btn-sm" )
+
+                    else
+                        ( "Claimed", class "btn btn-warning btn-sm" )
+            in
+            li [ class "present flex-h spread" ]
+                [ makeDescription present
+                , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
+                ]
+
+        mkItemsForPerson ( oRef, other ) =
+            let
+                claimsForPerson =
+                    Dict.filter (\_ v -> v.takenBy == Just model.user.uid) other.presents
+            in
+            if Dict.isEmpty claimsForPerson then
+                text ""
+
+            else
+                div [ class "person section" ]
+                    [ h4 [] [ text other.meta.name ]
+                    , claimsForPerson
+                        |> Dict.map (mkItem oRef)
+                        |> Dict.values
+                        |> ul []
+                    ]
+    in
+    div [ class "claims col-12 col-sm-6" ]
+        [ h2 [] [ text "My Claims" ]
+        , others
+            |> L.map mkItemsForPerson
+            |> div []
+        ]
+
+
+
 --
-
-
-matIcon : String -> Html msg
-matIcon icon =
-    i [ class "material-icons" ] [ text icon ]
-
-
-matIconMsg : Msg -> String -> Html Msg
-matIconMsg msg icon =
-    i [ class "material-icons clickable", onClick msg, style "user-select" "none" ] [ text icon ]
 
 
 viewNavbar : Model -> Html Msg
@@ -544,7 +500,7 @@ viewNavbar model =
         [ div [ class "container" ]
             [ div [ class "flex-h spread" ]
                 [ div [ class "flex-h" ]
-                    [ matIconMsg ToggleSidebar "menu"
+                    [ ViewHelpers.matIconMsg ToggleSidebar "menu"
                     , h4 [] [ text "Xmas 2017" ]
                     ]
                 , div []
@@ -577,6 +533,34 @@ viewFooter tab =
 isJust : Maybe a -> Bool
 isJust =
     Maybe.map (\_ -> True) >> Maybe.withDefault False
+
+
+
+--
+
+
+sidebar : Model -> Bool -> Html Msg
+sidebar { userMessage, showSettings } notifications =
+    div
+        [ if showSettings then
+            class "sidebar open"
+
+          else
+            class "sidebar"
+        ]
+        [ ul [ class "sidebar-inner" ]
+            [ li [ class "sidebar-menu-item" ]
+                [ div [ class "flex-h" ]
+                    [ span [ class "left-element" ] [ switcher ToggleNotifications notifications ]
+                    , text "Notifications"
+                    ]
+                , div [] [ text userMessage ]
+                ]
+            , li [ class "sidebar-menu-item flex-h", onClick Signout ]
+                [ span [ class "left-element" ] [ matIcon "power_settings_new" ], text "Signout" ]
+            ]
+        , div [ class "sidebar-remainder", onClick ToggleSidebar ] []
+        ]
 
 
 
