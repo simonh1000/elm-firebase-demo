@@ -1,7 +1,6 @@
 module Auth exposing (AuthTab(..), Config, Model, Msg(..), blank, update, view, viewLogin, viewRegister)
 
 import Bootstrap as B
-import Common.CoreHelpers exposing (addSuffixIf)
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB
 import Html exposing (..)
@@ -14,6 +13,7 @@ type alias Model =
     { email : String
     , password : String
     , password2 : String
+    , displayName : String
     , userMessage : Maybe String
     , tab : AuthTab
     }
@@ -24,6 +24,7 @@ blank =
     { email = ""
     , password = ""
     , password2 = ""
+    , displayName = ""
     , userMessage = Nothing
     , tab = LoginTab
     }
@@ -159,19 +160,15 @@ viewLogin model =
 viewRegister : Model -> Html Msg
 viewRegister model =
     let
-        username =
-            --            Maybe.withDefault "" model.user.displayName
-            "something to get started with"
-
         isDisabled =
-            model.password == "" || model.password /= model.password2 || username == ""
+            model.password == "" || model.password /= model.password2 || model.displayName == ""
     in
     div [ id "register", class "main" ]
         [ div [ class "section" ]
             [ h1 [] [ text "Register" ]
             , Html.form
                 [ onSubmit SubmitRegistration ]
-                [ B.inputWithLabel UpdateUsername "Name" "name" username
+                [ B.inputWithLabel UpdateUsername "Name" "name" model.displayName
                 , B.inputWithLabel UpdateEmail "Email" "email" model.email
                 , B.passwordWithLabel UpdatePassword "Password" "password" model.password
                 , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2

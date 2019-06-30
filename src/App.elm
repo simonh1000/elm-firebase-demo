@@ -8,7 +8,8 @@ import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Encode as E
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import List as L
 import Model as M exposing (..)
 
@@ -37,7 +38,7 @@ type Msg
     | Expander
     | EditPresent Present
       -- used by Main
-    | HandleSnapshot
+    | HandleSnapshot (Maybe FB.FBUser) Value
 
 
 
@@ -59,14 +60,14 @@ update message model =
 
         ToggleNotifications notifications ->
             if notifications then
-                ( { model | userMessage = "Attempting to subscribe" }, FB.sendToFirebase <| StartNotifications model.user.uid )
+                ( { model | userMessage = Just "Attempting to subscribe" }, FB.sendToFirebase <| StartNotifications model.user.uid )
 
             else
-                ( { model | userMessage = "Attempting to unsubscribe" }
+                ( { model | userMessage = Just "Attempting to unsubscribe" }
                 , FB.sendToFirebase <| StopNotifications model.user.uid
                 )
 
-        -- , FB.set model.user.uid "notifications" <|E.bool notifications )
+        -- , FB.set model.user.uid "notifications" <|Encode.bool notifications )
         Signout ->
             ( blank
             , FB.signout
@@ -135,66 +136,65 @@ update message model =
             , Cmd.none
             )
 
-        HandleSnapshot ->
-            ( model, Cmd.none )
+        --        HandleAuthChange value ->
+        --            handleAuthChange value model
+        HandleSnapshot mbUser value ->
+            handleSnapshot mbUser value model
+
+
+{-| If snapshot lacks displayName, then add it to the DB
+Now we have the (possible) notifications preference, so use that
+
+FIXME we are renewing subscriptions everytime a subscription comes in
+
+-}
+handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
+handleSnapshot mbUser snapshot model =
+    case Decode.decodeValue decoderXmas snapshot of
+        Ok xmas ->
+            let
+                newModel =
+                    { model | xmas = xmas, user = mbUser |> Maybe.withDefault model.user }
+            in
+            case ( Dict.get newModel.user.uid xmas, newModel.user.displayName ) of
+                -- User already registered; copy userName to model (whether needed or not)
+                ( Just userData, _ ) ->
+                    ( newModel |> setDisplayName userData.meta.name
+                      --                    , handleSubscribe userData.meta.notifications
+                    , Cmd.none
+                    )
+
+                ( Nothing, Just displayName ) ->
+                    -- This is a new user as we have the username and the database does not know it
+                    -- so we need to set up notifications
+                    ( newModel
+                    , Cmd.batch
+                        [ setMeta newModel.user.uid "name" <| Encode.string displayName
+
+                        --                        , handleSubscribe True
+                        ]
+                    )
+
+                ( Nothing, Nothing ) ->
+                    ( { newModel | userMessage = Just <| "Unexpected error - no display name present" }
+                      --                    , rollbar <| "Missing username for: " ++ model.user.uid
+                    , Cmd.none
+                    )
+
+        -- ( Just userData, Just _ ) ->
+        --     -- all subsequent snapshots
+        --     ( { model | xmas = xmas }
+        --     , renewNotificationsSub userData.meta.notifications
+        --       -- , Cmd.none
+        --     )
+        Err err ->
+            ( { model | userMessage = Just <| "handleSnapshot: " ++ Decode.errorToString err }
+              --            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
+            , Cmd.none
+            )
 
 
 
---        FBMsgHandler msg ->
---            case msg.message of
---                "authstate" ->
---                    handleAuthChange msg.payload model
---
---                "snapshot" ->
---                    handleSnapshot msg.payload model
---
---                "SubscriptionOk" ->
---                    -- After Cloud Function returns successfully, update db to persist preference
---                    ( { model | userMessage = "" }
---                    , setMeta model.user.uid "notifications" <| E.bool True
---                    )
---
---                "UnsubscribeOk" ->
---                    -- After Cloud Function returns successfully, update db to persist preference
---                    ( { model | userMessage = "" }
---                    , setMeta model.user.uid "notifications" <| E.bool False
---                    )
---
---                "CFError" ->
---                    let
---                        userMessage =
---                            Json.decodeValue decoderError msg.payload
---                                |> Result.withDefault model.userMessage
---                    in
---                    ( { model | userMessage = userMessage }
---                    , Cmd.none
---                    )
---
---                "error" ->
---                    let
---                        userMessage =
---                            Json.decodeValue decoderError msg.payload
---                                |> Result.withDefault model.userMessage
---                    in
---                    ( { model | userMessage = userMessage }
---                    , Cmd.none
---                    )
---
---                "token-refresh" ->
---                    let
---                        _ =
---                            Debug.log "token-refresh" msg.payload
---                    in
---                    ( model, Cmd.none )
---
---                _ ->
---                    let
---                        _ =
---                            Debug.log "********Unhandled Incoming FBMsg" message
---                    in
---                    ( model
---                    , Cmd.none
---                    )
 -- Model update helpers
 
 
@@ -246,7 +246,9 @@ view model =
         --                        |> Maybe.withDefault True
         --                        |> sidebar model
         --                    , viewPicker model
-        , div [ class "container warning" ] [ text model.userMessage ]
+        , model.userMessage
+            |> Maybe.map (\txt -> div [ class "container warning" ] [ text txt ])
+            |> Maybe.withDefault (text "")
         , viewFooter model.tab
         ]
 
@@ -554,7 +556,8 @@ sidebar { userMessage, showSettings } notifications =
                     [ span [ class "left-element" ] [ switcher ToggleNotifications notifications ]
                     , text "Notifications"
                     ]
-                , div [] [ text userMessage ]
+
+                --                , div [] [ text userMessage ]
                 ]
             , li [ class "sidebar-menu-item flex-h", onClick Signout ]
                 [ span [ class "left-element" ] [ matIcon "power_settings_new" ], text "Signout" ]
@@ -571,14 +574,14 @@ claim : String -> String -> String -> Cmd msg
 claim uid otherRef presentRef =
     FB.set
         (makeSetPresentRef "takenBy" otherRef presentRef)
-        (E.string uid)
+        (Encode.string uid)
 
 
 purchase : String -> String -> Bool -> Cmd msg
 purchase otherRef presentRef purchased =
     FB.set
         (makeSetPresentRef "purchased" otherRef presentRef)
-        (E.bool purchased)
+        (Encode.bool purchased)
 
 
 unclaim : String -> String -> Cmd msg
@@ -602,7 +605,7 @@ savePresent model =
             FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
 
 
-setMeta : String -> String -> E.Value -> Cmd msg
+setMeta : String -> String -> Encode.Value -> Cmd msg
 setMeta uid key val =
     FB.set ("/" ++ uid ++ "/meta/" ++ key) val
 

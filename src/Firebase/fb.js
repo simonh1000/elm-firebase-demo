@@ -59,7 +59,7 @@ function createAuthListener(fbToElm) {
     // console.log("[createAuthListener] starting");
     firebase.auth()
         .onAuthStateChanged(function(user) {
-            // console.log("[createAuthListener]", user);
+             console.log("[createAuthListener]", user);
 
             if (user) {
                 fbToElm(makeUserObject(user))

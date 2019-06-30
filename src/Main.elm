@@ -3,9 +3,8 @@ port module Main exposing (main)
 import App
 import Auth
 import Browser
-import Common.CoreHelpers exposing (debugALittle, recoverResult)
+import Common.CoreHelpers exposing (debugALittle, recoverResult, updateAndThen)
 import Common.ViewHelpers as ViewHelpers
-import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -13,7 +12,7 @@ import Iso8601
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import List as L
-import Model as AppM exposing (decoderXmas)
+import Model as AppM
 import Time exposing (Posix)
 
 
@@ -31,7 +30,6 @@ type alias Model =
     { auth : Auth.Model
     , app : AppM.Model
     , page : Page
-    , user : FB.FBUser
     , userMessage : Maybe String
     }
 
@@ -41,7 +39,6 @@ blank =
     { auth = Auth.blank
     , app = AppM.blank
     , page = InitAuth
-    , user = FB.init
     , userMessage = Nothing
     }
 
@@ -81,10 +78,6 @@ type Msg
     | FBMsgHandler FB.FBMsg
 
 
-
---    | PickerMsg App.Msg
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case Debug.log "update" message of
@@ -116,18 +109,17 @@ update message model =
                 "snapshot" ->
                     handleSnapshot msg.payload model
 
-                "SubscriptionOk" ->
-                    -- After Cloud Function returns successfully, update db to persist preference
-                    ( { model | userMessage = Nothing }
-                    , setMeta model.user.uid "notifications" <| Encode.bool True
-                    )
-
-                "UnsubscribeOk" ->
-                    -- After Cloud Function returns successfully, update db to persist preference
-                    ( { model | userMessage = Nothing }
-                    , setMeta model.user.uid "notifications" <| Encode.bool False
-                    )
-
+                --                "SubscriptionOk" ->
+                --                    -- After Cloud Function returns successfully, update db to persist preference
+                --                    ( { model | userMessage = Nothing }
+                --                    , setMeta model.user.uid "notifications" <| Encode.bool True
+                --                    )
+                --
+                --                "UnsubscribeOk" ->
+                --                    -- After Cloud Function returns successfully, update db to persist preference
+                --                    ( { model | userMessage = Nothing }
+                --                    , setMeta model.user.uid "notifications" <| Encode.bool False
+                --                    )
                 "CFError" ->
                     let
                         userMessage =
@@ -172,33 +164,40 @@ handleAuthChange val model =
         -- If user exists, then subscribe to db changes
         Ok user ->
             let
+                displayName =
+                    case ( user.displayName, model.auth.displayName /= "" ) of
+                        ( Nothing, True ) ->
+                            Just model.auth.displayName
+
+                        _ ->
+                            user.displayName
+
                 newModel =
                     { model
-                        | page = Subscribing
+                        | page = Subscribing { user | displayName = displayName }
                         , userMessage = Nothing
                     }
             in
-            case ( user.displayName, model.user.displayName ) of
-                ( Nothing, Just displayName ) ->
-                    -- Have displayName: case occurs immediately after new Email registration
-                    ( { newModel | user = { user | displayName = Just displayName } }
-                    , FB.subscribe "/"
-                    )
+            ( newModel, FB.subscribe "/" )
 
-                -- (Just _, Nothing) -> standard startup
-                -- (Just _, Just _) -> not sure this is possible
-                -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
-                _ ->
-                    -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
-                    ( { newModel | user = user }
-                    , FB.subscribe "/"
-                    )
-
+        --            case ( user.displayName, model.user.displayName ) of
+        --                ( Nothing, Just displayName ) ->
+        --                    -- Have displayName: case occurs immediately after new Email registration
+        --
+        --                -- (Just _, Nothing) -> standard startup
+        --                -- (Just _, Just _) -> not sure this is possible
+        --                -- (Nothing, Nothing) -> Occurs when a non-Google user reloads page. Username will come with first snapshot
+        --                _ ->
+        --                    -- at this stage we could update the DB with this info, but we cannot know whether it is necessary
+        --                    ( { newModel | user = user }
+        --                    , FB.subscribe "/"
+        --                    )
+        --
         Err "nouser" ->
-            ( { model | user = FB.init, page = AuthPage }, Cmd.none )
+            ( { model | page = AuthPage }, Cmd.none )
 
         Err err ->
-            ( { model | user = FB.init, page = AuthPage, userMessage = Just err }
+            ( { model | page = AuthPage, userMessage = Just err }
             , rollbar <| "handleAuthChange " ++ err
             )
 
@@ -210,62 +209,20 @@ FIXME we are renewing subscriptions everytime a subscription comes in
 
 -}
 handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
-handleSnapshot snapshot model =
+handleSnapshot payload model =
     let
-        newPage =
-            if L.member model.page [ InitAuth, Subscribing ] then
-                AppPage
-
-            else
-                model.page
-
-        handleSubscribe notifications =
-            -- don't redo notifications (un)subscription once in Picker/Claims
-            case ( L.member model.page [ InitAuth, Subscribing ], notifications ) of
-                ( False, _ ) ->
-                    Cmd.none
-
-                ( True, True ) ->
-                    FB.sendToFirebase <| StartNotifications model.user.uid
-
-                ( True, False ) ->
-                    FB.sendToFirebase <| StopNotifications model.user.uid
+        newModel =
+            { model | page = AppPage }
     in
-    case Decode.decodeValue AppM.decoderXmas snapshot of
-        Ok xmas ->
-            ( { model | page = newPage }, Cmd.none )
+    case model.page of
+        Subscribing user ->
+            update (AppMsg <| App.HandleSnapshot (Just user) payload) newModel
 
-        --                case ( Dict.get model.user.uid xmas, model.user.displayName ) of
-        --                    -- User already registered; copy userName to model (whether needed or not)
-        --                    ( Just userData, _ ) ->
-        --                        ( { model | xmas = xmas, page = newPage } |> setDisplayName userData.meta.name
-        --                        , handleSubscribe userData.meta.notifications
-        --                        )
-        --
-        --                    ( Nothing, Just displayName ) ->
-        --                        -- This is a new user as we have the username and the database does not know it
-        --                        -- so we need to set up notifications
-        --                        ( { model | xmas = xmas, page = newPage }
-        --                        , Cmd.batch
-        --                            [ setMeta model.user.uid "name" <| Encode.string displayName
-        --                            , handleSubscribe True
-        --                            ]
-        --                        )
-        --
-        --                    ( Nothing, Nothing ) ->
-        --                        ( { model | userMessage = Just <| "Unexpected error - no display name present" }
-        --                        , rollbar <| "Missing username for: " ++ model.user.uid
-        --                        )
-        -- ( Just userData, Just _ ) ->
-        --     -- all subsequent snapshots
-        --     ( { model | xmas = xmas }
-        --     , renewNotificationsSub userData.meta.notifications
-        --       -- , Cmd.none
-        --     )
-        Err err ->
-            ( { model | userMessage = Just <| "handleSnapshot: " ++ Decode.errorToString err }
-            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
-            )
+        AppPage ->
+            update (AppMsg <| App.HandleSnapshot Nothing payload) newModel
+
+        _ ->
+            Debug.todo "handleSnapshot"
 
 
 decoderError : Decoder String
@@ -299,7 +256,7 @@ view model =
         InitAuth ->
             spinner "Checking credentials"
 
-        Subscribing ->
+        Subscribing _ ->
             spinner "Getting presents data"
 
         AuthPage ->
@@ -325,8 +282,7 @@ view model =
 
 type Page
     = InitAuth -- checking auth status
-    | Subscribing -- making snapshot request
-      --   | SetNotifications -- no specific UI consequences in fact
+    | Subscribing FB.FBUser -- making snapshot request
     | AuthPage
     | AppPage
 

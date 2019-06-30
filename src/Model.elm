@@ -1,6 +1,5 @@
 module Model exposing (AppTab(..), Model, Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent, stringFromTab)
 
-import Auth
 import Common.CoreHelpers exposing (andMap)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
@@ -17,7 +16,7 @@ type alias Model =
     { tab : AppTab
     , user : FB.FBUser
     , xmas : Dict String UserData
-    , userMessage : String
+    , userMessage : Maybe String
     , editor : Present
     , editorCollapsed : Bool
     , isPhase2 : Bool
@@ -30,7 +29,7 @@ blank =
     { tab = MainList
     , user = FB.init
     , xmas = Dict.empty
-    , userMessage = ""
+    , userMessage = Nothing
     , editor = blankPresent
     , editorCollapsed = True
     , isPhase2 = False
