@@ -185,7 +185,7 @@ handleAuthChange val model =
 {-| If snapshot lacks displayName, then add it to the DB
 Now we have the (possible) notifications preference, so use that
 
-FIXME we are renewing subscriptions everytime a subscription comes in
+FIXME we are renewing subscriptions every time a subscription comes in
 
 -}
 handleSnapshot : Value -> Model -> ( Model, Cmd Msg )
@@ -203,7 +203,8 @@ handleSnapshot payload model =
             update (AppMsg <| App.HandleSnapshot Nothing payload) newModel
 
         _ ->
-            Debug.todo "handleSnapshot"
+            -- not clear how we could reach here for any other page
+            ( model, Cmd.none )
 
 
 decoderError : Decoder String
