@@ -73,17 +73,11 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case Debug.log "update" message of
+    case message of
         AuthMsg msg ->
             let
-                config =
-                    { signin = Signin
-                    , signinGoogle = SigninGoogle
-                    , register = Register
-                    }
-
                 ( auth, c ) =
-                    Auth.update config msg model.auth
+                    Auth.update msg model.auth
             in
             ( { model | auth = auth }, c )
 

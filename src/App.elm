@@ -57,6 +57,8 @@ update message model =
 
         -- Main page
         ToggleNotifications notifications ->
+            -- this returns to main as "SubscriptionOk", which triggers an update of the db,
+            -- which triggers a snapshot that clears this message
             if notifications then
                 ( { model | userMessage = Just "Attempting to subscribe" }
                 , FB.sendToFirebase <| StartNotifications model.user.uid
@@ -67,7 +69,6 @@ update message model =
                 , FB.sendToFirebase <| StopNotifications model.user.uid
                 )
 
-        -- , FB.set model.user.uid "notifications" <|Encode.bool notifications )
         Signout ->
             ( blank
             , FB.signout
@@ -82,9 +83,8 @@ update message model =
             ( model
             , Cmd.batch
                 [ unclaim otherRef presentRef
-
-                -- must also set as un-purchased
-                , purchase otherRef presentRef False
+                , -- must also set as un-purchased
+                  purchase otherRef presentRef False
                 ]
             )
 
@@ -151,7 +151,7 @@ FIXME we are renewing subscriptions everytime a subscription comes in
 -}
 handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot mbUser snapshot model =
-    case Decode.decodeValue decoderXmas snapshot of
+    case Decode.decodeValue decoderUserData snapshot of
         Ok xmas ->
             let
                 newModel =
@@ -207,15 +207,6 @@ handleSnapshot mbUser snapshot model =
 updateEditor : (Present -> Present) -> Model -> Model
 updateEditor fn model =
     { model | editor = fn model.editor }
-
-
-setDisplayName : String -> Model -> Model
-setDisplayName displayName model =
-    let
-        user =
-            model.user
-    in
-    { model | user = { user | displayName = Just displayName } }
 
 
 
@@ -470,10 +461,10 @@ viewSettings _ notifications =
                 [ div [] [ text "Notifications" ]
                 , span [ onClick (ToggleNotifications <| not notifications) ]
                     [ if notifications then
-                        badge " bg-success" "on"
+                        badge "success clickable" "on"
 
                       else
-                        badge " bg-danger" "off"
+                        badge "danger clickable" "off"
                     ]
                 ]
             , mkPresentTmpl
@@ -482,9 +473,6 @@ viewSettings _ notifications =
                 ]
             ]
         ]
-
-    --                , div [] [ text userMessage ]
-    --        , div [ class "sidebar-remainder", onClick ToggleSidebar ] []
     ]
 
 

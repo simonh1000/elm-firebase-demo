@@ -1,10 +1,10 @@
-module Model exposing (AppTab(..), Model, Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent, stringFromTab)
+module Model exposing (AppTab(..), Model, Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderUserData, encodeMaybe, encodePresent, setDisplayName, stringFromTab)
 
 import Common.CoreHelpers exposing (andMap)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
 import Json.Decode as Json exposing (..)
-import Json.Encode as E
+import Json.Encode as Encode
 import List as L
 
 
@@ -54,7 +54,7 @@ stringFromTab tab =
             ( "file-document-box-check-outline", "Claims" )
 
         Settings ->
-            ( "settings", "Settings" )
+            ( "settings", "" )
 
 
 type alias UserData =
@@ -63,10 +63,59 @@ type alias UserData =
     }
 
 
+decoderUserData : Decoder (Dict String UserData)
+decoderUserData =
+    field "value" <|
+        oneOf
+            [ keyValuePairs decodeUserData
+                |> map (L.map converter >> L.filterMap identity >> Dict.fromList)
+
+            --  handle case where the database starts empty
+            , null Dict.empty
+            ]
+
+
+setDisplayName : String -> Model -> Model
+setDisplayName displayName model =
+    let
+        user =
+            model.user
+    in
+    { model | user = { user | displayName = Just displayName } }
+
+
+
+-- -----------------------
+-- UserMeta
+-- -----------------------
+
+
 type alias UserMeta =
     { name : String
     , notifications : Bool
     }
+
+
+decodeUserData : Decoder (Maybe UserData)
+decodeUserData =
+    oneOf
+        [ map Just <|
+            map2 UserData
+                (field "meta" decoderMeta)
+                (Json.oneOf [ field "presents" decodePresents, Json.succeed Dict.empty ])
+        , succeed Nothing
+        ]
+
+
+decoderMeta : Decoder UserMeta
+decoderMeta =
+    Json.map2 UserMeta
+        (field "name" string)
+        (oneOf [ field "notifications" bool, succeed True ])
+
+
+
+-- DECODER
 
 
 type alias Present =
@@ -86,43 +135,6 @@ blankPresent =
     , takenBy = Nothing
     , purchased = False
     }
-
-
-
--- DECODER
-
-
-decoderXmas : Decoder (Dict String UserData)
-decoderXmas =
-    field "value" <|
-        oneOf
-            [ keyValuePairs decodeUserData
-                |> map (L.map converter >> L.filterMap identity >> Dict.fromList)
-
-            --  handle case where the database starts empty
-            , null Dict.empty
-            ]
-
-
-converter : ( a, Maybe b ) -> Maybe ( a, b )
-converter ( a, b ) =
-    case b of
-        Just b_ ->
-            Just ( a, b_ )
-
-        Nothing ->
-            Nothing
-
-
-decodeUserData : Decoder (Maybe UserData)
-decodeUserData =
-    oneOf
-        [ map Just <|
-            map2 UserData
-                (field "meta" decoderMeta)
-                (Json.oneOf [ field "presents" decodePresents, Json.succeed Dict.empty ])
-        , succeed Nothing
-        ]
 
 
 decodePresents : Decoder (Dict String Present)
@@ -149,13 +161,6 @@ decoderPresent id =
         |> andMap (oneOf [ field "purchased" bool, succeed False ])
 
 
-decoderMeta : Decoder UserMeta
-decoderMeta =
-    Json.map2 UserMeta
-        (field "name" string)
-        (oneOf [ field "notifications" bool, succeed True ])
-
-
 decoderError : Decoder String
 decoderError =
     field "message" string
@@ -165,7 +170,7 @@ decoderError =
 -- Encoders
 
 
-encodePresent : Present -> E.Value
+encodePresent : Present -> Encode.Value
 encodePresent { description, link, takenBy } =
     let
         commonData =
@@ -181,9 +186,19 @@ encodePresent { description, link, takenBy } =
     in
     dataToEncode
         |> L.filterMap encodeMaybe
-        |> E.object
+        |> Encode.object
 
 
-encodeMaybe : ( String, Maybe String ) -> Maybe ( String, E.Value )
+encodeMaybe : ( String, Maybe String ) -> Maybe ( String, Encode.Value )
 encodeMaybe ( s, v ) =
-    Maybe.map (E.string >> (\b -> ( s, b ))) v
+    Maybe.map (Encode.string >> (\b -> ( s, b ))) v
+
+
+converter : ( a, Maybe b ) -> Maybe ( a, b )
+converter ( a, b ) =
+    case b of
+        Just b_ ->
+            Just ( a, b_ )
+
+        Nothing ->
+            Nothing

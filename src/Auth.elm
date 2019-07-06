@@ -7,6 +7,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import List as L
+import Model exposing (setDisplayName)
 
 
 type alias Model =
@@ -52,7 +53,7 @@ type Msg
     = UpdateEmail String
     | UpdatePassword String
     | UpdatePassword2 String
-    | UpdateUsername String
+    | UpdateDisplayName String
     | Submit
     | SubmitRegistration
     | GoogleSignin
@@ -66,8 +67,8 @@ type alias Config msg =
     }
 
 
-update : Config msg -> Msg -> Model -> ( Model, Cmd msg )
-update config message model =
+update : Msg -> Model -> ( Model, Cmd msg )
+update message model =
     case message of
         UpdateEmail email ->
             ( { model | email = email }
@@ -105,11 +106,8 @@ update config message model =
             , Cmd.none
             )
 
-        UpdateUsername userName ->
-            --            ( setDisplayName userName model
-            ( model
-            , Cmd.none
-            )
+        UpdateDisplayName displayName ->
+            ( { model | displayName = displayName }, Cmd.none )
 
 
 view : Model -> List (Html Msg)
@@ -166,7 +164,7 @@ viewRegister model =
         [ div [ class "section" ]
             [ Html.form
                 [ onSubmit SubmitRegistration ]
-                [ B.inputWithLabel UpdateUsername "Name" "name" model.displayName
+                [ B.inputWithLabel UpdateDisplayName "Name" "name" model.displayName
                 , B.inputWithLabel UpdateEmail "Email" "email" model.email
                 , B.passwordWithLabel UpdatePassword "Password" "password" model.password
                 , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
