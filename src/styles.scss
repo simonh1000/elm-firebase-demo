@@ -4,11 +4,14 @@ $red: #880d0d;
 $bkg-colour: #ddd;
 
 .app {
+    background-color: $bkg-colour;
     // repeat settings inlined
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
 
     header {
         flex: 0 0 60px;
@@ -23,14 +26,14 @@ $bkg-colour: #ddd;
         display: flex;
         flex-direction: column;
         align-items: stretch;
+        margin-top: 10px;
+        margin-bottom: 10px;
         overflow-y: auto;
         overflow-x: hidden;
         padding-left: 10px;
         padding-right: 10px;
     }
     .main {
-        margin-top: 10px;
-        margin-bottom: 10px;
     }
 
 }
@@ -106,49 +109,6 @@ ul.present-list {
         }
     }
 }
-//#picker {
-//    .claims,
-//    .my-ideas,
-//    .others {
-//        overflow-y: auto;
-//        max-height: 100%;
-//    }
-//
-//    .my-ideas {
-//        padding-bottom: 20px;
-//    }
-//
-//    .person {
-//        background-color: white;
-//        margin-bottom: 15px;
-//    }
-//
-//    .new-present {
-//        margin-bottom: 20px;
-//    }
-//
-//}
-
-//.app {
-//    .main {
-//        position: relative;
-//        // Spinner centered
-//        &.initauth,
-//        &.subscribe {
-//            justify-content: center;
-//            align-items: center;
-//        }
-//
-//        .new-present {
-//            transition: flex 0.3s ease-out; // note that we're transitioning flex, not height!
-//            flex: 0 0;
-//        }
-//
-//        .my-presents {
-//            overflow-y: auto;
-//        }
-//    }
-//}
 // plus see css for larger screens
 .sidebar {
     display: flex;
@@ -189,51 +149,9 @@ ul.present-list {
     }
 }
 
-@media (min-width: 576px) {
-    .app {
-        .main {
-            flex-direction: column;
-        }
-
-//        #picker {
-//            display: flex;
-//            flex-direction: column;
-//        }
-//
-//        .main.claims,
-//        .main.picker {
-//            .container {
-//                overflow-y: hidden;
-//
-//                .row {
-//                    height: 100%;
-//                    overflow: hidden;
-//                }
-//            }
-//
-//            .my-ideas {
-//                padding-bottom: 0;
-//            }
-//        }
-//
-//        .sidebar-inner {
-//            width: auto;
-//            flex: 0 1 400px;
-//            margin: 0 auto;
-//        }
-//
-//        .sidebar-remainder {
-//            flex: 1 1;
-//        }
-    }
-}
 // ****************************
 // Common
 // ****************************
-
-body {
-    background-color: $bkg-colour;
-}
 
 header {
     padding: 10px;
@@ -301,6 +219,24 @@ footer {
         background-color: #ddd;
     }
 }
+
+@media (min-width: 576px) {
+    body {
+        background-color: white;
+    }
+    .app {
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .section.settings {
+        max-width: 500px;
+    }
+}
+
+
+
+
 
 h1, h2 {
     margin-bottom: 20px;

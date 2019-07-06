@@ -54,7 +54,7 @@ stringFromTab tab =
             ( "file-document-box-check-outline", "Claims" )
 
         Settings ->
-            ( "settings", "" )
+            ( "settings", "Settings" )
 
 
 type alias UserData =

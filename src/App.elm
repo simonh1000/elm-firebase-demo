@@ -328,7 +328,7 @@ viewMySuggestions : Model -> List ( String, UserData ) -> Html Msg
 viewMySuggestions model lst =
     let
         viewPresent present =
-            li [ class "present flex-h spread" ]
+            li [ class "present flex-h flex-spread" ]
                 [ makeDescription present
                 , matIconMsg (EditPresent present) "pencil-outline"
                 ]
@@ -385,7 +385,7 @@ viewNewIdeaForm { editor, isPhase2 } =
             , editor.link
                 |> Maybe.withDefault ""
                 |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
-            , div [ class "flex-h spread" ]
+            , div [ class "flex-h flex-spread" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case ( editor.uid, isPhase2 ) of
                     ( Just uid, False ) ->
@@ -430,7 +430,7 @@ viewClaims model others =
                     else
                         ( "Claimed", class "btn btn-warning btn-sm" )
             in
-            li [ class "present flex-h spread" ]
+            li [ class "present flex-h flex-spread" ]
                 [ makeDescription present
                 , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
                 ]
@@ -463,7 +463,7 @@ viewClaims model others =
 
 viewSettings : Model -> Bool -> List (Html Msg)
 viewSettings _ notifications =
-    [ div [ class "section" ]
+    [ div [ class "section settings" ]
         [ h4 [] [ text "Settings" ]
         , ul [ class "present-list" ]
             [ mkPresentTmpl
