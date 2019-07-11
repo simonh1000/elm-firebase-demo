@@ -65,9 +65,6 @@ init _ =
 type Msg
     = AuthMsg Auth.Msg
     | AppMsg App.Msg
-    | Signin String String
-    | SigninGoogle
-    | Register String String
     | FBMsgHandler FB.FBMsg
 
 
@@ -113,20 +110,18 @@ update message model =
                         userMessage =
                             Decode.decodeValue decoderError msg.payload
                                 |> recoverResult Decode.errorToString
+                                |> Just
                     in
-                    ( { model | userMessage = Just userMessage }
-                    , Cmd.none
-                    )
+                    ( { model | userMessage = userMessage }, Cmd.none )
 
                 "error" ->
                     let
                         userMessage =
                             Decode.decodeValue decoderError msg.payload
                                 |> recoverResult Decode.errorToString
+                                |> Just
                     in
-                    ( { model | userMessage = Just userMessage }
-                    , Cmd.none
-                    )
+                    ( { model | userMessage = userMessage }, Cmd.none )
 
                 "token-refresh" ->
                     let
@@ -141,9 +136,6 @@ update message model =
                             Debug.log "********Unhandled Incoming FBMsg" message
                     in
                     ( model, Cmd.none )
-
-        _ ->
-            ( model, Cmd.none )
 
 
 {-| the user information is richer for a google login than for an email login

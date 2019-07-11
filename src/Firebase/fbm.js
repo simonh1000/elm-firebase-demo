@@ -1,4 +1,5 @@
-import config from "./fb.config";
+// imports the config - not needed with modern firebase
+//import config from "./fb.config";
 
 const CFError = "CFError"
 // See also /assets/firebase-messaging.js
@@ -18,7 +19,7 @@ function makeRequest(userId, token) {
     };
 }
 
-// Triggr pop-up that asks for permission
+// Trigger pop-up that asks for permission
 function requestMessagingPermission(userId, logger, cb) {
     // Create within function because firebase may not otherwise be initialised
     const messaging = firebase.messaging();

@@ -33,6 +33,17 @@
   </head>
 
   <body>
-  <script src="https://www.gstatic.com/firebasejs/4.7.0/firebase.js"></script>
+    <!-- The core Firebase JS SDK is always required and must be listed first
+    Ideally want to add defer to each script tag
+     -->
+    <script src="https://www.gstatic.com/firebasejs/6.2.4/firebase-app.js"></script>
+
+    <!-- include only the Firebase features as you need -->
+    <script src="https://www.gstatic.com/firebasejs/6.2.4/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.4/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.2.4/firebase-messaging.js"></script>
+
+    <!-- Initialize Firebase -->
+    <script src="./firebase-init.js"></script>
   </body>
 </html>

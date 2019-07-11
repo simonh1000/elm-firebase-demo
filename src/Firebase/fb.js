@@ -2,7 +2,7 @@ import fbmsg from './fbm';
 
 // Elm message handler
 function handler({message, payload}, fbToElm) {
-    // console.log(message, payload);
+    console.log(message, payload);
     switch (message) {
         case "ListenAuthState":
             createAuthListener(fbToElm);
@@ -129,6 +129,11 @@ function signout(x) {
         });
 }
 
+
+//
+
+
+
 function set(data) {
     firebase.database().ref(data.ref)
         .set(data.payload);
@@ -146,9 +151,10 @@ function push(data) {
 }
 
 function subscribe(fbToElm, _ref) {
+    console.log("subscribe", _ref);
     firebase.database().ref(_ref)
         .on('value', snapshot => {
-            // console.log(snapshot);
+            console.log(snapshot.val());
             fbToElm({
                 message: "snapshot",
                 payload: {
