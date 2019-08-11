@@ -50,10 +50,10 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case message of
+    case debugALittle message of
         -- Registration page
         SwitchTab tab ->
-            ( { model | tab = tab }, Cmd.none )
+            ( { model | tab = tab, editor = blank.editor }, Cmd.none )
 
         -- Main page
         ToggleNotifications notifications ->
@@ -146,7 +146,7 @@ update message model =
 {-| If snapshot lacks displayName, then add it to the DB
 Now we have the (possible) notifications preference, so use that
 
-FIXME we are renewing subscriptions everytime a subscription comes in
+FIXME we are renewing subscriptions every time a subscription comes in
 
 -}
 handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
@@ -226,21 +226,18 @@ view model =
     [ viewNavbar model
     , div [ class <| "main " ++ String.toLower (Tuple.second <| stringFromTab model.tab) ] <|
         case model.tab of
-            Family ->
-                viewFamily model others
-
+            --            Family ->
+            --                viewFamily model others
             MySuggestions ->
-                viewMySuggestions model mine
+                viewSuggestions model mine
 
-            MyClaims ->
-                [ viewClaims others ]
-
-            Settings ->
-                model.xmas
-                    |> Dict.get model.user.uid
-                    |> Maybe.map (.meta >> .notifications)
-                    |> Maybe.withDefault True
-                    |> viewSettings model
+            --            MyClaims ->
+            --                [ viewClaims others ]
+            --
+            --            Settings ->
+            --                viewSettings model
+            _ ->
+                []
     , model.userMessage
         |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
         |> Maybe.withDefault (viewFooter model.tab)
@@ -327,13 +324,17 @@ viewOther ( userRef, { meta, presents } ) =
 -- ------------------
 
 
-viewMySuggestions : Model -> List ( String, UserData ) -> List (Html Msg)
-viewMySuggestions model lst =
+viewSuggestions : Model -> List ( String, UserData ) -> List (Html Msg)
+viewSuggestions model lst =
     let
         viewPresent present =
             li [ class "present flex-h flex-spread" ]
                 [ makeDescription present
-                , matIconMsg (EditPresent present) "pencil-outline"
+                , button
+                    [ onClick (EditPresent present)
+                    , class "btn btn-success btn-small"
+                    ]
+                    [ matIcon "pencil-outline", text "Edit" ]
                 ]
 
         mypresents =
@@ -352,15 +353,15 @@ viewMySuggestions model lst =
                     text "Time to add you first idea!"
 
                 _ ->
-                    text <| "error" ++ Debug.toString lst
+                    text <| "Unexpected error - too many entries in your name - please report this"
     in
-    [ viewNewIdeaForm model
+    [ viewPresentEditor model.isPhase2 model.editor
     , div [ class "my-presents section" ] [ mypresents ]
     ]
 
 
-viewNewIdeaForm : Model -> Html Msg
-viewNewIdeaForm { editor, isPhase2 } =
+viewPresentEditor : Bool -> Present -> Html Msg
+viewPresentEditor isPhase2 editor =
     let
         btn msg txt =
             button
@@ -374,7 +375,7 @@ viewNewIdeaForm { editor, isPhase2 } =
         [ h4 []
             [ case editor.uid of
                 Just _ ->
-                    text "Editor"
+                    text "Edit suggestion"
 
                 Nothing ->
                     text "New suggestion"
@@ -476,8 +477,15 @@ viewClaims others =
 -- ------------------
 
 
-viewSettings : Model -> Bool -> List (Html Msg)
-viewSettings _ notifications =
+viewSettings : Model -> List (Html Msg)
+viewSettings model =
+    let
+        notifications =
+            model.xmas
+                |> Dict.get model.user.uid
+                |> Maybe.map (.meta >> .notifications)
+                |> Maybe.withDefault True
+    in
     [ div [ class "section settings" ]
         [ h4 [] [ text "Settings" ]
         , ul [ class "present-list" ]
