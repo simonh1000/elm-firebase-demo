@@ -407,7 +407,10 @@ makeDescription : Present -> Html Msg
 makeDescription { description, link } =
     case link of
         Just link_ ->
-            a [ href link_, target "_blank" ] [ text description ]
+            div [ class "description" ]
+                [ text description
+                , a [ href link_, target "_blank" ] [ matIcon "open-in-new" ]
+                ]
 
         Nothing ->
             text description
