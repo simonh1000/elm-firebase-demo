@@ -6,9 +6,6 @@ import Html.Events exposing (..)
 import Json.Decode as Json
 
 
-onChange : (String -> msg) -> Attribute msg
-onChange msg =
-    on "change" (Json.map msg Json.string)
 
 
 inputWithButton : (String -> msg) -> msg -> String -> Html msg

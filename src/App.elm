@@ -151,7 +151,7 @@ FIXME we are renewing subscriptions everytime a subscription comes in
 -}
 handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot mbUser snapshot model =
-    case Decode.decodeValue decoderUserData snapshot of
+    case Decode.decodeValue (decoderUserData model.user.uid) snapshot of
         Ok xmas ->
             let
                 newModel =
@@ -233,7 +233,7 @@ view model =
                 [ viewMySuggestions model mine ]
 
             MyClaims ->
-                [ viewClaims model others ]
+                [ viewClaims others ]
 
             Settings ->
                 model.xmas
@@ -248,7 +248,9 @@ view model =
 
 
 
--- MainList / Family
+-- ------------------
+-- Family Tab
+-- ------------------
 
 
 viewFamily : Model -> List ( String, UserData ) -> List (Html Msg)
@@ -256,7 +258,7 @@ viewFamily model others =
     let
         wishes =
             if model.isPhase2 then
-                L.map (viewOther model) others
+                L.map viewOther others
 
             else
                 L.map (viewOtherPhase1 model) others
@@ -270,30 +272,30 @@ viewOtherPhase1 _ ( _, { meta, presents } ) =
         [ div [] [ text <| meta.name ++ ": " ++ Debug.toString (Dict.size presents) ++ " suggestion(s)" ] ]
 
 
-viewOther : Model -> ( String, UserData ) -> Html Msg
-viewOther model ( userRef, { meta, presents } ) =
+viewOther : ( String, UserData ) -> Html Msg
+viewOther ( userRef, { meta, presents } ) =
     let
         viewPresent presentRef present =
-            case present.takenBy of
-                Just id ->
-                    if model.user.uid == id then
-                        mkPresent present <|
-                            button
-                                [ class "btn btn-success btn-sm"
-                                , onClick <| Unclaim userRef presentRef
-                                ]
-                                [ text "Claimed" ]
-
-                    else
-                        mkPresent present <| badge "warning" "Taken"
-
-                Nothing ->
-                    mkPresent present <|
+            mkPresentTmpl
+                [ makeDescription present
+                , case present.status of
+                    Available ->
                         button
                             [ class "btn btn-primary btn-sm"
                             , onClick <| Claim userRef presentRef
                             ]
                             [ text "Claim" ]
+
+                    ClaimedByMe _ ->
+                        button
+                            [ class "btn btn-success btn-sm"
+                            , onClick <| Unclaim userRef presentRef
+                            ]
+                            [ text "Claimed" ]
+
+                    ClaimedBySomeone ->
+                        badge "warning" "Taken"
+                ]
 
         ps =
             presents
@@ -312,7 +314,9 @@ viewOther model ( userRef, { meta, presents } ) =
 
 
 
--- MyIdeas
+-- ------------------
+-- Suggestions Tab
+-- ------------------
 
 
 viewMySuggestions : Model -> List ( String, UserData ) -> Html Msg
@@ -406,16 +410,19 @@ makeDescription { description, link } =
 
 
 
--- MyClaims
+-- ------------------
+-- Claims Tab
+-- ------------------
 
 
-viewClaims : Model -> List ( String, UserData ) -> Html Msg
-viewClaims model others =
+viewClaims : List ( String, UserData ) -> Html Msg
+viewClaims others =
     let
-        mkItem oRef presentRef present =
+        mkItem : String -> String -> Present -> Bool -> Html Msg
+        mkItem oRef presentRef present purchased =
             let
                 ( status, cls ) =
-                    if present.purchased then
+                    if purchased then
                         ( "Purchased", class "btn btn-success btn-sm" )
 
                     else
@@ -423,24 +430,32 @@ viewClaims model others =
             in
             li [ class "present flex-h flex-spread" ]
                 [ makeDescription present
-                , button [ onClick <| TogglePurchased oRef presentRef (not present.purchased), cls ] [ text status ]
+                , button [ onClick <| TogglePurchased oRef presentRef (not purchased), cls ] [ text status ]
                 ]
 
+        mkItemsForPerson : ( String, UserData ) -> Html Msg
         mkItemsForPerson ( oRef, other ) =
             let
                 claimsForPerson =
-                    Dict.filter (\_ v -> v.takenBy == Just model.user.uid) other.presents
+                    other.presents
+                        |> Dict.toList
+                        |> L.filterMap
+                            (\( presentRef, present ) ->
+                                case present.status of
+                                    ClaimedByMe purchased ->
+                                        Just <| mkItem oRef presentRef present purchased
+
+                                    _ ->
+                                        Nothing
+                            )
             in
-            if Dict.isEmpty claimsForPerson then
+            if List.isEmpty claimsForPerson then
                 text ""
 
             else
                 div [ class "person section" ]
                     [ h4 [] [ text other.meta.name ]
-                    , claimsForPerson
-                        |> Dict.map (mkItem oRef)
-                        |> Dict.values
-                        |> ul [ class "present-list" ]
+                    , ul [ class "present-list" ] claimsForPerson
                     ]
     in
     others
@@ -449,7 +464,9 @@ viewClaims model others =
 
 
 
---
+-- ------------------
+-- Settings Tab
+-- ------------------
 
 
 viewSettings : Model -> Bool -> List (Html Msg)
@@ -474,13 +491,6 @@ viewSettings _ notifications =
             ]
         ]
     ]
-
-
-mkPresent present htm =
-    mkPresentTmpl
-        [ makeDescription present
-        , htm
-        ]
 
 
 mkPresentTmpl htms =
@@ -549,10 +559,10 @@ savePresent model =
     case model.editor.uid of
         Just uid_ ->
             -- update existing present
-            FB.set ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.editor)
+            FB.set ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
 
         Nothing ->
-            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
+            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
 
 
 setMeta : String -> String -> Encode.Value -> Cmd msg
