@@ -1,8 +1,9 @@
 $border-color: #ddd; // LAYOUT ++ see css for larger screens
 $green: #0a691f;
+$green-icon: #29a745;
 $green-accent: #d8f1de;
 $red: #880d0d;
-$bkg-colour: #ddd;
+$bkg-colour: #dedede;
 
 .app {
     background-color: $bkg-colour;
@@ -181,7 +182,7 @@ header {
 }
 
 footer {
-    background-color: #eee;
+    background-color: white;
 
     &.tabs {
         display: flex;
@@ -191,16 +192,20 @@ footer {
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            color: $green;
             padding: 5px 5px;
             flex-basis: 50px;
             flex-grow: 1;
             &.narrow {
                 flex-grow: 0;
             }
+            .iconify {
+                color: $green-icon;
+            }
         }
         .tab.active {
-            background-color: #fff;
-            color: #53d43e;
+            background-color: $bkg-colour;
+            color: $green;
         }
         .tab + .tab {
             border-left: 1px solid #ccc;
