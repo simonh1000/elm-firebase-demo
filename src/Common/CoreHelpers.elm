@@ -1,4 +1,4 @@
-module Common.CoreHelpers exposing (addCmd, addNone, addNothing, addSuffixIf, andAddCmd, andMap, attemptUpdateNth, bindMaybe_, changeValue, curry, debugALittle, decodeOnError, decodeSimpleCustomType, deleteFromArray, detectDuplicates, dictFilterMap, escapeString, exactMatch, exactMatchGeneral, exactMatchString, filterByList, flip, foldMaybe, foldRMaybe, foldRResult, foldResult, formatPluralIrregular, formatPluralIrregularAlt, formatPluralRegular, formatPluralRegularAlt, getNth, groupListBy, ifThenElse, indexedFoldl, insertIfMissing, insertNth, isJust, isNothing, listRemoveIndex, listSetIndex, mapKeys, mapMaybe, mapResult, mapThird, recoverResult, rejectByList, removeFromList, renameKey, rgxContains, rgxFind, rgxReplace, rgxSplitAtMost1, slice, stringFromBool, takeWhile, taskFromResult, uncurry, updateAndThen, updateArray, updateNth, updateNth_, updateWithParentMsg)
+module Common.CoreHelpers exposing (addCmd, addNone, addNothing, addSuffixIf, andAddCmd, andMap, attemptUpdateNth, bindMaybe_, changeValue, curry, decodeOnError, decodeSimpleCustomType, deleteFromArray, detectDuplicates, dictFilterMap, escapeString, exactMatch, exactMatchGeneral, exactMatchString, filterByList, flip, foldMaybe, foldRMaybe, foldRResult, foldResult, formatPluralIrregular, formatPluralIrregularAlt, formatPluralRegular, formatPluralRegularAlt, getNth, groupListBy, ifThenElse, indexedFoldl, insertIfMissing, insertNth, isJust, isNothing, listRemoveIndex, listSetIndex, mapKeys, mapMaybe, mapResult, mapThird, recoverResult, rejectByList, removeFromList, renameKey, rgxContains, rgxFind, rgxReplace, rgxSplitAtMost1, slice, stringFromBool, takeWhile, taskFromResult, uncurry, updateAndThen, updateArray, updateNth, updateNth_, updateWithParentMsg)
 
 -- ONLY FOR THINGS THAT ARE TOTALLY UN-REMIX SPECIFIC
 
@@ -14,18 +14,14 @@ import Task exposing (Task)
 import Tuple
 
 
-{-| Useful for logging a very long string (e.g. base 64 image)
--}
-debugALittle : a -> a
-debugALittle message =
-    let
-        _ =
-            Debug.log "" (String.left 1000 <| Debug.toString message)
-    in
-    message
 
-
-
+--debugALittle : a -> a
+--debugALittle message =
+--    let
+--        _ =
+--            Debug.log "" (String.left 1000 <| Debug.toString message)
+--    in
+--    message
 -- To prepare for 0.19
 
 

@@ -1,6 +1,6 @@
 module Model exposing (..)
 
-import Common.CoreHelpers exposing (andMap)
+import Common.CoreHelpers exposing (andMap, foldResult)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
 import Json.Decode as Decode exposing (..)
@@ -158,15 +158,22 @@ decodePresents : String -> Decoder (Dict String Present)
 decodePresents myId =
     let
         go ( id, p ) ps =
-            case decodeValue (decoderPresent myId id) p of
-                Ok present ->
-                    Dict.insert id present ps
+            decodeValue (decoderPresent myId id) p
+                |> Result.map (\present -> Dict.insert id present ps)
 
-                Err err ->
-                    Debug.todo <| "decodePresents" ++ Decode.errorToString err
+        decodeInner =
+            foldResult go (Ok Dict.empty)
     in
     keyValuePairs value
-        |> andThen (L.foldl go Dict.empty >> succeed)
+        |> andThen
+            (\lst ->
+                case decodeInner lst of
+                    Ok res ->
+                        Decode.succeed res
+
+                    Err err ->
+                        Decode.fail <| Decode.errorToString err
+            )
 
 
 decoderPresent : String -> String -> Decoder Present
@@ -227,12 +234,9 @@ decodePresentStatus myId =
 encodePresentStatus : String -> PresentStatus -> List ( String, Value )
 encodePresentStatus myId presentStatus =
     case presentStatus of
-        Available ->
-            []
-
         ClaimedByMe _ ->
             -- TODO purchased???
             [ ( "takenBy", Encode.string myId ) ]
 
-        ClaimedBySomeone ->
-            Debug.todo "should not be encoding something 'ClaimedBySomeone'"
+        _ ->
+            []

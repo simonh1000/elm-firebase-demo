@@ -3,7 +3,7 @@ port module Main exposing (main)
 import App
 import Auth
 import Browser
-import Common.CoreHelpers exposing (addCmd, debugALittle, recoverResult)
+import Common.CoreHelpers exposing (addCmd, recoverResult)
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
@@ -124,17 +124,17 @@ update message model =
                     ( { model | userMessage = userMessage }, Cmd.none )
 
                 "token-refresh" ->
-                    let
-                        _ =
-                            Debug.log "token-refresh" msg.payload
-                    in
+                    --                    let
+                    --                        _ =
+                    --                            Debug.log "token-refresh" msg.payload
+                    --                    in
                     ( model, Cmd.none )
 
                 _ ->
-                    let
-                        _ =
-                            Debug.log "********Unhandled Incoming FBMsg" message
-                    in
+                    --                    let
+                    --                        _ =
+                    --                            Debug.log "********Unhandled Incoming FBMsg" message
+                    --                    in
                     ( model, Cmd.none )
 
 

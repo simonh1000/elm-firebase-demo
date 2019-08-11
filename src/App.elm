@@ -1,7 +1,7 @@
 module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
-import Common.CoreHelpers exposing (debugALittle, isJust)
+import Common.CoreHelpers exposing (isJust)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
@@ -50,7 +50,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case debugALittle message of
+    case message of
         -- Registration page
         SwitchTab tab ->
             ( { model | tab = tab, editor = blank.editor }, Cmd.none )
@@ -226,18 +226,17 @@ view model =
     [ viewNavbar model
     , div [ class <| "main " ++ String.toLower (Tuple.second <| stringFromTab model.tab) ] <|
         case model.tab of
-            --            Family ->
-            --                viewFamily model others
+            Family ->
+                viewFamily model others
+
             MySuggestions ->
                 viewSuggestions model mine
 
-            --            MyClaims ->
-            --                [ viewClaims others ]
-            --
-            --            Settings ->
-            --                viewSettings model
-            _ ->
-                []
+            MyClaims ->
+                viewClaims others
+
+            Settings ->
+                viewSettings model
     , model.userMessage
         |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
         |> Maybe.withDefault (viewFooter model.tab)
@@ -332,7 +331,7 @@ viewSuggestions model lst =
                 [ makeDescription present
                 , button
                     [ onClick (EditPresent present)
-                    , class "btn btn-success btn-small"
+                    , class "btn btn-success btn-sm"
                     ]
                     [ matIcon "pencil-outline", text "Edit" ]
                 ]
@@ -423,7 +422,7 @@ makeDescription { description, link } =
 -- ------------------
 
 
-viewClaims : List ( String, UserData ) -> Html Msg
+viewClaims : List ( String, UserData ) -> List (Html Msg)
 viewClaims others =
     let
         mkItem : String -> String -> Present -> Bool -> Html Msg
@@ -441,7 +440,7 @@ viewClaims others =
                 , button [ onClick <| TogglePurchased oRef presentRef (not purchased), cls ] [ text status ]
                 ]
 
-        mkItemsForPerson : ( String, UserData ) -> Html Msg
+        mkItemsForPerson : ( String, UserData ) -> Maybe (Html Msg)
         mkItemsForPerson ( oRef, other ) =
             let
                 claimsForPerson =
@@ -458,17 +457,21 @@ viewClaims others =
                             )
             in
             if List.isEmpty claimsForPerson then
-                text ""
+                Nothing
 
             else
-                div [ class "person section" ]
-                    [ h4 [] [ text other.meta.name ]
-                    , ul [ class "present-list" ] claimsForPerson
-                    ]
+                Just <|
+                    div [ class "person section" ]
+                        [ h4 [] [ text other.meta.name ]
+                        , ul [ class "present-list" ] claimsForPerson
+                        ]
     in
-    others
-        |> L.map mkItemsForPerson
-        |> div [ class "claims" ]
+    case L.filterMap mkItemsForPerson others of
+        [] ->
+            [ text "You currently have no claims" ]
+
+        lst ->
+            lst
 
 
 
@@ -598,7 +601,7 @@ initCmd =
 
 checkIfPhase2 : Posix -> Bool
 checkIfPhase2 now =
-    case Debug.log "" <| Iso8601.toTime "2018-10-01" of
+    case Iso8601.toTime "2018-10-01" of
         Ok endPhase1 ->
             Time.posixToMillis now > Time.posixToMillis endPhase1
 
