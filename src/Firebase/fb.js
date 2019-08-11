@@ -1,4 +1,6 @@
+// import helpers for messaging
 import fbmsg from './fbm';
+const Rollbar = require('../rollbar');
 
 // Elm message handler
 function handler({message, payload}, fbToElm) {
@@ -81,7 +83,7 @@ function signin(email, password, fbToElm) {
         .catch(function(err) {
             fbToElm({message: "error", payload: err});
             console.error(err);
-            // Rollbar.info(err);
+            Rollbar.info(err);
         });
 }
 
@@ -105,13 +107,15 @@ function signinGoogle(fbToElm) {
     // firebase.auth().signInWithPopup(provider).then(function(result) {
     firebase.auth().signInWithRedirect(provider)
         .then(function(result) {
-            console.log("Google signin successful")
+            console.log("Google signin successful");
+            debugger;
             // This gives you a Google Access Token, result.credential.accessToken
 
             // Send user details back to Elm
             fbToElm(makeUserObject(result.user));
         })
         .catch(function(error) {
+            debugger;
             logger(error);
             fbToElm({
                 message: "Error",

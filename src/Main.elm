@@ -86,7 +86,7 @@ update message model =
             ( { model | app = app }, Cmd.map AppMsg c )
 
         FBMsgHandler msg ->
-            case msg.message of
+            case Debug.log "FBMsgHandler" msg.message of
                 "authstate" ->
                     handleAuthChange msg.payload model
 
@@ -124,17 +124,17 @@ update message model =
                     ( { model | userMessage = userMessage }, Cmd.none )
 
                 "token-refresh" ->
-                    --                    let
-                    --                        _ =
-                    --                            Debug.log "token-refresh" msg.payload
-                    --                    in
+                    let
+                        _ =
+                            Debug.log "token-refresh" msg.payload
+                    in
                     ( model, Cmd.none )
 
                 _ ->
-                    --                    let
-                    --                        _ =
-                    --                            Debug.log "********Unhandled Incoming FBMsg" message
-                    --                    in
+                    let
+                        _ =
+                            Debug.log "********Unhandled Incoming FBMsg" message
+                    in
                     ( model, Cmd.none )
 
 
@@ -166,6 +166,10 @@ handleAuthChange val model =
             ( newModel, FB.subscribe "/" )
 
         Err "nouser" ->
+            let
+                _ =
+                    Debug.log "handleAuthChange" "nouser"
+            in
             ( { model | page = AuthPage }, Cmd.none )
 
         Err err ->

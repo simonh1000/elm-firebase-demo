@@ -133,7 +133,7 @@ viewLogin model =
             , img
                 [ src "images/google_signin.png"
                 , onClick GoogleSignin
-                , alt "Click to sigin with Google"
+                , alt "Click to sign-in with Google"
                 ]
                 []
             ]

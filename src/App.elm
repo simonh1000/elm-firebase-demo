@@ -259,7 +259,11 @@ viewFamily model others =
             else
                 viewOtherPhase1
     in
-    L.map fn others
+    if List.isEmpty others then
+        [ text "Awaiting first present ideas" ]
+
+    else
+        L.map fn others
 
 
 viewOtherPhase1 : ( String, UserData ) -> Html Msg
