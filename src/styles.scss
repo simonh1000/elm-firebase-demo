@@ -1,5 +1,6 @@
 $border-color: #ddd; // LAYOUT ++ see css for larger screens
 $green: #0a691f;
+$green-accent: #d8f1de;
 $red: #880d0d;
 $bkg-colour: #ddd;
 
@@ -106,6 +107,9 @@ ul.present-list {
         span {
             font-size: 14px;
         }
+        &.ClaimedBySomeone {
+            color: grey;
+        }
     }
 }
 // plus see css for larger screens
@@ -157,7 +161,7 @@ header {
     width: 100%;
     background-color: $green;
     &, a, h4 {
-        color: white;
+        color: $green-accent;
     }
     a:hover {
         color: #ddd;
@@ -165,11 +169,6 @@ header {
     h4 {
         margin-bottom: 0;
     }
-
-//    .container,
-//    .container > div {
-//        height: 100%;
-//    }
 
     .avatar {
         height: 30px;

@@ -230,7 +230,7 @@ view model =
                 viewFamily model others
 
             MySuggestions ->
-                [ viewMySuggestions model mine ]
+                viewMySuggestions model mine
 
             MyClaims ->
                 [ viewClaims others ]
@@ -256,45 +256,53 @@ view model =
 viewFamily : Model -> List ( String, UserData ) -> List (Html Msg)
 viewFamily model others =
     let
-        wishes =
+        fn =
             if model.isPhase2 then
-                L.map viewOther others
+                viewOther
 
             else
-                L.map (viewOtherPhase1 model) others
+                viewOtherPhase1
     in
-    wishes
+    L.map fn others
 
 
-viewOtherPhase1 : Model -> ( String, UserData ) -> Html Msg
-viewOtherPhase1 _ ( _, { meta, presents } ) =
+viewOtherPhase1 : ( String, UserData ) -> Html Msg
+viewOtherPhase1 ( _, { meta, presents } ) =
     div [ class "person section" ]
-        [ div [] [ text <| meta.name ++ ": " ++ Debug.toString (Dict.size presents) ++ " suggestion(s)" ] ]
+        [ div [] [ text <| meta.name ++ ": " ++ String.fromInt (Dict.size presents) ++ " suggestion(s)" ] ]
 
 
 viewOther : ( String, UserData ) -> Html Msg
 viewOther ( userRef, { meta, presents } ) =
     let
         viewPresent presentRef present =
-            mkPresentTmpl
+            let
+                ( cls, htm ) =
+                    case present.status of
+                        Available ->
+                            ( "available"
+                            , button
+                                [ class "btn btn-primary btn-sm"
+                                , onClick <| Claim userRef presentRef
+                                ]
+                                [ text "Claim" ]
+                            )
+
+                        ClaimedByMe _ ->
+                            ( "ClaimedByMe"
+                            , button
+                                [ class "btn btn-success btn-sm"
+                                , onClick <| Unclaim userRef presentRef
+                                ]
+                                [ text "Claimed" ]
+                            )
+
+                        ClaimedBySomeone ->
+                            ( "text-secondary", badge "light" "Taken" )
+            in
+            li [ class <| "present flex-h " ++ cls ]
                 [ makeDescription present
-                , case present.status of
-                    Available ->
-                        button
-                            [ class "btn btn-primary btn-sm"
-                            , onClick <| Claim userRef presentRef
-                            ]
-                            [ text "Claim" ]
-
-                    ClaimedByMe _ ->
-                        button
-                            [ class "btn btn-success btn-sm"
-                            , onClick <| Unclaim userRef presentRef
-                            ]
-                            [ text "Claimed" ]
-
-                    ClaimedBySomeone ->
-                        badge "warning" "Taken"
+                , htm
                 ]
 
         ps =
@@ -307,7 +315,7 @@ viewOther ( userRef, { meta, presents } ) =
             text ""
 
         _ ->
-            div [ class "person section" ]
+            div [ class "shadow-sm bg-white rounded person section" ]
                 [ h4 [] [ text meta.name ]
                 , ul [ class "present-list" ] ps
                 ]
@@ -319,7 +327,7 @@ viewOther ( userRef, { meta, presents } ) =
 -- ------------------
 
 
-viewMySuggestions : Model -> List ( String, UserData ) -> Html Msg
+viewMySuggestions : Model -> List ( String, UserData ) -> List (Html Msg)
 viewMySuggestions model lst =
     let
         viewPresent present =
@@ -345,14 +353,10 @@ viewMySuggestions model lst =
 
                 _ ->
                     text <| "error" ++ Debug.toString lst
-
-        cls =
-            class "main suggestions col-sm-6"
     in
-    div [ cls ]
-        [ viewNewIdeaForm model
-        , div [ class "my-presents section" ] [ mypresents ]
-        ]
+    [ viewNewIdeaForm model
+    , div [ class "my-presents section" ] [ mypresents ]
+    ]
 
 
 viewNewIdeaForm : Model -> Html Msg
@@ -460,7 +464,7 @@ viewClaims others =
     in
     others
         |> L.map mkItemsForPerson
-        |> div [ class "claims col-12 col-sm-6" ]
+        |> div [ class "claims" ]
 
 
 
