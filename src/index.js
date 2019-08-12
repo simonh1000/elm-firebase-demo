@@ -5,7 +5,7 @@ require("./sw-installer");
 require("bootstrap-loader");
 require("./styles.scss");
 
-import {firebaseConfig} from './firebase-config';
+import {firebaseConfig} from './config/firebase-config';
 
 const {Elm} = require('./Main');
 
@@ -19,19 +19,12 @@ app.ports.removeAppShell.subscribe(() => {
 
 // F i r e b a s e
 
-// ********** C O N F I G
-//console.log("Using project:", config.projectId);
-//import config from "./Firebase/fb.config";
-//firebase.initializeApp(config);
-
-// Load main firebase handler using your config data
-
-// Initialize Firebase
+// Initialise firebase using config data
 console.log("* firebase.initializeApp(firebaseConfig)")
 firebase.initializeApp(firebaseConfig);
 
+// Set up Elm to use Firebase handler
 import fb from "./Firebase/fb";
-// Finally, set up Elm to use Firebase handler
 app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));
 
 // rollbar

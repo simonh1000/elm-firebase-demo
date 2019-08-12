@@ -24,7 +24,7 @@ example/dist
 
 ignore
 /dist
-/src/**/*.config.js
+/src/config
 functions/*.adminsdk.json
 secrets.js
 yarn.lock
