@@ -29,5 +29,3 @@ functions/*.adminsdk.json
 secrets.js
 yarn.lock
 tools/*.json
-.firebase
-Design.md

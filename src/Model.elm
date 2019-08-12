@@ -1,78 +1,56 @@
-module Model exposing (..)
+module Model exposing (Model, Page(..), Present, UserData, UserMeta, blank, blankPresent, converter, decodePresents, decodeUserData, decoderError, decoderMeta, decoderPresent, decoderXmas, encodeMaybe, encodePresent, prettyPrint)
 
-import Common.CoreHelpers exposing (andMap, foldResult)
+import Common.CoreHelpers exposing (andMap)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
-import Json.Decode as Decode exposing (..)
-import Json.Encode as Encode
+import Json.Decode as Json exposing (..)
+import Json.Encode as E
 import List as L
 
 
+type Page
+    = InitAuth -- checking auth status
+    | Subscribe -- making snapshot request
+      --   | SetNotifications -- no specific UI consequnces in fact
+    | Picker
+    | MyClaims
+    | Login
+    | Register
+
+
+
+-- type InitStatus
+
+
 type alias Model =
-    { tab : AppTab
+    { page : Page
+    , email : String
+    , password : String
+    , password2 : String
     , user : FB.FBUser
     , xmas : Dict String UserData
-    , userMessage : Maybe String
+    , userMessage : String
     , editor : Present
     , editorCollapsed : Bool
     , isPhase2 : Bool
+    , showSettings : Bool
     }
 
 
 blank : Model
 blank =
-    { tab = Family
+    { page = InitAuth
+    , email = ""
+    , password = ""
+    , password2 = ""
     , user = FB.init
     , xmas = Dict.empty
-    , userMessage = Nothing
+    , userMessage = ""
     , editor = blankPresent
     , editorCollapsed = True
     , isPhase2 = False
+    , showSettings = False
     }
-
-
-setDisplayName : String -> Model -> Model
-setDisplayName displayName model =
-    let
-        user =
-            model.user
-    in
-    { model | user = { user | displayName = Just displayName } }
-
-
-
--- -----------------------
--- AppTab
--- -----------------------
-
-
-type AppTab
-    = Family
-    | MySuggestions
-    | MyClaims
-    | Settings
-
-
-stringFromTab : AppTab -> ( String, String )
-stringFromTab tab =
-    case tab of
-        Family ->
-            ( "account-group", "Family" )
-
-        MySuggestions ->
-            ( "account", "Suggestions" )
-
-        MyClaims ->
-            ( "file-document-box-check-outline", "Claims" )
-
-        Settings ->
-            ( "settings", "" )
-
-
-
--- -----------------------
--- UserData
--- -----------------------
 
 
 type alias UserData =
@@ -81,27 +59,71 @@ type alias UserData =
     }
 
 
-decoderUserData : String -> Decoder (Dict String UserData)
-decoderUserData myId =
+type alias UserMeta =
+    { name : String
+    , notifications : Bool
+    }
+
+
+type alias Present =
+    { uid : Maybe String
+    , description : String
+    , link : Maybe String
+    , takenBy : Maybe String
+    , purchased : Bool
+    }
+
+
+blankPresent : Present
+blankPresent =
+    { uid = Nothing
+    , description = ""
+    , link = Nothing
+    , takenBy = Nothing
+    , purchased = False
+    }
+
+
+
+--
+
+
+prettyPrint : Page -> String
+prettyPrint p =
+    case p of
+        InitAuth ->
+            "Checking credentials"
+
+        Subscribe ->
+            "Getting presents data"
+
+        Picker ->
+            "Picker"
+
+        MyClaims ->
+            "MyClaims"
+
+        Login ->
+            "Login"
+
+        Register ->
+            "Register"
+
+
+
+-- DECODER
+
+
+decoderXmas : Decoder (Dict String UserData)
+decoderXmas =
     field "value" <|
         oneOf
-            [ keyValuePairs (decodeUserData myId)
+            [ keyValuePairs decodeUserData
                 |> map (L.map converter >> L.filterMap identity >> Dict.fromList)
 
             --  handle case where the database starts empty
             , null Dict.empty
             ]
-
-
-decodeUserData : String -> Decoder (Maybe UserData)
-decodeUserData myId =
-    oneOf
-        [ map Just <|
-            map2 UserData
-                (field "meta" decodeUserMeta)
-                (Decode.oneOf [ field "presents" (decodePresents myId), Decode.succeed Dict.empty ])
-        , succeed Nothing
-        ]
 
 
 converter : ( a, Maybe b ) -> Maybe ( a, b )
@@ -114,129 +136,76 @@ converter ( a, b ) =
             Nothing
 
 
+decodeUserData : Decoder (Maybe UserData)
+decodeUserData =
+    oneOf
+        [ map Just <|
+            map2 UserData
+                (field "meta" decoderMeta)
+                (Json.oneOf [ field "presents" decodePresents, Json.succeed Dict.empty ])
+        , succeed Nothing
+        ]
 
--- -----------------------
--- UserMeta
--- -----------------------
+
+decodePresents : Decoder (Dict String Present)
+decodePresents =
+    let
+        go ( id, p ) ps =
+            case decodeValue (decoderPresent id) p of
+                Ok present ->
+                    Dict.insert id present ps
+
+                Err err ->
+                    ps
+    in
+    keyValuePairs value
+        |> andThen (L.foldl go Dict.empty >> succeed)
 
 
-type alias UserMeta =
-    { name : String
-    , notifications : Bool
-    }
+decoderPresent : String -> Decoder Present
+decoderPresent id =
+    succeed (Present <| Just id)
+        |> andMap (field "description" string)
+        |> andMap (maybe <| field "link" string)
+        |> andMap (maybe <| field "takenBy" string)
+        |> andMap (oneOf [ field "purchased" bool, succeed False ])
 
 
-decodeUserMeta : Decoder UserMeta
-decodeUserMeta =
-    Decode.map2 UserMeta
+decoderMeta : Decoder UserMeta
+decoderMeta =
+    Json.map2 UserMeta
         (field "name" string)
         (oneOf [ field "notifications" bool, succeed True ])
 
 
-
--- DECODER
-
-
-type alias Present =
-    { uid : Maybe String
-    , description : String
-    , link : Maybe String
-    , status : PresentStatus
-    }
+decoderError : Decoder String
+decoderError =
+    field "message" string
 
 
-blankPresent : Present
-blankPresent =
-    { uid = Nothing
-    , description = ""
-    , link = Nothing
-    , status = Available
-    }
+
+-- Encoders
 
 
-decodePresents : String -> Decoder (Dict String Present)
-decodePresents myId =
-    let
-        go ( id, p ) ps =
-            decodeValue (decoderPresent myId id) p
-                |> Result.map (\present -> Dict.insert id present ps)
-
-        decodeInner =
-            foldResult go (Ok Dict.empty)
-    in
-    keyValuePairs value
-        |> andThen
-            (\lst ->
-                case decodeInner lst of
-                    Ok res ->
-                        Decode.succeed res
-
-                    Err err ->
-                        Decode.fail <| Decode.errorToString err
-            )
-
-
-decoderPresent : String -> String -> Decoder Present
-decoderPresent myId id =
-    succeed (Present <| Just id)
-        |> andMap (field "description" string)
-        |> andMap (maybe <| field "link" string)
-        |> andMap (decodePresentStatus myId)
-
-
-encodePresent : String -> Present -> Encode.Value
-encodePresent myId p =
+encodePresent : Present -> E.Value
+encodePresent { description, link, takenBy } =
     let
         commonData =
-            ( "description", Encode.string p.description ) :: encodePresentStatus myId p.status
+            [ ( "description", Just description ), ( "takenBy", takenBy ) ]
 
         dataToEncode =
-            case p.link of
+            case link of
                 Just link_ ->
-                    ( "link", Encode.string link_ ) :: commonData
+                    ( "link", Just link_ ) :: commonData
 
                 Nothing ->
                     commonData
     in
-    Encode.object dataToEncode
+    dataToEncode
+        |> L.filterMap encodeMaybe
+        |> E.object
 
 
-
--- PresentStatus
-
-
-type PresentStatus
-    = Available
-    | ClaimedByMe Bool -- purchased?
-    | ClaimedBySomeone
-
-
-decodePresentStatus : String -> Decoder PresentStatus
-decodePresentStatus myId =
-    field "takenBy" string
-        |> Decode.maybe
-        |> Decode.andThen
-            (\val ->
-                case val of
-                    Just id ->
-                        if id == myId then
-                            oneOf [ field "purchased" bool, succeed False ]
-                                |> Decode.map ClaimedByMe
-
-                        else
-                            Decode.succeed ClaimedBySomeone
-
-                    Nothing ->
-                        Decode.succeed Available
-            )
-
-
-encodePresentStatus : String -> PresentStatus -> List ( String, Value )
-encodePresentStatus myId presentStatus =
-    case presentStatus of
-        ClaimedByMe _ ->
-            -- TODO purchased???
-            [ ( "takenBy", Encode.string myId ) ]
-
-        _ ->
-            []
+encodeMaybe : ( String, Maybe String ) -> Maybe ( String, E.Value )
+encodeMaybe ( s, v ) =
+    Maybe.map (E.string >> (\b -> ( s, b ))) v

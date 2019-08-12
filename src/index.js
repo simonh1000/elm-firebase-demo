@@ -5,11 +5,11 @@ require("./sw-installer");
 require("bootstrap-loader");
 require("./styles.scss");
 
-import {firebaseConfig} from './firebase-config';
-
+let d = new Date();
 const {Elm} = require('./Main');
-
-var app = Elm.Main.init({flags: {}});
+var app = Elm.Main.init({
+    flags: {now: d.getTime()}
+});
 
 // Once Elm is running, remove the existing 'appshell'
 app.ports.removeAppShell.subscribe(() => {
@@ -20,16 +20,11 @@ app.ports.removeAppShell.subscribe(() => {
 // F i r e b a s e
 
 // ********** C O N F I G
-//console.log("Using project:", config.projectId);
-//import config from "./Firebase/fb.config";
-//firebase.initializeApp(config);
+import config from "./Firebase/fb.config";
 
-// Load main firebase handler using your config data
-
-// Initialize Firebase
-console.log("* firebase.initializeApp(firebaseConfig)")
-firebase.initializeApp(firebaseConfig);
-
+console.log("Using project:", config.projectId);
+firebase.initializeApp(config);
+// Load main firebase handler
 import fb from "./Firebase/fb";
 // Finally, set up Elm to use Firebase handler
 app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));

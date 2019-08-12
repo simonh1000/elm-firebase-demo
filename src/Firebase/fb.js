@@ -1,10 +1,8 @@
-// import helpers for messaging
 import fbmsg from './fbm';
-const Rollbar = require('../rollbar');
 
 // Elm message handler
 function handler({message, payload}, fbToElm) {
-    console.log(message, payload);
+    // console.log(message, payload);
     switch (message) {
         case "ListenAuthState":
             createAuthListener(fbToElm);
@@ -61,7 +59,7 @@ function createAuthListener(fbToElm) {
     // console.log("[createAuthListener] starting");
     firebase.auth()
         .onAuthStateChanged(function(user) {
-             console.log("[createAuthListener]", user);
+            // console.log("[createAuthListener]", user);
 
             if (user) {
                 fbToElm(makeUserObject(user))
@@ -83,7 +81,7 @@ function signin(email, password, fbToElm) {
         .catch(function(err) {
             fbToElm({message: "error", payload: err});
             console.error(err);
-            Rollbar.info(err);
+            // Rollbar.info(err);
         });
 }
 
@@ -107,15 +105,13 @@ function signinGoogle(fbToElm) {
     // firebase.auth().signInWithPopup(provider).then(function(result) {
     firebase.auth().signInWithRedirect(provider)
         .then(function(result) {
-            console.log("Google signin successful");
-            debugger;
+            console.log("Google signin successful")
             // This gives you a Google Access Token, result.credential.accessToken
 
             // Send user details back to Elm
             fbToElm(makeUserObject(result.user));
         })
         .catch(function(error) {
-            debugger;
             logger(error);
             fbToElm({
                 message: "Error",
@@ -132,11 +128,6 @@ function signout(x) {
             console.log("signed out");
         });
 }
-
-
-//
-
-
 
 function set(data) {
     firebase.database().ref(data.ref)
@@ -155,10 +146,9 @@ function push(data) {
 }
 
 function subscribe(fbToElm, _ref) {
-    console.log("subscribe", _ref);
     firebase.database().ref(_ref)
         .on('value', snapshot => {
-            console.log(snapshot.val());
+            // console.log(snapshot);
             fbToElm({
                 message: "snapshot",
                 payload: {
@@ -167,18 +157,7 @@ function subscribe(fbToElm, _ref) {
                 }
             });
         });
-
-    // adds ability to keep track of whether online
-    firebase.database().ref(_ref).child('.info/connected').on('value', function(connectedSnap) {
-      if (connectedSnap.val() === true) {
-            console.log("/* we're connected! */");
-      } else {
-            console.log("/* we're disconnected! */")
-      }
-    });
 }
-
-
 
 function logger(msg) {
     let reg = new RegExp('hampton-xmas');

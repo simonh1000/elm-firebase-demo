@@ -9,20 +9,21 @@ Check the following are pointing to production assets:
  - functions/index.js
  - src/Firebase/fb.config.js
  - src/Firebase/fbsw.config.js
- - database.rules.json 
- 
+ - database.rules.json
  `firebase use default`
 
  - Update assets/mainfest.json
  - Update package.json
 
 ```
-npm run prod && firebase deploy --only hosting
+yarn prod && firebase deploy --only hosting
 ```
 
 ## Installation
 
-Add you config to `/src/assets/firebase-init.js`
+All that is needed is to add two files
+
+`/src/Firebase/fb.config.js`
 
 ```js
 var config = {
@@ -35,31 +36,11 @@ var config = {
 };
 export default config;
 ```
-
-### Set up auth 
-Go to auth section of firebase console
-
-- enable google
-- enable email + password 
-
-
 ## Test functions locally
 
-firebase serve --only functions,database
-
-https://firebase.google.com/docs/functions/local-emulator
-firebase emulators:start
-
-
 ```
-firebase setup:emulators:database
-
-npm run localfunctions
+yarn localfunctions
 ```
-
-- start the database so that you can test rules `firebase serve --only database`
-- Get some sort of command line to access the functions: `npm run shell`
-
 
 ## src/Firebase/fbsw.config.js
 ```
@@ -83,3 +64,45 @@ self.config = self.config || dev;
  * Delete item (with warning)
  * add click-action to notification
  * Add firebase rules so that first person to claim can't be overwritten
+
+## Data structure (for 2.0)
+
+```
+/key1
+     - meta
+         - name
+     - presents
+         - key2
+             - description
+             - ?link
+             - ?takenBy : key1
+             - ?purchased : Bool
+```
+
+### Normal start up
+
+Elm starts running             Loading            Calls ListenAuthState
+
+Authstate sends back
+"authstate" and user object
+ - if user                     Picker             subscribe "/"
+
+ Snapshot
+
+
+### Signup flow
+
+Google
+    - auth returns a username, sends a snapshot without username
+    - so send username when auth returns?  (or when discover snapshot does not contain own username)
+
+Email registration
+    - app collects username, but does not initially send it anywhere
+    - auth returns no username, know that username needs to be saved
+
+On subsequent signup
+
+Google
+    - auth returns a username, sends a snapshot WITH username
+Email
+    - auth return NO username

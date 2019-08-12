@@ -5,13 +5,13 @@ const elmMinify = require("elm-minify");
 
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
-const {CleanWebpackPlugin} = require("clean-webpack-plugin");
+const CleanWebpackPlugin = require("clean-webpack-plugin");
 // to extract the css as a separate file
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 var MODE =
     process.env.npm_lifecycle_event === "prod" ? "production" : "development";
-var withDebug = !process.env["npm_config_nodebug"] && (MODE !== "production" );
+var withDebug = !process.env["npm_config_nodebug"];
 // this may help for Yarn users
 // var withDebug = !npmParams.includes("--nodebug");
 console.log('\x1b[36m%s\x1b[0m', `** elm-webpack-starter: mode "${MODE}", withDebug: ${withDebug}\n`);
@@ -110,14 +110,14 @@ if (MODE === "development") {
         },
         devServer: {
             inline: true,
-            stats: 'errors-only',
+            stats: "errors-only",
             contentBase: path.join(__dirname, "src/assets"),
             historyApiFallback: true,
+            // feel free to delete this section if you don't need anything like this
             before(app) {
-                // Make fbsw.config.js available
-                app.get('/Firebase/:fname', (req, res) => {
-                    console.log("[devserver] Firebase directory", req.params.fname)
-                    res.sendFile(path.join(__dirname, 'src/Firebase/', req.params.fname));
+                // on port 3000
+                app.get("/test", function(req, res) {
+                    res.json({ result: "OK" });
                 });
             }
         }

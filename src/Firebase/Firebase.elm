@@ -68,17 +68,16 @@ type FBCommand
     | ListenAuthState
 
 
-fbCommandToString : FBCommand -> String
-fbCommandToString cmd =
-    case cmd of
-        StartNotifications _ ->
-            "StartNotifications"
 
-        StopNotifications _ ->
-            "StopNotifications"
-
-        ListenAuthState ->
-            "ListenAuthState"
+-- fbCommandToString : FBCommand -> String
+-- fbCommandToString cmd =
+--     case cmd of
+--     StartNotifications _ ->
+--         "StartNotifications"
+--     StopNotifications _ ->
+--             "StopNotifications"
+--     ListenAuthState ->
+--         "ListenAuthState"
 
 
 sendToFirebase : FBCommand -> Cmd msg
@@ -91,7 +90,7 @@ sendToFirebase cmd =
             elmToFb <| { message = "StopNotifications", payload = E.string userId }
 
         _ ->
-            elmToFb <| { message = fbCommandToString cmd, payload = E.null }
+            elmToFb <| { message = Debug.toString cmd, payload = E.null }
 
 
 

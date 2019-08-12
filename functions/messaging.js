@@ -31,7 +31,7 @@ exports.subscribe = function subscribe(req, res) {
 
 exports.unsubscribe = function(req, res) {
     var token = req.body.token;
-    console.log("unsubscribe starting", token);
+    console.log("unsubcribe starting", token);
     // https://firebase.google.com/docs/cloud-messaging/admin/manage-topic-subscriptions
     cors(req, res, () => {
         admin.messaging().unsubscribeFromTopic(token, topic)

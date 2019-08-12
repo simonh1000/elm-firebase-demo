@@ -1,4 +1,4 @@
-module Bootstrap exposing (inputWithLabel, passwordWithLabel)
+module Bootstrap exposing (inputWithButton, inputWithLabel, onChange, passwordWithLabel)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -6,6 +6,9 @@ import Html.Events exposing (..)
 import Json.Decode as Json
 
 
+onChange : (String -> msg) -> Attribute msg
+onChange msg =
+    on "change" (Json.map msg Json.string)
 
 
 inputWithButton : (String -> msg) -> msg -> String -> Html msg

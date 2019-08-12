@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "hampton-xmas",
+    "staging": "xmas-f3f6b"
+  }
+}
