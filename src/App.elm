@@ -28,12 +28,12 @@ type Msg
     | Claim String String
     | Unclaim String String
     | TogglePurchased String String Bool -- other user ref, present ref, new value
-      -- MyIdeas
-    | UpdateNewPresent String
-    | UpdateNewPresentLink String
-    | SubmitNewPresent
+      -- Suggestions
+    | UpdateSuggestionDescription String
+    | UpdateSuggestionLink String
+    | SubmitSuggestion
     | CancelEditor
-    | DeletePresent String
+    | DeleteSuggestion String
       -- My presents list
     | Expander
     | EditPresent Present
@@ -91,12 +91,12 @@ update message model =
         TogglePurchased otherRef presentRef newValue ->
             ( model, purchase otherRef presentRef newValue )
 
-        UpdateNewPresent description ->
+        UpdateSuggestionDescription description ->
             ( updateEditor (\ed -> { ed | description = description }) model
             , Cmd.none
             )
 
-        UpdateNewPresentLink link ->
+        UpdateSuggestionLink link ->
             ( updateEditor
                 (\ed ->
                     { ed
@@ -112,7 +112,7 @@ update message model =
             , Cmd.none
             )
 
-        SubmitNewPresent ->
+        SubmitSuggestion ->
             ( { model | editor = blankPresent }
             , savePresent model
             )
@@ -122,7 +122,7 @@ update message model =
             , Cmd.none
             )
 
-        DeletePresent uid ->
+        DeleteSuggestion uid ->
             ( { model | editor = blankPresent }
             , delete model uid
             )
@@ -388,19 +388,19 @@ viewPresentEditor isPhase2 editor =
                     text "New suggestion"
             ]
         , div [ id "new-present-form" ]
-            [ B.inputWithLabel UpdateNewPresent "Description" "newpresent" editor.description
+            [ B.inputWithLabel UpdateSuggestionDescription "Description" "newpresent" editor.description
             , editor.link
                 |> Maybe.withDefault ""
-                |> B.inputWithLabel UpdateNewPresentLink "Link (optional)" "newpresentlink"
+                |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "newpresentlink"
             , div [ class "flex-h flex-spread" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case ( editor.uid, isPhase2 ) of
                     ( Just uid, False ) ->
-                        button [ class "btn btn-danger", onClick (DeletePresent uid) ] [ text "Delete*" ]
+                        button [ class "btn btn-danger", onClick (DeleteSuggestion uid) ] [ text "Delete*" ]
 
                     _ ->
                         text ""
-                , button [ class "btn btn-success", onClick SubmitNewPresent, disabled <| editor.description == "" ] [ text "Save" ]
+                , button [ class "btn btn-success", onClick SubmitSuggestion, disabled <| editor.description == "" ] [ text "Save" ]
                 ]
             , if isJust editor.uid then
                 p [] [ text "* Warning: someone may already have committed to buy this!" ]
