@@ -1,4 +1,4 @@
-port module Firebase.Firebase exposing (FBCommand(..), FBMsg, FBResponse(..), FBUser, PortMsg, decodeAuthState, elmToFb, encodeCredentials, fbToElm, init, push, register, remove, sendToFirebase, set, setUpAuthListener, signin, signinGoogle, signout, subscribe, subscriptions, toFBResponse, userDecoder)
+port module Firebase.Firebase exposing (..)
 
 import Json.Decode as Json exposing (..)
 import Json.Encode as E
@@ -191,6 +191,18 @@ set ref val =
     ]
         |> E.object
         |> FBMsg "set"
+        |> elmToFb
+
+
+{-| updates key values at the ref, but does not replace completely
+-}
+update : String -> E.Value -> Cmd msg
+update ref val =
+    [ ( "ref", E.string ref )
+    , ( "payload", val )
+    ]
+        |> E.object
+        |> FBMsg "update"
         |> elmToFb
 
 

@@ -33,6 +33,9 @@ function handler({message, payload}, fbToElm) {
         case "set":
             set(payload);
             break;
+        case "update":
+            update(payload);
+            break;
         case "remove":
             remove(payload);
             break;
@@ -141,6 +144,11 @@ function signout(x) {
 function set(data) {
     firebase.database().ref(data.ref)
         .set(data.payload);
+}
+
+function update(data) {
+    firebase.database().ref(data.ref)
+        .update(data.payload);
 }
 
 function remove(ref) {

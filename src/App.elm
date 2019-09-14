@@ -1,7 +1,7 @@
 module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
-import Common.CoreHelpers exposing (isJust)
+import Common.CoreHelpers exposing (ifThenElse, isJust)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
@@ -27,16 +27,15 @@ type Msg
       -- MainList
     | Claim String String
     | Unclaim String String
-    | TogglePurchased String String Bool -- other user ref, present ref, new value
       -- Suggestions
+    | EditSuggestion Present
     | UpdateSuggestionDescription String
     | UpdateSuggestionLink String
     | SubmitSuggestion
     | CancelEditor
     | DeleteSuggestion String
-      -- My presents list
-    | Expander
-    | EditPresent Present
+      -- Claims tab
+    | TogglePurchased String String Bool -- other user ref, present ref, new value
       -- Settings
     | ToggleNotifications Bool -- turn on/off subscription for notifications of changes
     | Signout
@@ -55,7 +54,54 @@ update message model =
         SwitchTab tab ->
             ( { model | tab = tab, editor = blank.editor }, Cmd.none )
 
+        ConfirmIsPhase2 isPhase2 ->
+            ( { model | isPhase2 = isPhase2 }, Cmd.none )
+
         -- Main page
+        Claim otherRef presentRef ->
+            ( model, claim model.user.uid otherRef presentRef )
+
+        Unclaim otherRef presentRef ->
+            ( model
+            , Cmd.batch
+                [ unclaim otherRef presentRef
+                , -- must also set as un-purchased
+                  purchase otherRef presentRef False
+                ]
+            )
+
+        -- Suggestions
+        EditSuggestion newPresent ->
+            ( updateEditor (\_ -> newPresent) model
+            , Cmd.none
+            )
+
+        UpdateSuggestionDescription description ->
+            ( updateEditor (\ed -> { ed | description = description }) model
+            , Cmd.none
+            )
+
+        UpdateSuggestionLink link ->
+            ( updateEditor
+                (\ed -> { ed | link = ifThenElse (link == "") Nothing (Just link) })
+                model
+            , Cmd.none
+            )
+
+        SubmitSuggestion ->
+            ( { model | editor = blankPresent }, savePresent model )
+
+        CancelEditor ->
+            ( { model | editor = blankPresent }, Cmd.none )
+
+        DeleteSuggestion uid ->
+            ( { model | editor = blankPresent }, delete model uid )
+
+        -- Claims
+        TogglePurchased otherRef presentRef newValue ->
+            ( model, purchase otherRef presentRef newValue )
+
+        -- Misc
         ToggleNotifications notifications ->
             -- this returns to main as "SubscriptionOk", which triggers an update of the db,
             -- which triggers a snapshot that clears this message
@@ -73,71 +119,6 @@ update message model =
             ( blank
             , FB.signout
             )
-
-        Claim otherRef presentRef ->
-            ( model
-            , claim model.user.uid otherRef presentRef
-            )
-
-        Unclaim otherRef presentRef ->
-            ( model
-            , Cmd.batch
-                [ unclaim otherRef presentRef
-                , -- must also set as un-purchased
-                  purchase otherRef presentRef False
-                ]
-            )
-
-        TogglePurchased otherRef presentRef newValue ->
-            ( model, purchase otherRef presentRef newValue )
-
-        UpdateSuggestionDescription description ->
-            ( updateEditor (\ed -> { ed | description = description }) model
-            , Cmd.none
-            )
-
-        UpdateSuggestionLink link ->
-            ( updateEditor
-                (\ed ->
-                    { ed
-                        | link =
-                            if link == "" then
-                                Nothing
-
-                            else
-                                Just link
-                    }
-                )
-                model
-            , Cmd.none
-            )
-
-        SubmitSuggestion ->
-            ( { model | editor = blankPresent }
-            , savePresent model
-            )
-
-        CancelEditor ->
-            ( { model | editor = blankPresent }
-            , Cmd.none
-            )
-
-        DeleteSuggestion uid ->
-            ( { model | editor = blankPresent }
-            , delete model uid
-            )
-
-        -- New present form
-        Expander ->
-            ( { model | editorCollapsed = not model.editorCollapsed }, Cmd.none )
-
-        EditPresent newPresent ->
-            ( updateEditor (\_ -> newPresent) model
-            , Cmd.none
-            )
-
-        ConfirmIsPhase2 isPhase2 ->
-            ( { model | isPhase2 = isPhase2 }, Cmd.none )
 
         HandleSnapshot mbUser value ->
             handleSnapshot mbUser value model
@@ -338,7 +319,7 @@ viewSuggestions model lst =
             li [ class "present flex-h flex-spread" ]
                 [ makeDescription present
                 , button
-                    [ onClick (EditPresent present)
+                    [ onClick (EditSuggestion present)
                     , class "btn btn-success btn-sm"
                     ]
                     [ matIcon "pencil-outline", text "Edit" ]
@@ -399,7 +380,7 @@ viewPresentEditor isPhase2 editor =
                         button [ class "btn btn-danger", onClick (DeleteSuggestion uid) ] [ text "Delete*" ]
 
                     _ ->
-                        text ""
+                        text "not showing delete button????"
                 , button [ class "btn btn-success", onClick SubmitSuggestion, disabled <| editor.description == "" ] [ text "Save" ]
                 ]
             , if isJust editor.uid then
@@ -585,7 +566,8 @@ savePresent model =
     case model.editor.uid of
         Just uid_ ->
             -- update existing present
-            FB.set ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
+            -- FIXME should UPDATE description and link, NOT REPLACE everything
+            FB.update ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
 
         Nothing ->
             FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
