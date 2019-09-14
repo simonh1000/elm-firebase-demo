@@ -151,13 +151,17 @@ FIXME we are renewing subscriptions every time a subscription comes in
 -}
 handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
 handleSnapshot mbUser snapshot model =
-    case Decode.decodeValue (decoderUserData model.user.uid) snapshot of
+    let
+        user =
+            mbUser |> Maybe.withDefault model.user
+    in
+    case Decode.decodeValue (decoderUserData user.uid) snapshot of
         Ok xmas ->
             let
                 newModel =
                     { model
                         | xmas = xmas
-                        , user = mbUser |> Maybe.withDefault model.user
+                        , user = user
                         , -- if we got a snapshot then no need to show progress/error
                           userMessage = Nothing
                     }
