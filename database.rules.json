@@ -1,6 +1,6 @@
 {
   "rules": {
-      ".read"  : "auth != null && root.child('users').child(auth.uid).val() === true",
-      ".write" : "auth != null && root.child('users').child(auth.uid).val() === true"
+    ".read": "auth != null && root.child('emails').hasChild(auth.token.email.replace('@','_').replace('.','_'))",
+    ".write": "auth != null && root.child('emails').hasChild(auth.token.email.replace('@','_').replace('.','_'))"
   }
 }

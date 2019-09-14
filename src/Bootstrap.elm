@@ -3,17 +3,14 @@ module Bootstrap exposing (inputWithLabel, passwordWithLabel)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as Json
-
-
 
 
 inputWithButton : (String -> msg) -> msg -> String -> Html msg
 inputWithButton updater clicker val =
     div [ class "input-group" ]
         [ input
-            [ class "form-control"
-            , onInput updater
+            [ onInput updater
+            , class "form-control"
             , value val
             ]
             []

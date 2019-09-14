@@ -2,8 +2,11 @@
 
 // require("./rollbar");
 require("./sw-installer");
-require("bootstrap-loader");
+//require("bootstrap-loader");
+// require('bootstrap');
+
 require("./styles.scss");
+
 
 import {firebaseConfig} from './config/firebase-config';
 

@@ -5,6 +5,8 @@ $green-accent: #d8f1de;
 $red: #880d0d;
 $bkg-colour: #dedede;
 
+@import "~bootstrap/scss/bootstrap";
+
 .app {
     background-color: $bkg-colour;
     // repeat settings inlined
