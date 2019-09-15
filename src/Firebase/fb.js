@@ -1,9 +1,9 @@
 // import helpers for messaging
-import fbmsg from './fbm';
-const Rollbar = require('../rollbar');
+import fbmsg from "./messaging-permission";
+const Rollbar = require("../rollbar");
 
 // Elm message handler
-function handler({message, payload}, fbToElm) {
+function handler({ message, payload }, fbToElm) {
     console.log(message, payload);
     switch (message) {
         case "ListenAuthState":
@@ -62,42 +62,43 @@ function makeUserObject(user) {
 
 function createAuthListener(fbToElm) {
     // console.log("[createAuthListener] starting");
-    firebase.auth()
-        .onAuthStateChanged(function(user) {
-             console.log("[createAuthListener]", user);
+    firebase.auth().onAuthStateChanged(function(user) {
+        console.log("[createAuthListener]", user);
 
-            if (user) {
-                fbToElm(makeUserObject(user))
-            } else {
-                fbToElm({
-                    message: "authstate",
-                    payload: null
-                });
-            }
-        });
+        if (user) {
+            fbToElm(makeUserObject(user));
+        } else {
+            fbToElm({
+                message: "authstate",
+                payload: null
+            });
+        }
+    });
 }
 
 function signin(email, password, fbToElm) {
-    firebase.auth()
+    firebase
+        .auth()
         .signInWithEmailAndPassword(email, password)
         .then(res => {
             console.log("Signin success", res);
         })
         .catch(function(err) {
-            fbToElm({message: "error", payload: err});
+            fbToElm({ message: "error", payload: err });
             console.error(err);
             Rollbar.info(err);
         });
 }
 
 function register(email, password, fbToElm) {
-    firebase.auth()
+    firebase
+        .auth()
         .createUserWithEmailAndPassword(email, password)
         .then(res => {
             console.log("Register success", res);
         })
         .catch(function(err) {
-            fbToElm({message: "error", payload: err});
+            fbToElm({ message: "error", payload: err });
             logger(err);
         });
 }
@@ -108,7 +109,9 @@ function signinGoogle(fbToElm) {
     console.log("[signinGoogle] start");
     var provider = new firebase.auth.GoogleAuthProvider();
     // firebase.auth().signInWithPopup(provider).then(function(result) {
-    firebase.auth().signInWithRedirect(provider)
+    firebase
+        .auth()
+        .signInWithRedirect(provider)
         .then(function(result) {
             console.log("Google signin successful");
             debugger;
@@ -127,45 +130,51 @@ function signinGoogle(fbToElm) {
         });
 }
 
-
 function signout(x) {
-    firebase.auth()
+    firebase
+        .auth()
         .signOut()
         .then(res => {
             console.log("signed out");
         });
 }
 
-
-//
-
-
-
+// set replaces object at ref
 function set(data) {
-    firebase.database().ref(data.ref)
+    firebase
+        .database()
+        .ref(data.ref)
         .set(data.payload);
 }
 
 function update(data) {
-    firebase.database().ref(data.ref)
+    firebase
+        .database()
+        .ref(data.ref)
         .update(data.payload);
 }
 
 function remove(ref) {
     // console.log("removing ref:", ref);
-    firebase.database().ref(ref)
+    firebase
+        .database()
+        .ref(ref)
         .remove();
 }
 
 function push(data) {
-    firebase.database().ref(data.ref)
+    firebase
+        .database()
+        .ref(data.ref)
         .push(data.payload);
 }
 
 function subscribe(fbToElm, _ref) {
     console.log("subscribe", _ref);
-    firebase.database().ref(_ref)
-        .on('value', snapshot => {
+    firebase
+        .database()
+        .ref(_ref)
+        .on("value", snapshot => {
             console.log(snapshot.val());
             fbToElm({
                 message: "snapshot",
@@ -177,19 +186,21 @@ function subscribe(fbToElm, _ref) {
         });
 
     // adds ability to keep track of whether online
-    firebase.database().ref(_ref).child('.info/connected').on('value', function(connectedSnap) {
-      if (connectedSnap.val() === true) {
-            console.log("/* we're connected! */");
-      } else {
-            console.log("/* we're disconnected! */")
-      }
-    });
+    firebase
+        .database()
+        .ref(_ref)
+        .child(".info/connected")
+        .on("value", function(connectedSnap) {
+            if (connectedSnap.val() === true) {
+                // console.log("/* we're connected! */");
+            } else {
+                // console.log("/* we're disconnected! */");
+            }
+        });
 }
 
-
-
 function logger(msg) {
-    let reg = new RegExp('hampton-xmas');
+    let reg = new RegExp("hampton-xmas");
 
     if (reg.test(window.location.href)) {
         console.log("Sending to rollbar", msg);
@@ -199,7 +210,8 @@ function logger(msg) {
     }
 }
 
-
 export default {
-    createAuthListener, handler, logger
+    createAuthListener,
+    handler,
+    logger
 };

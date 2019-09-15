@@ -113,9 +113,8 @@ decoderUserData myId =
         oneOf
             [ keyValuePairs (decodeUserData myId)
                 |> map (L.map converter >> L.filterMap identity >> Dict.fromList)
-
-            --  handle case where the database starts empty
-            , null Dict.empty
+            , --  handle case where the database starts empty
+              null Dict.empty
             ]
 
 
@@ -156,7 +155,7 @@ decodeUserMeta : Decoder UserMeta
 decodeUserMeta =
     Decode.map2 UserMeta
         (field "name" string)
-        (oneOf [ field "notifications" bool, succeed True ])
+        (oneOf [ field "notifications" bool, succeed False ])
 
 
 

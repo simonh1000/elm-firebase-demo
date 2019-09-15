@@ -11,7 +11,7 @@ Check the following are pointing to production assets:
  - src/Firebase/fbsw.config.js
  - database.rules.json 
  
- `firebase use default`
+`firebase use default`
 
  - Update assets/mainfest.json
  - Update package.json
@@ -36,7 +36,8 @@ var config = {
 export default config;
 ```
 
-### Set up auth 
+### Set up auth
+
 Go to auth section of firebase console
 
 - enable google
