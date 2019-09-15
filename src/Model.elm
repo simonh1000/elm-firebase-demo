@@ -70,6 +70,32 @@ stringFromTab tab =
 
 
 
+--
+
+
+type Page
+    = InitAuth -- checking auth status
+    | Subscribing FB.FBUser -- making snapshot request
+    | AuthPage
+    | AppPage
+
+
+stringFromPage page =
+    case page of
+        InitAuth ->
+            "InitAuth"
+
+        Subscribing _ ->
+            "Subscribing"
+
+        AuthPage ->
+            "AuthPage"
+
+        AppPage ->
+            "AppPage"
+
+
+
 -- -----------------------
 -- UserData
 -- -----------------------

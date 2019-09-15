@@ -10,7 +10,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
-import Model as AppM
+import Model as AppM exposing (Page(..))
 
 
 port removeAppShell : String -> Cmd msg
@@ -230,7 +230,7 @@ view model =
             ]
 
         wrap htm =
-            div [ class <| "app " ++ String.toLower (stringFromPage model.page) ] htm
+            div [ class <| "app " ++ String.toLower (AppM.stringFromPage model.page) ] htm
     in
     case model.page of
         InitAuth ->
@@ -247,32 +247,6 @@ view model =
 
 
 
---
-
-
-type Page
-    = InitAuth -- checking auth status
-    | Subscribing FB.FBUser -- making snapshot request
-    | AuthPage
-    | AppPage
-
-
-stringFromPage page =
-    case page of
-        InitAuth ->
-            "InitAuth"
-
-        Subscribing _ ->
-            "Subscribing"
-
-        AuthPage ->
-            "AuthPage"
-
-        AppPage ->
-            "AppPage"
-
-
-
 -- CMDs
 
 
@@ -282,50 +256,13 @@ setMeta uid key val =
 
 
 
---claim : String -> String -> String -> Cmd msg
---claim uid otherRef presentRef =
---    FB.set
---        (makeSetPresentRef "takenBy" otherRef presentRef)
---        (Encode.string uid)
---
---
---purchase : String -> String -> Bool -> Cmd msg
---purchase otherRef presentRef purchased =
---    FB.set
---        (makeSetPresentRef "purchased" otherRef presentRef)
---        (Encode.bool purchased)
---
---
---unclaim : String -> String -> Cmd msg
---unclaim otherRef presentRef =
---    FB.remove <| makeSetPresentRef "takenBy" otherRef presentRef
---
---
---delete : Model -> String -> Cmd Msg
---delete model ref =
---    FB.remove ("/" ++ model.user.uid ++ "/presents/" ++ ref)
---
---
---savePresent : Model -> Cmd Msg
---savePresent model =
---    case model.editor.uid of
---        Just uid_ ->
---            -- update existing present
---            FB.set ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.editor)
---
---        Nothing ->
---            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.editor)
---makeSetPresentRef : String -> String -> String -> String
---makeSetPresentRef str otherRef presentRef =
---    [ otherRef, "presents", presentRef, str ] |> String.join "/"
 --
 
 
 main =
     Browser.document
         { init = init
-        , view = \m -> { title = "new app", body = [ view m ] }
+        , view = \m -> { title = "Xmas 2019", body = [ view m ] }
         , update = update
-        , subscriptions =
-            always (FB.subscriptions FBMsgHandler)
+        , subscriptions = \_ -> FB.subscriptions FBMsgHandler
         }

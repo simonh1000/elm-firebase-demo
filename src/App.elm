@@ -17,6 +17,10 @@ import Task
 import Time exposing (Posix)
 
 
+phase2 =
+    "2019-11-01"
+
+
 
 -- UPDATE
 
@@ -322,10 +326,12 @@ viewSuggestions model lst =
                     [ onClick (EditSuggestion present)
                     , class "btn btn-success btn-sm"
                     ]
-                    [ matIcon "pencil-outline", text "Edit" ]
+                    [ span [ class "mr-1" ] [ matIcon "pencil-outline" ]
+                    , text "Edit"
+                    ]
                 ]
 
-        mypresents =
+        myPresents =
             case lst of
                 [ ( _, { presents } ) ] ->
                     case Dict.values presents of
@@ -344,21 +350,12 @@ viewSuggestions model lst =
                     text <| "Unexpected error - too many entries in your name - please report this"
     in
     [ viewPresentEditor model.isPhase2 model.editor
-    , div [ class "my-presents section" ] [ mypresents ]
+    , div [ class "my-presents section" ] [ myPresents ]
     ]
 
 
 viewPresentEditor : Bool -> Present -> Html Msg
 viewPresentEditor isPhase2 editor =
-    let
-        btn msg txt =
-            button
-                [ class "btn btn-primary"
-                , onClick msg
-                , disabled <| editor.description == ""
-                ]
-                [ text txt ]
-    in
     div [ class "new-present section" ]
         [ h4 []
             [ case editor.uid of
@@ -375,16 +372,21 @@ viewPresentEditor isPhase2 editor =
                 |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "newpresentlink"
             , div [ class "flex-h flex-spread" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
-                , case ( editor.uid, isPhase2 ) of
-                    ( Just uid, False ) ->
+                , case editor.uid of
+                    Just uid ->
                         button [ class "btn btn-danger", onClick (DeleteSuggestion uid) ] [ text "Delete*" ]
 
-                    _ ->
-                        text "not showing delete button????"
-                , button [ class "btn btn-success", onClick SubmitSuggestion, disabled <| editor.description == "" ] [ text "Save" ]
+                    Nothing ->
+                        text ""
+                , button
+                    [ class "btn btn-success"
+                    , onClick SubmitSuggestion
+                    , disabled <| editor.description == ""
+                    ]
+                    [ text "Save" ]
                 ]
-            , if isJust editor.uid then
-                p [] [ text "* Warning: someone may already have committed to buy this!" ]
+            , if isPhase2 then
+                div [ class "mt-1" ] [ text "* Warning: someone may already have committed to buy this!" ]
 
               else
                 text ""
@@ -591,7 +593,7 @@ initCmd =
 
 checkIfPhase2 : Posix -> Bool
 checkIfPhase2 now =
-    case Iso8601.toTime "2018-10-01" of
+    case Iso8601.toTime phase2 of
         Ok endPhase1 ->
             Time.posixToMillis now > Time.posixToMillis endPhase1
 
