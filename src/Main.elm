@@ -11,12 +11,7 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Model as AppM exposing (Page(..))
-
-
-port removeAppShell : String -> Cmd msg
-
-
-port rollbar : String -> Cmd msg
+import Ports
 
 
 
@@ -53,7 +48,7 @@ init _ =
     ( { blank | page = InitAuth }
     , Cmd.batch
         [ FB.setUpAuthListener
-        , removeAppShell ""
+        , Ports.sendToJs <| Ports.RemoveAppShell ""
         ]
     )
 
@@ -86,7 +81,7 @@ update message model =
             ( { model | app = app }, Cmd.map AppMsg c )
 
         FBMsgHandler msg ->
-            case Debug.log "FBMsgHandler" msg.message of
+            case msg.message of
                 "authstate" ->
                     handleAuthChange msg.payload model
 
@@ -174,7 +169,7 @@ handleAuthChange val model =
 
         Err err ->
             ( { model | page = AuthPage, userMessage = Just err }
-            , rollbar <| "handleAuthChange " ++ err
+            , Ports.sendToJs <| Ports.LogRollbar <| "handleAuthChange " ++ err
             )
 
 

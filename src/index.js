@@ -2,8 +2,6 @@
 
 // require("./rollbar");
 require("./sw-installer");
-//require("bootstrap-loader");
-// require('bootstrap');
 
 require("./styles.scss");
 
@@ -14,11 +12,23 @@ const {Elm} = require('./Main');
 
 var app = Elm.Main.init({flags: {}});
 
-// Once Elm is running, remove the existing 'appshell'
-app.ports.removeAppShell.subscribe(() => {
-    let rm = document.querySelector(".removable");
-    if (rm) rm.remove();
+app.ports.toJs.subscribe(data => {
+    switch(data.tag) {
+        case "RemoveAppShell":
+            let rm = document.querySelector(".removable");
+            if (rm) rm.remove();
+            break;
+        case "LogRollbar":
+            fb.logger({
+                source: "elm",
+                message: data.payload
+            });
+            break
+        default:
+            console.error(data);
+    }
 });
+
 
 // F i r e b a s e
 
@@ -29,11 +39,3 @@ firebase.initializeApp(firebaseConfig);
 // Set up Elm to use Firebase handler
 import fb from "./Firebase/fb";
 app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));
-
-// rollbar
-app.ports.rollbar.subscribe(msg => {
-    fb.logger({
-        source: "elm",
-        message: msg
-    });
-});
