@@ -17,6 +17,16 @@ import Task
 import Time exposing (Posix)
 
 
+initCmd : Cmd Msg
+initCmd =
+    Cmd.batch
+        [ Time.now
+            |> Task.map checkIfPhase2
+            |> Task.perform ConfirmIsPhase2
+        , FB.sendToFirebase FB.GetMessagingToken
+        ]
+
+
 phase2 =
     "2019-11-01"
 
@@ -196,6 +206,16 @@ handleSnapshot mbUser snapshot model =
 updateEditor : (Present -> Present) -> Model -> Model
 updateEditor fn model =
     { model | editor = fn model.editor }
+
+
+checkIfPhase2 : Posix -> Bool
+checkIfPhase2 now =
+    case Iso8601.toTime phase2 of
+        Ok endPhase1 ->
+            Time.posixToMillis now > Time.posixToMillis endPhase1
+
+        Err _ ->
+            False
 
 
 
@@ -586,17 +606,5 @@ makeSetPresentRef str otherRef presentRef =
     [ otherRef, "presents", presentRef, str ] |> String.join "/"
 
 
-initCmd =
-    Time.now
-        |> Task.map checkIfPhase2
-        |> Task.perform ConfirmIsPhase2
 
-
-checkIfPhase2 : Posix -> Bool
-checkIfPhase2 now =
-    case Iso8601.toTime phase2 of
-        Ok endPhase1 ->
-            Time.posixToMillis now > Time.posixToMillis endPhase1
-
-        Err _ ->
-            False
+--https://us-central1-***REMOVED***.cloudfunctions.net/subscribe

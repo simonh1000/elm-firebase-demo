@@ -1,4 +1,4 @@
-module Common.CoreHelpers exposing (addCmd, addNone, addNothing, addSuffixIf, andAddCmd, andMap, attemptUpdateNth, bindMaybe_, changeValue, curry, decodeOnError, decodeSimpleCustomType, deleteFromArray, detectDuplicates, dictFilterMap, escapeString, exactMatch, exactMatchGeneral, exactMatchString, filterByList, flip, foldMaybe, foldRMaybe, foldRResult, foldResult, formatPluralIrregular, formatPluralIrregularAlt, formatPluralRegular, formatPluralRegularAlt, getNth, groupListBy, ifThenElse, indexedFoldl, insertIfMissing, insertNth, isJust, isNothing, listRemoveIndex, listSetIndex, mapKeys, mapMaybe, mapResult, mapThird, recoverResult, rejectByList, removeFromList, renameKey, rgxContains, rgxFind, rgxReplace, rgxSplitAtMost1, slice, stringFromBool, takeWhile, taskFromResult, uncurry, updateAndThen, updateArray, updateNth, updateNth_, updateWithParentMsg)
+module Common.CoreHelpers exposing (..)
 
 -- ONLY FOR THINGS THAT ARE TOTALLY UN-REMIX SPECIFIC
 
@@ -38,34 +38,6 @@ uncurry fn =
 flip : (a -> b -> c) -> b -> a -> c
 flip function argB argA =
     function argA argB
-
-
-
--- Regex
-
-
-rgxContains rgxString str =
-    Regex.fromString rgxString
-        |> Maybe.map (\rgx -> Regex.contains rgx str)
-        |> Maybe.withDefault False
-
-
-rgxFind rgxString tgt =
-    Regex.fromString rgxString
-        |> Maybe.map (\rgx -> Regex.find rgx tgt)
-        |> Maybe.withDefault []
-
-
-rgxReplace rgxString fn orig =
-    Regex.fromString rgxString
-        |> Maybe.map (\rgx -> Regex.replace rgx fn orig)
-        |> Maybe.withDefault orig
-
-
-rgxSplitAtMost1 rgxString orig =
-    Regex.fromString rgxString
-        |> Maybe.map (\rgx -> Regex.splitAtMost 1 rgx orig)
-        |> Maybe.withDefault []
 
 
 
@@ -155,68 +127,6 @@ stringFromBool t =
 escapeString : String -> String
 escapeString =
     Jenc.string >> Jenc.encode 0
-
-
-{-| Format plural for nouns which have an irregular plural
-
-  - 0, child, children -> 0 children
-  - 1, child, children -> 1 child
-  - 10, child, children -> 10 children
-
--}
-formatPluralIrregular : Int -> String -> String -> String
-formatPluralIrregular nb singular plural =
-    if nb == 0 then
-        "0 " ++ plural
-
-    else if nb == 1 then
-        "1 " ++ singular
-
-    else
-        String.fromInt nb ++ " " ++ plural
-
-
-{-| Format plural for nouns which have a regular plural (meaning the plural is the singular+ 's'
-
-  - 0, day -> 0 days
-  - 1, day -> 1 day
-  - 10, day -> 10 day
-
--}
-formatPluralRegular : Int -> String -> String
-formatPluralRegular nb singular =
-    formatPluralIrregular nb singular (singular ++ "s")
-
-
-{-| Format plural for nouns which have an irregular plural
-
-  - 0, child, children -> no children
-  - 1, child, children -> one child
-  - 10, child, children -> 10 children
-
--}
-formatPluralIrregularAlt : Int -> String -> String -> String
-formatPluralIrregularAlt nb singular plural =
-    if nb == 0 then
-        "no " ++ plural
-
-    else if nb == 1 then
-        "one " ++ singular
-
-    else
-        String.fromInt nb ++ " " ++ plural
-
-
-{-| Format plural for nouns which have a regular plural (meaning the plural is the singular+ 's'
-
-  - 0, day -> no days
-  - 1, day -> one day
-  - 10, day -> 10 day
-
--}
-formatPluralRegularAlt : Int -> String -> String
-formatPluralRegularAlt nb singular =
-    formatPluralIrregularAlt nb singular (singular ++ "s")
 
 
 

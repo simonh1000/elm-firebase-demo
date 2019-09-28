@@ -24,10 +24,11 @@ example/dist
 
 ignore
 /dist
-/src/config
+/src/assets/config
 functions/*.adminsdk.json
 secrets.js
 yarn.lock
 tools/*.json
 .firebase
 Design.md
+.env

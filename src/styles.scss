@@ -7,6 +7,12 @@ $bkg-colour: #dedede;
 
 @import "~bootstrap/scss/bootstrap";
 
+// move elm dev tool to left
+body > div:not(.app) {
+    left: 6px;
+    right: initial !important;
+}
+
 .app {
     background-color: $bkg-colour;
     // repeat settings inlined
@@ -23,6 +29,8 @@ $bkg-colour: #dedede;
 
     footer {
         flex: 0 0 50px;
+        display: flex;
+        align-items: center;
     }
 
     .main {

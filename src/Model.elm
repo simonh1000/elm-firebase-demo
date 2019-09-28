@@ -11,6 +11,7 @@ import List as L
 type alias Model =
     { tab : AppTab
     , user : FB.FBUser
+    , messagingToken : Maybe String
     , xmas : Dict String UserData
     , userMessage : Maybe String
     , editor : Present
@@ -23,6 +24,7 @@ blank : Model
 blank =
     { tab = Family
     , user = FB.init
+    , messagingToken = Nothing
     , xmas = Dict.empty
     , userMessage = Nothing
     , editor = blankPresent

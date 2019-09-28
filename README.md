@@ -73,6 +73,12 @@ self.config = self.config || dev;
 
 .... and connect the cloud functions code to the admin sdk, following https://firebase.google.com/docs/admin/setup
 
+## ngrok 
+
+ngrok http 3000 -host-header="localhost:3000"
+
+
+
 ## Changelog
 
  - 2.1.0:

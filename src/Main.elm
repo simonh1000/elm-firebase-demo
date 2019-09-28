@@ -5,7 +5,7 @@ import Auth
 import Browser
 import Common.CoreHelpers exposing (addCmd, recoverResult)
 import Common.ViewHelpers as ViewHelpers
-import Firebase.Firebase as FB exposing (FBCommand(..))
+import Firebase.Firebase as FB exposing (FBCommand(..), FBResponse(..), FBUser)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -15,7 +15,7 @@ import Ports
 
 
 
---
+-- Model
 
 
 type alias Model =
@@ -33,6 +33,11 @@ blank =
     , page = InitAuth
     , userMessage = Nothing
     }
+
+
+updateApp : (AppM.Model -> AppM.Model) -> Model -> Model
+updateApp fn model =
+    { model | app = fn model.app }
 
 
 
@@ -60,7 +65,7 @@ init _ =
 type Msg
     = AuthMsg Auth.Msg
     | AppMsg App.Msg
-    | FBMsgHandler FB.FBMsg
+    | FBMsgHandler FB.FBResponse
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -80,59 +85,45 @@ update message model =
             in
             ( { model | app = app }, Cmd.map AppMsg c )
 
-        FBMsgHandler msg ->
-            case msg.message of
-                "authstate" ->
-                    handleAuthChange msg.payload model
+        FBMsgHandler fbResponse ->
+            case fbResponse of
+                AuthState mbUser ->
+                    handleAuthChange mbUser model
 
-                "snapshot" ->
-                    handleSnapshot msg.payload model
+                Snapshot payload ->
+                    handleSnapshot payload model
 
-                "SubscriptionOk" ->
-                    -- After Cloud Function returns successfully, update db to persist preference
-                    ( model
-                    , setMeta model.app.user.uid "notifications" <| Encode.bool True
-                    )
+                MessagingToken token ->
+                    ( updateApp (\m -> { m | messagingToken = Just token }) model, Cmd.none )
 
-                "UnsubscribeOk" ->
-                    -- After Cloud Function returns successfully, update db to persist preference
-                    ( model
-                    , setMeta model.app.user.uid "notifications" <| Encode.bool False
-                    )
+                --
+                --                "SubscriptionOk" ->
+                --                    -- After Cloud Function returns successfully, update db to persist preference
+                --                    ( model
+                --                    , setMeta model.app.user.uid "notifications" <| Encode.bool True
+                --                    )
+                --
+                --                "UnsubscribeOk" ->
+                --                    -- After Cloud Function returns successfully, update db to persist preference
+                --                    ( model
+                --                    , setMeta model.app.user.uid "notifications" <| Encode.bool False
+                --                    )
+                --
+                CFError err ->
+                    ( { model | userMessage = Just err }, Cmd.none )
 
-                "CFError" ->
-                    let
-                        userMessage =
-                            Decode.decodeValue decoderError msg.payload
-                                |> recoverResult Decode.errorToString
-                                |> Just
-                    in
-                    ( { model | userMessage = userMessage }, Cmd.none )
+                Error err ->
+                    ( { model | userMessage = Just err }, Cmd.none )
 
-                "error" ->
-                    let
-                        userMessage =
-                            Decode.decodeValue decoderError msg.payload
-                                |> recoverResult Decode.errorToString
-                                |> Just
-                    in
-                    ( { model | userMessage = userMessage }, Cmd.none )
-
-                --                "token-refresh" ->
-                --                    let
-                --                        _ =
-                --                            Debug.log "token-refresh" msg.payload
-                --                    in
-                --                    ( model, Cmd.none )
-                _ ->
-                    ( { model | userMessage = Just <| "[Port Message] Unexpectedly received a port message of type " ++ msg.message }, Cmd.none )
+                UnhandledResponse res ->
+                    ( { model | userMessage = Just <| "Need handler for " ++ res }, Cmd.none )
 
 
 {-| the user information is richer for a google login than for an email login
 -}
-handleAuthChange : Value -> Model -> ( Model, Cmd Msg )
-handleAuthChange val model =
-    case Decode.decodeValue FB.decodeAuthState val |> Result.mapError Decode.errorToString |> Result.andThen identity of
+handleAuthChange : Result String FBUser -> Model -> ( Model, Cmd Msg )
+handleAuthChange mbUser model =
+    case mbUser of
         Ok user ->
             let
                 displayName =
@@ -187,11 +178,6 @@ handleSnapshot payload model =
         _ ->
             -- not clear how we could reach here for any other page
             ( model, Cmd.none )
-
-
-decoderError : Decoder String
-decoderError =
-    Decode.field "message" Decode.string
 
 
 
