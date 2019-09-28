@@ -4,7 +4,8 @@
 // TODO use a library to make a great SW
 require("./sw-installer");
 
-// require("./rollbar");
+import { Rollbar} from "./rollbar";
+
 require("./styles.scss");
 
 const { Elm } = require("./Main");
@@ -18,7 +19,7 @@ app.ports.toJs.subscribe(data => {
             if (rm) rm.remove();
             break;
         case "LogRollbar":
-            fb.logger({
+            Rollbar.info({
                 source: "elm",
                 message: data.payload
             });

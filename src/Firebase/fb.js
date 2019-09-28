@@ -27,7 +27,8 @@ function handler({ message, payload }, fbToElm) {
         case "signinGoogle":
             signinGoogle(fbToElm);
             break;
-        case "signout":""
+        case "signout":
+            "";
             signout();
             break;
         case "subscribe":
@@ -47,7 +48,7 @@ function handler({ message, payload }, fbToElm) {
             push(payload);
             break;
         default:
-            console.error("[fb.js] Unhandled", message);
+            logger("[fb.js] Unhandled", message);
             break;
     }
 }
@@ -66,9 +67,8 @@ function makeUserObject(user) {
 }
 
 function createAuthListener(fbToElm) {
-    // console.log("[createAuthListener] starting");
     firebase.auth().onAuthStateChanged(function(user) {
-        console.log("[createAuthListener]", user);
+        // console.log("[createAuthListener]", user);
 
         if (user) {
             fbToElm(makeUserObject(user));
@@ -90,8 +90,7 @@ function signin(email, password, fbToElm) {
         })
         .catch(function(err) {
             fbToElm({ message: "error", payload: err });
-            console.error(err);
-            Rollbar.info(err);
+            logger(err);
         });
 }
 
@@ -111,7 +110,7 @@ function register(email, password, fbToElm) {
 // Use success here to send message back to Elm. Hopefully this will enable the client
 // to go forward, as otherwise the authstate change does not seem always to be recorded
 function signinGoogle(fbToElm) {
-    console.log("[signinGoogle] start");
+    // console.log("[signinGoogle] start");
     var provider = new firebase.auth.GoogleAuthProvider();
     // firebase.auth().signInWithPopup(provider).then(function(result) {
     firebase
@@ -178,7 +177,7 @@ function subscribe(fbToElm, _ref) {
         .database()
         .ref(_ref)
         .on("value", snapshot => {
-            console.log(snapshot.val());
+            // console.log("snapshot", snapshot.val());
             fbToElm({
                 message: "snapshot",
                 payload: {
@@ -230,15 +229,10 @@ function getMessagingToken(cb) {
 
     Notification.requestPermission().then(permission => {
         if (permission === "granted") {
-//            console.log("Notification permission granted.");
+            //            console.log("Notification permission granted.");
             return messaging.getToken().then(function(currentToken) {
                 if (currentToken) {
-                    let obj = {
-                        message: "MessagingToken",
-                        payload: currentToken
-                    };
-                    console.log("MessagingToken", currentToken);
-                    cb(obj);
+                    cb(mkTokenResp(currentToken));
                 } else {
                     cb({
                         message: "Error",
@@ -269,15 +263,21 @@ function getMessagingToken(cb) {
     messaging.onTokenRefresh(() => {
         messaging
             .getToken()
-            .then(refreshedToken => {
-                console.log("[getMessagingToken] Token refreshed.");
+            .then(currentToken => {
+                cb(mkTokenResp(currentToken));
             })
             .catch(err => {
-                console.log("Unable to retrieve refreshed token ", err);
+                console.error("Unable to retrieve refreshed token ", err);
             });
     });
 }
 
+function mkTokenResp(token) {
+    return {
+        message: "MessagingToken",
+        payload: token
+    };
+}
 /*
  * EXPORTS
  */

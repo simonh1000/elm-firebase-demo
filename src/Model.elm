@@ -13,7 +13,7 @@ type alias Model =
     , user : FB.FBUser
     , messagingToken : Maybe String
     , xmas : Dict String UserData
-    , userMessage : Maybe String
+    , userMessage : UserMessage
     , editor : Present
     , editorCollapsed : Bool
     , isPhase2 : Bool
@@ -26,7 +26,7 @@ blank =
     , user = FB.init
     , messagingToken = Nothing
     , xmas = Dict.empty
-    , userMessage = Nothing
+    , userMessage = NoMessage
     , editor = blankPresent
     , editorCollapsed = True
     , isPhase2 = False
@@ -82,6 +82,7 @@ type Page
     | AppPage
 
 
+stringFromPage : Page -> String
 stringFromPage page =
     case page of
         InitAuth ->
@@ -95,6 +96,18 @@ stringFromPage page =
 
         AppPage ->
             "AppPage"
+
+
+
+-- -----------------------
+-- UserMessage
+-- -----------------------
+
+
+type UserMessage
+    = NoMessage
+    | SuccessMessage String
+    | ErrorMessage String
 
 
 

@@ -29,6 +29,7 @@ initCmd =
         ]
 
 
+phase2 : String
 phase2 =
     "2019-11-01"
 
@@ -55,13 +56,13 @@ type Msg
       -- Settings
     | ToggleNotifications Bool -- turn on/off subscription for notifications of changes
     | ConfirmNotifications (Result Http.Error TaggedPayload)
-    | Signout
+    | SignOut
       -- used by Main
     | HandleSnapshot (Maybe FB.FBUser) Value
 
 
 update : String -> Msg -> Model -> ( Model, Cmd Msg )
-update clooudFunction message model =
+update cloudFunction message model =
     case message of
         -- Registration page
         SwitchTab tab ->
@@ -121,42 +122,46 @@ update clooudFunction message model =
             case model.messagingToken of
                 Just token ->
                     if notifications then
-                        ( { model | userMessage = Just "Attempting to subscribe" }
-                        , postToFirebaseFunction (clooudFunction ++ "subscribe") model.user.uid token
+                        ( { model | userMessage = SuccessMessage "Attempting to subscribe" }
+                        , postToFirebaseFunction (cloudFunction ++ "subscribe") model.user.uid token
                         )
 
                     else
-                        ( { model | userMessage = Just "Attempting to unsubscribe" }
-                        , postToFirebaseFunction (clooudFunction ++ "unsubscribe") model.user.uid token
+                        ( { model | userMessage = SuccessMessage "Attempting to unsubscribe" }
+                        , postToFirebaseFunction (cloudFunction ++ "unsubscribe") model.user.uid token
                         )
 
                 Nothing ->
-                    ( { model | userMessage = Just "Cannot change notfiication as no messaging token present" }
+                    ( { model | userMessage = ErrorMessage "Cannot change notification as no messaging token present" }
                     , Cmd.none
                     )
 
         ConfirmNotifications res ->
             case res of
                 Ok msg ->
-                    case msg.tag of
+                    case Debug.log "" msg.tag of
                         "SubscriptionOk" ->
                             -- persist confirmation to user data
-                            ( model, setMeta model.user.uid "notifications" <| Encode.bool True )
+                            ( { model | userMessage = SuccessMessage "Storing new preference" }
+                            , setMeta model.user.uid "notifications" <| Encode.bool True
+                            )
 
                         "UnsubscribeOk" ->
                             -- persist confirmation to user data
-                            ( model, setMeta model.user.uid "notifications" <| Encode.bool False )
+                            ( { model | userMessage = SuccessMessage "Storing new preference" }
+                            , setMeta model.user.uid "notifications" <| Encode.bool False
+                            )
 
                         "CFError" ->
-                            ( { model | userMessage = Just <| "Cloud Function error " ++ Encode.encode 0 msg.payload }, Cmd.none )
+                            ( { model | userMessage = ErrorMessage <| "Cloud Function error " ++ Encode.encode 0 msg.payload }, Cmd.none )
 
                         _ ->
-                            ( { model | userMessage = Just <| "[ConfirmNotifications] unhandled " ++ msg.tag }, Cmd.none )
+                            ( { model | userMessage = ErrorMessage <| "[ConfirmNotifications] unhandled " ++ msg.tag }, Cmd.none )
 
                 Err _ ->
-                    ( { model | userMessage = Just <| "[ConfirmNotifications] network error while attempting to change notificiations" }, Cmd.none )
+                    ( { model | userMessage = ErrorMessage <| "[ConfirmNotifications] network error while attempting to change notificiations" }, Cmd.none )
 
-        Signout ->
+        SignOut ->
             ( blank
             , FB.signout
             )
@@ -185,7 +190,7 @@ handleSnapshot mbUser snapshot model =
                         | xmas = xmas
                         , user = user
                         , -- if we got a snapshot then no need to show progress/error
-                          userMessage = Nothing
+                          userMessage = NoMessage
                     }
             in
             case ( Dict.get newModel.user.uid xmas, newModel.user.displayName ) of
@@ -208,7 +213,7 @@ handleSnapshot mbUser snapshot model =
                     )
 
                 ( Nothing, Nothing ) ->
-                    ( { newModel | userMessage = Just <| "Unexpected error - no display name present" }
+                    ( { newModel | userMessage = ErrorMessage <| "Unexpected error - no display name present" }
                       --                    , rollbar <| "Missing username for: " ++ model.user.uid
                     , Cmd.none
                     )
@@ -220,7 +225,7 @@ handleSnapshot mbUser snapshot model =
         --       -- , Cmd.none
         --     )
         Err err ->
-            ( { model | userMessage = Just <| "handleSnapshot: " ++ Decode.errorToString err }
+            ( { model | userMessage = ErrorMessage <| "handleSnapshot: " ++ Decode.errorToString err }
               --            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
             , Cmd.none
             )
@@ -273,9 +278,15 @@ view model =
 
             Settings ->
                 viewSettings model
-    , model.userMessage
-        |> Maybe.map (\txt -> footer [ class "container warning" ] [ text txt ])
-        |> Maybe.withDefault (viewFooter model.tab)
+    , case model.userMessage of
+        NoMessage ->
+            viewFooter model.tab
+
+        SuccessMessage txt ->
+            footer [ class "container success" ] [ text txt ]
+
+        ErrorMessage txt ->
+            footer [ class "container warning" ] [ text txt ]
     ]
 
 
@@ -299,7 +310,8 @@ viewFamily model others =
         [ text "Awaiting first present ideas" ]
 
     else
-        L.map fn others
+        h4 [] [ text "Until mid-October, only summary details are available" ]
+            :: L.map fn others
 
 
 viewOtherPhase1 : ( String, UserData ) -> Html Msg
@@ -545,7 +557,7 @@ viewSettings model =
                 ]
             , mkPresentTmpl
                 [ div [ class "text-danger" ] [ text "Signout" ]
-                , div [ class "text-danger" ] [ matIconMsg Signout "logout" ]
+                , div [ class "text-danger" ] [ matIconMsg SignOut "logout" ]
                 ]
             ]
         ]
@@ -638,7 +650,7 @@ postToFirebaseFunction url userId token =
     let
         body : Http.Body
         body =
-            [ -- NOTE that the FB function does not actually use this
+            [ -- NOTE that the FB function does not actually use userId
               ( "userId", Encode.string userId )
             , ( "token", Encode.string token )
             ]

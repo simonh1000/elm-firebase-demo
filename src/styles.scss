@@ -197,6 +197,7 @@ footer {
     &.tabs {
         display: flex;
         flex-direction: row;
+        align-items: stretch;
         .tab {
             display: flex;
             flex-direction: column;
