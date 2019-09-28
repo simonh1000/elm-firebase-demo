@@ -11,14 +11,10 @@ exports.subscribe = functions.https.onRequest(messaging.subscribe);
 exports.unsubscribe = functions.https.onRequest(messaging.unsubscribe);
 
 
-// When present added to database, inform users
-exports.sendNotification = functions.database.ref("/{userId}/presents/{presentId}").onWrite(event => {
-    // Stop if this is an update to existing data
-    if (event.data.previous.exists()) {
-        return;
-    }
-
-    return event.data.ref.parent.parent
+// When present first created, inform users
+exports.sendNotification = functions.database.ref("/{userId}/presents/{presentId}").onCreate(event => {
+    // https://firebase.google.com/docs/reference/admin/node/admin.database.Reference
+    return event.ref.parent.parent
         .child("meta/name")
         .once("value")
         .then(snapshot => {
