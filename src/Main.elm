@@ -96,6 +96,9 @@ update message model =
                 MessagingToken token ->
                     ( updateApp (\m -> { m | messagingToken = Just token }) model, Cmd.none )
 
+                NotificationsRefused ->
+                    Debug.todo "NotificationsRefused"
+
                 --
                 --                "SubscriptionOk" ->
                 --                    -- After Cloud Function returns successfully, update db to persist preference

@@ -30,11 +30,6 @@ app.ports.toJs.subscribe(data => {
 
 // F i r e b a s e
 
-// get the non-SW config
-import { firebaseConfig } from "./config/firebase-config";
-// Initialise firebase using config data
-firebase.initializeApp(firebaseConfig);
-
 // Set up Elm to use Firebase handler
 import fb from "./Firebase/fb";
 app.ports.elmToFb.subscribe(msg =>

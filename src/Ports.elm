@@ -1,5 +1,6 @@
 port module Ports exposing (..)
 
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 
 
@@ -10,6 +11,13 @@ type alias TaggedPayload =
     { tag : String
     , payload : Encode.Value
     }
+
+
+decodeFBFunction : Decoder TaggedPayload
+decodeFBFunction =
+    Decode.map2 TaggedPayload
+        (Decode.field "message" Decode.string)
+        (Decode.field "payload" Decode.value)
 
 
 type PortMsg

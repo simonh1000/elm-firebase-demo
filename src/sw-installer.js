@@ -1,7 +1,10 @@
+// Installs the service worker
+// Why is it not in assets?
+
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function() {
-        // navigator.serviceWorker.register("/sw.js").then(
-        navigator.serviceWorker.register("/firebase-messaging-sw.js").then(
+        navigator.serviceWorker.register("/sw.js").then(
+            // navigator.serviceWorker.register("/firebase-messaging-sw.js").then(
             function(registration) {
                 // Registration was successful
                 console.log(

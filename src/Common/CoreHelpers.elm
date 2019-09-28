@@ -14,14 +14,16 @@ import Task exposing (Task)
 import Tuple
 
 
+debugALittle : a -> a
+debugALittle message =
+    let
+        _ =
+            Debug.log "" (String.left 1000 <| Debug.toString message)
+    in
+    message
 
---debugALittle : a -> a
---debugALittle message =
---    let
---        _ =
---            Debug.log "" (String.left 1000 <| Debug.toString message)
---    in
---    message
+
+
 -- To prepare for 0.19
 
 

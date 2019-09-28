@@ -28,9 +28,7 @@ type FBResponse
     | MessagingToken String
     | CFError String -- ??
     | Error String
-      --    | SubscriptionOk
-      --    | UnsubscribeOk
-      --    | NoUserPermission -- user has blocked use
+    | NotificationsRefused -- user has blocked use
       --    | NewMessage -- from the subscribed service
     | UnhandledResponse String
 
@@ -66,8 +64,7 @@ fbResponseDecoder =
         , mkDec "MessagingToken" Decode.string MessagingToken
         , mkDec "CFError" decoderError CFError
         , mkDec "Error" decoderError Error
-
-        --        , mkDec "SubscriptionOk" (Decode.succeed ()) (\_ -> SubscriptionOk)
+        , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
         , Decode.field "message" Decode.string |> Decode.map UnhandledResponse
         ]
 
@@ -83,20 +80,12 @@ decoderError =
 
 type FBCommand
     = GetMessagingToken -- request firebase.messaging to provide its messaging token
-    | StartNotifications String
-    | StopNotifications String
     | ListenAuthState
 
 
 sendToFirebase : FBCommand -> Cmd msg
 sendToFirebase cmd =
     case cmd of
-        StartNotifications userId ->
-            elmToFb <| { message = fbCommandToString cmd, payload = E.string userId }
-
-        StopNotifications userId ->
-            elmToFb <| { message = fbCommandToString cmd, payload = E.string userId }
-
         _ ->
             elmToFb <| { message = fbCommandToString cmd, payload = E.null }
 
@@ -106,12 +95,6 @@ fbCommandToString cmd =
     case cmd of
         GetMessagingToken ->
             "GetMessagingToken"
-
-        StartNotifications _ ->
-            "StartNotifications"
-
-        StopNotifications _ ->
-            "StopNotifications"
 
         ListenAuthState ->
             "ListenAuthState"

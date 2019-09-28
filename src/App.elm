@@ -1,18 +1,20 @@
 module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
-import Common.CoreHelpers exposing (ifThenElse, isJust)
+import Common.CoreHelpers exposing (debugALittle, ifThenElse)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Http
 import Iso8601
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import List as L
-import Model as M exposing (..)
+import Model exposing (..)
+import Ports exposing (TaggedPayload)
 import Task
 import Time exposing (Posix)
 
@@ -52,18 +54,15 @@ type Msg
     | TogglePurchased String String Bool -- other user ref, present ref, new value
       -- Settings
     | ToggleNotifications Bool -- turn on/off subscription for notifications of changes
+    | ConfirmNotifications (Result Http.Error TaggedPayload)
     | Signout
       -- used by Main
     | HandleSnapshot (Maybe FB.FBUser) Value
 
 
-
--- Subscriptions
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
-    case message of
+    case debugALittle message of
         -- Registration page
         SwitchTab tab ->
             ( { model | tab = tab, editor = blank.editor }, Cmd.none )
@@ -119,15 +118,43 @@ update message model =
         ToggleNotifications notifications ->
             -- this returns to main as "SubscriptionOk", which triggers an update of the db,
             -- which triggers a snapshot that clears this message
-            if notifications then
-                ( { model | userMessage = Just "Attempting to subscribe" }
-                , FB.sendToFirebase <| StartNotifications model.user.uid
-                )
+            case model.messagingToken of
+                Just token ->
+                    if notifications then
+                        ( { model | userMessage = Just "Attempting to subscribe" }
+                        , postToFirebaseFunction "subscribe" model.user.uid token
+                        )
 
-            else
-                ( { model | userMessage = Just "Attempting to unsubscribe" }
-                , FB.sendToFirebase <| StopNotifications model.user.uid
-                )
+                    else
+                        ( { model | userMessage = Just "Attempting to unsubscribe" }
+                        , postToFirebaseFunction "unsubscribe" model.user.uid token
+                        )
+
+                Nothing ->
+                    ( { model | userMessage = Just "Cannot change notfiication as no messaging token present" }
+                    , Cmd.none
+                    )
+
+        ConfirmNotifications res ->
+            case res of
+                Ok msg ->
+                    case msg.tag of
+                        "SubscriptionOk" ->
+                            -- persist confirmation to user data
+                            ( model, setMeta model.user.uid "notifications" <| Encode.bool True )
+
+                        "UnsubscribeOk" ->
+                            -- persist confirmation to user data
+                            ( model, setMeta model.user.uid "notifications" <| Encode.bool False )
+
+                        "CFError" ->
+                            ( { model | userMessage = Just <| "Cloud Function error " ++ Encode.encode 0 msg.payload }, Cmd.none )
+
+                        _ ->
+                            ( { model | userMessage = Just <| "[ConfirmNotifications] unhandled " ++ msg.tag }, Cmd.none )
+
+                Err _ ->
+                    ( { model | userMessage = Just <| "[ConfirmNotifications] network error while attempting to change notificiations" }, Cmd.none )
 
         Signout ->
             ( blank
@@ -606,5 +633,23 @@ makeSetPresentRef str otherRef presentRef =
     [ otherRef, "presents", presentRef, str ] |> String.join "/"
 
 
+postToFirebaseFunction : String -> String -> String -> Cmd Msg
+postToFirebaseFunction method userId token =
+    let
+        body : Http.Body
+        body =
+            [ -- NOTE that the FB function does not actually use this
+              ( "userId", Encode.string userId )
+            , ( "token", Encode.string token )
+            ]
+                |> Encode.object
+                |> Http.jsonBody
 
---https://us-central1-***REMOVED***.cloudfunctions.net/subscribe
+        url =
+            "https://us-central1-***REMOVED***.cloudfunctions.net/" ++ method
+    in
+    Http.post
+        { url = url
+        , body = body
+        , expect = Http.expectJson ConfirmNotifications Ports.decodeFBFunction
+        }

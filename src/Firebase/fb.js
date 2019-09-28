@@ -1,19 +1,22 @@
-// import helpers for messaging
-import fbmsg from "./messaging-permission";
 const Rollbar = require("../rollbar");
+
+// import helpers for messaging
+// get the non-SW config
+import { firebaseConfig } from "../assets/config/firebase-config";
+// Initialise firebase using config data
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
 
 // Elm message handler
 function handler({ message, payload }, fbToElm) {
-    console.log(message, payload);
+    console.log("[fb.js]", message, payload);
     switch (message) {
         case "ListenAuthState":
             createAuthListener(fbToElm);
             break;
-        case "StartNotifications":
-            fbmsg.requestMessagingPermission(payload, logger, fbToElm);
-            break;
-        case "StopNotifications":
-            fbmsg.unregisterMessaging(payload, logger, fbToElm);
+        case "GetMessagingToken":
+            // Attempt to get a mesaging token and return it to Elm
+            getMessagingToken(fbToElm);
             break;
         case "signin":
             signin(payload.email, payload.password, fbToElm);
@@ -114,14 +117,12 @@ function signinGoogle(fbToElm) {
         .signInWithRedirect(provider)
         .then(function(result) {
             console.log("Google signin successful");
-            debugger;
             // This gives you a Google Access Token, result.credential.accessToken
 
             // Send user details back to Elm
             fbToElm(makeUserObject(result.user));
         })
         .catch(function(error) {
-            debugger;
             logger(error);
             fbToElm({
                 message: "Error",
@@ -209,6 +210,121 @@ function logger(msg) {
         console.error("[logger]", msg);
     }
 }
+
+/*
+ * MESSAGING
+ */
+
+// Code to request permission to notify.
+// If user accepts notifications, we get a token which we ....
+
+const CFError = "CFError";
+
+const vapidKey = process.env.VAPID;
+
+function getMessagingToken(cb) {
+    // next line essential for getToken to work
+    messaging.usePublicVapidKey(vapidKey);
+
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            console.log("Notification permission granted.");
+            return messaging.getToken().then(function(currentToken) {
+                if (currentToken) {
+                    let obj = {
+                        message: "MessagingToken",
+                        payload: currentToken
+                    };
+                    console.log(obj);
+                    cb(obj);
+                } else {
+                    cb({
+                        message: "Error",
+                        payload: "getToken returned no data"
+                    });
+                }
+            });
+        } else {
+            console.log("Unable to get permission to notify.");
+            cb({
+                message: "NotificationsRefused",
+                payload: "Unable to get permission to notify"
+            });
+        }
+    });
+}
+
+function requestMessagingPermission(userId, logger, cb) {
+    // Retrieve Firebase Messaging object.
+    console.log("requestMessagingPermission init", userId);
+
+    messaging.usePublicVapidKey(vapidKey);
+
+    // Trigger pop-up that asks for permission
+    Notification.requestPermission()
+        .then(permission => {
+            if (permission === "granted") {
+                console.log("Notification permission granted.");
+                return Promise.resolve("Permission granted");
+            } else {
+                console.log("Unable to get permission to notify.");
+                return Promise.reject("Permission to notify rejected");
+            }
+        })
+        .then(() => connectNotificationHandler(logger, "subscribe", userId))
+        .then(body => cb(body))
+        .catch(err => {
+            console.error(err);
+            logger({
+                message: CFError,
+                payload: err
+            });
+        });
+
+    // Handle incoming messages. Called when:
+    // - a message is received while the app has focus
+    // - the user clicks on an app notification created by a service worker
+    //   `messaging.setBackgroundMessageHandler` handler.
+    messaging.onMessage(payload => {
+        console.log("Message received. ", payload);
+        // ...
+    });
+    // event handlers
+    messaging.onTokenRefresh(() => {
+        messaging
+            .getToken()
+            .then(refreshedToken => {
+                console.log("Token refreshed.");
+            })
+            .catch(err => {
+                console.log("Unable to retrieve refreshed token ", err);
+            });
+    });
+}
+
+function connectNotificationHandler(mode, userId) {
+    console.log("connectNotificationHandler init", mode, userId);
+    // This method returns null when permission has not been granted.
+    return messaging.getToken().then(function(currentToken) {
+        if (currentToken) {
+            console.log(
+                "[fb.connectNotificationHandler: currentToken]",
+                currentToken
+            );
+            return sendTokenToServer(mode, userId, currentToken);
+        } else {
+            // Let front end inform user that they have blocked notices
+            return Promise.resolve({
+                message: "NoUserPermission",
+                payload: null
+            });
+        }
+    });
+}
+
+/*
+ * EXPORTS
+ */
 
 export default {
     createAuthListener,
