@@ -479,6 +479,9 @@ viewSettings model =
                 |> Dict.get model.user.uid
                 |> Maybe.map (.meta >> .notifications)
                 |> Maybe.withDefault True
+
+        mkPresentTmpl htms =
+            li [ class "present flex-h" ] htms
     in
     [ div [ class "section settings" ]
         [ h4 [] [ text "Settings" ]
@@ -502,18 +505,16 @@ viewSettings model =
     ]
 
 
-mkPresentTmpl htms =
-    li [ class "present flex-h" ] htms
 
-
-
---
+-- ------------------
+-- Navbar
+-- ------------------
 
 
 viewNavbar : Model -> Html Msg
 viewNavbar model =
     header [ class "flex-h flex-aligned flex-spread" ]
-        [ h4 [] [ text "Xmas 2017" ]
+        [ h4 [] [ text "Xmas 2019" ]
         , div [ class "flex-h flex-aligned" ]
             [ model.user.displayName
                 |> Maybe.map (text >> L.singleton >> strong [])

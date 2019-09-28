@@ -118,19 +118,14 @@ update message model =
                     in
                     ( { model | userMessage = userMessage }, Cmd.none )
 
-                "token-refresh" ->
-                    let
-                        _ =
-                            Debug.log "token-refresh" msg.payload
-                    in
-                    ( model, Cmd.none )
-
+                --                "token-refresh" ->
+                --                    let
+                --                        _ =
+                --                            Debug.log "token-refresh" msg.payload
+                --                    in
+                --                    ( model, Cmd.none )
                 _ ->
-                    let
-                        _ =
-                            Debug.log "********Unhandled Incoming FBMsg" message
-                    in
-                    ( model, Cmd.none )
+                    ( { model | userMessage = Just <| "[Port Message] Unexpectedly received a port message of type " ++ msg.message }, Cmd.none )
 
 
 {-| the user information is richer for a google login than for an email login
@@ -161,11 +156,7 @@ handleAuthChange val model =
             ( newModel, FB.subscribe "/" )
 
         Err "nouser" ->
-            let
-                _ =
-                    Debug.log "handleAuthChange" "nouser"
-            in
-            ( { model | page = AuthPage }, Cmd.none )
+            ( { model | page = AuthPage, userMessage = Just "Unexpectedly lost details of the user" }, Cmd.none )
 
         Err err ->
             ( { model | page = AuthPage, userMessage = Just err }
