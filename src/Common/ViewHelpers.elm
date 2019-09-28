@@ -1,4 +1,4 @@
-module Common.ViewHelpers exposing (badge, matIcon, matIconMsg, mkTab, simpleHeader)
+module Common.ViewHelpers exposing (..)
 
 import Common.CoreHelpers exposing (addSuffixIf)
 import Html exposing (..)
@@ -14,6 +14,7 @@ simpleHeader =
         ]
 
 
+matIcon : String -> Html msg
 matIcon icon =
     --    i [ class <| "mdi mdi-" ++ icon ] []
     span [ class "iconify", attribute "data-icon" <| "mdi-" ++ icon ] []

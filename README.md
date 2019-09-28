@@ -13,7 +13,7 @@ Check the following are pointing to production assets:
  
 `firebase use default`
 
- - Update assets/mainfest.json
+ - Update assets/manifest.json
  - Update package.json
 
 ```

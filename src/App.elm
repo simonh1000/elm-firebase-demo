@@ -1,7 +1,7 @@
 module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
-import Common.CoreHelpers exposing (debugALittle, ifThenElse)
+import Common.CoreHelpers exposing (ifThenElse)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
@@ -60,9 +60,9 @@ type Msg
     | HandleSnapshot (Maybe FB.FBUser) Value
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update message model =
-    case debugALittle message of
+update : String -> Msg -> Model -> ( Model, Cmd Msg )
+update clooudFunction message model =
+    case message of
         -- Registration page
         SwitchTab tab ->
             ( { model | tab = tab, editor = blank.editor }, Cmd.none )
@@ -122,12 +122,12 @@ update message model =
                 Just token ->
                     if notifications then
                         ( { model | userMessage = Just "Attempting to subscribe" }
-                        , postToFirebaseFunction "subscribe" model.user.uid token
+                        , postToFirebaseFunction (clooudFunction ++ "subscribe") model.user.uid token
                         )
 
                     else
                         ( { model | userMessage = Just "Attempting to unsubscribe" }
-                        , postToFirebaseFunction "unsubscribe" model.user.uid token
+                        , postToFirebaseFunction (clooudFunction ++ "unsubscribe") model.user.uid token
                         )
 
                 Nothing ->
@@ -634,7 +634,7 @@ makeSetPresentRef str otherRef presentRef =
 
 
 postToFirebaseFunction : String -> String -> String -> Cmd Msg
-postToFirebaseFunction method userId token =
+postToFirebaseFunction url userId token =
     let
         body : Http.Body
         body =
@@ -644,9 +644,6 @@ postToFirebaseFunction method userId token =
             ]
                 |> Encode.object
                 |> Http.jsonBody
-
-        url =
-            "https://us-central1-***REMOVED***.cloudfunctions.net/" ++ method
     in
     Http.post
         { url = url

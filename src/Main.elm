@@ -3,12 +3,12 @@ port module Main exposing (main)
 import App
 import Auth
 import Browser
-import Common.CoreHelpers exposing (addCmd, recoverResult)
+import Common.CoreHelpers exposing (addCmd)
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB exposing (FBCommand(..), FBResponse(..), FBUser)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Model as AppM exposing (Page(..))
 import Ports
@@ -22,6 +22,7 @@ type alias Model =
     { auth : Auth.Model
     , app : AppM.Model
     , page : Page
+    , cloudFunction : String
     , userMessage : Maybe String
     }
 
@@ -31,6 +32,7 @@ blank =
     { auth = Auth.blank
     , app = AppM.blank
     , page = InitAuth
+    , cloudFunction = ""
     , userMessage = Nothing
     }
 
@@ -48,9 +50,9 @@ type alias Flags =
     { now : Int }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { blank | page = InitAuth }
+init : String -> ( Model, Cmd Msg )
+init cloudFunction =
+    ( { blank | page = InitAuth, cloudFunction = cloudFunction }
     , Cmd.batch
         [ FB.setUpAuthListener
         , Ports.sendToJs <| Ports.RemoveAppShell ""
@@ -81,7 +83,7 @@ update message model =
         AppMsg msg ->
             let
                 ( app, c ) =
-                    App.update msg model.app
+                    App.update model.cloudFunction msg model.app
             in
             ( { model | app = app }, Cmd.map AppMsg c )
 
@@ -97,21 +99,8 @@ update message model =
                     ( updateApp (\m -> { m | messagingToken = Just token }) model, Cmd.none )
 
                 NotificationsRefused ->
-                    Debug.todo "NotificationsRefused"
+                    ( { model | userMessage = Just "NotificationsRefused" }, Cmd.none )
 
-                --
-                --                "SubscriptionOk" ->
-                --                    -- After Cloud Function returns successfully, update db to persist preference
-                --                    ( model
-                --                    , setMeta model.app.user.uid "notifications" <| Encode.bool True
-                --                    )
-                --
-                --                "UnsubscribeOk" ->
-                --                    -- After Cloud Function returns successfully, update db to persist preference
-                --                    ( model
-                --                    , setMeta model.app.user.uid "notifications" <| Encode.bool False
-                --                    )
-                --
                 CFError err ->
                     ( { model | userMessage = Just err }, Cmd.none )
 
