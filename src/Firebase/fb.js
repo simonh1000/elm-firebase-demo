@@ -9,13 +9,13 @@ const messaging = firebase.messaging();
 
 // Elm message handler
 function handler({ message, payload }, fbToElm) {
-    console.log("[fb.js]", message, payload);
+    // console.log("[fb.js]", message, payload);
     switch (message) {
         case "ListenAuthState":
             createAuthListener(fbToElm);
             break;
         case "GetMessagingToken":
-            // Attempt to get a mesaging token and return it to Elm
+            // Attempt to get a messaging token and return it to Elm
             getMessagingToken(fbToElm);
             break;
         case "signin":
@@ -27,10 +27,11 @@ function handler({ message, payload }, fbToElm) {
         case "signinGoogle":
             signinGoogle(fbToElm);
             break;
-        case "signout":
+        case "signout":""
             signout();
             break;
         case "subscribe":
+            // subscribe to some ref
             subscribe(fbToElm, payload);
             break;
         case "set":
@@ -46,6 +47,7 @@ function handler({ message, payload }, fbToElm) {
             push(payload);
             break;
         default:
+            console.error("[fb.js] Unhandled", message);
             break;
     }
 }
@@ -171,7 +173,7 @@ function push(data) {
 }
 
 function subscribe(fbToElm, _ref) {
-    console.log("subscribe", _ref);
+    // console.log("subscribe", _ref);
     firebase
         .database()
         .ref(_ref)
@@ -213,32 +215,29 @@ function logger(msg) {
 
 /*
  * MESSAGING
+ * Code to request permission to notify.
+ * If user accepts notifications, we get a token which we return to Elm.
  */
-
-// Code to request permission to notify.
-// If user accepts notifications, we get a token which we ....
-
-const CFError = "CFError";
+// As Elm loads it requests the messaging token,
+// We will use that hook as the moment to set up messaging event listeners
 
 const vapidKey =
     "BHjECplRVszZL2J92EptDzETrwr1YjPWx9XeKNyR3qUBb0iVT3mGPUrV2unnJCtdi9OUNF6IiQIKOTOdUUjl7Gk";
 
-// As Elm loads it requests the messagin token,
-// We will use that hook as the moment to set up messaging envent listeners
 function getMessagingToken(cb) {
     // next line essential for getToken to work
     messaging.usePublicVapidKey(vapidKey);
 
     Notification.requestPermission().then(permission => {
         if (permission === "granted") {
-            console.log("Notification permission granted.");
+//            console.log("Notification permission granted.");
             return messaging.getToken().then(function(currentToken) {
                 if (currentToken) {
                     let obj = {
                         message: "MessagingToken",
                         payload: currentToken
                     };
-                    console.log(obj);
+                    console.log("MessagingToken", currentToken);
                     cb(obj);
                 } else {
                     cb({
@@ -248,7 +247,7 @@ function getMessagingToken(cb) {
                 }
             });
         } else {
-            console.log("Unable to get permission to notify.");
+            console.warning("Unable to get permission to notify.");
             cb({
                 message: "NotificationsRefused",
                 payload: "Unable to get permission to notify"
@@ -261,7 +260,10 @@ function getMessagingToken(cb) {
     //   `messaging.setBackgroundMessageHandler` handler.
     messaging.onMessage(payload => {
         console.log("[getMessagingToken] Message received. ", payload);
-        // ...
+        cb({
+            message: "NewNotification",
+            payload: payload.data
+        });
     });
     // event handlers
     messaging.onTokenRefresh(() => {

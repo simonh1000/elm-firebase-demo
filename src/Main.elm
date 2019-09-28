@@ -101,6 +101,13 @@ update message model =
                 NotificationsRefused ->
                     ( { model | userMessage = Just "NotificationsRefused" }, Cmd.none )
 
+                NewNotification notification ->
+                    --                    let
+                    --                        _ =
+                    --                            Debug.log "!!!!!" notification
+                    --                    in
+                    ( model, Cmd.none )
+
                 CFError err ->
                     ( { model | userMessage = Just err }, Cmd.none )
 

@@ -2,7 +2,7 @@ port module Firebase.Firebase exposing (..)
 
 import Common.CoreHelpers exposing (exactMatchString)
 import Json.Decode as Decode exposing (Decoder, Value)
-import Json.Encode as E
+import Json.Encode as Encode
 import Result.Extra as RE
 
 
@@ -29,7 +29,7 @@ type FBResponse
     | CFError String -- ??
     | Error String
     | NotificationsRefused -- user has blocked use
-      --    | NewMessage -- from the subscribed service
+    | NewNotification Notification -- will only be received if app is in 'focus'
     | UnhandledResponse String
 
 
@@ -65,6 +65,7 @@ fbResponseDecoder =
         , mkDec "CFError" decoderError CFError
         , mkDec "Error" decoderError Error
         , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
+        , mkDec "NewNotification" decodeNotification NewNotification
         , Decode.field "message" Decode.string |> Decode.map UnhandledResponse
         ]
 
@@ -72,6 +73,23 @@ fbResponseDecoder =
 decoderError : Decoder String
 decoderError =
     Decode.field "message" Decode.string
+
+
+
+-- Notification
+
+
+type alias Notification =
+    { person : String
+    , present : String
+    }
+
+
+decodeNotification : Decoder Notification
+decodeNotification =
+    Decode.map2 Notification
+        (Decode.field "person" Decode.string)
+        (Decode.field "present" Decode.string)
 
 
 
@@ -87,7 +105,7 @@ sendToFirebase : FBCommand -> Cmd msg
 sendToFirebase cmd =
     case cmd of
         _ ->
-            elmToFb <| { message = fbCommandToString cmd, payload = E.null }
+            elmToFb <| { message = fbCommandToString cmd, payload = Encode.null }
 
 
 fbCommandToString : FBCommand -> String
@@ -145,9 +163,9 @@ userDecoder =
 
 encodeCredentials : String -> String -> Value
 encodeCredentials email password =
-    E.object
-        [ ( "email", E.string email )
-        , ( "password", E.string password )
+    Encode.object
+        [ ( "email", Encode.string email )
+        , ( "password", Encode.string password )
         ]
 
 
@@ -158,12 +176,12 @@ signin email password =
 
 signinGoogle : Cmd msg
 signinGoogle =
-    elmToFb <| FBMsg "signinGoogle" E.null
+    elmToFb <| FBMsg "signinGoogle" Encode.null
 
 
 signout : Cmd msg
 signout =
-    elmToFb <| FBMsg "signout" E.null
+    elmToFb <| FBMsg "signout" Encode.null
 
 
 register : String -> String -> Cmd msg
@@ -177,41 +195,41 @@ register email password =
 
 subscribe : String -> Cmd msg
 subscribe ref =
-    elmToFb <| FBMsg "subscribe" <| E.string ref
+    elmToFb <| FBMsg "subscribe" <| Encode.string ref
 
 
-push : String -> E.Value -> Cmd msg
+push : String -> Encode.Value -> Cmd msg
 push ref val =
-    [ ( "ref", E.string ref )
+    [ ( "ref", Encode.string ref )
     , ( "payload", val )
     ]
-        |> E.object
+        |> Encode.object
         |> FBMsg "push"
         |> elmToFb
 
 
-set : String -> E.Value -> Cmd msg
+set : String -> Encode.Value -> Cmd msg
 set ref val =
-    [ ( "ref", E.string ref )
+    [ ( "ref", Encode.string ref )
     , ( "payload", val )
     ]
-        |> E.object
+        |> Encode.object
         |> FBMsg "set"
         |> elmToFb
 
 
 {-| updates key values at the ref, but does not replace completely
 -}
-update : String -> E.Value -> Cmd msg
+update : String -> Encode.Value -> Cmd msg
 update ref val =
-    [ ( "ref", E.string ref )
+    [ ( "ref", Encode.string ref )
     , ( "payload", val )
     ]
-        |> E.object
+        |> Encode.object
         |> FBMsg "update"
         |> elmToFb
 
 
 remove : String -> Cmd msg
 remove ref =
-    elmToFb <| FBMsg "remove" (E.string ref)
+    elmToFb <| FBMsg "remove" (Encode.string ref)
