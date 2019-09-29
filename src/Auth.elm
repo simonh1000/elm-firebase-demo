@@ -10,7 +10,6 @@ import Html.Events exposing (..)
 import List as L
 import Material.Icons.Action as MAction
 import Material.Icons.Social as MSocial
-import Model exposing (setDisplayName)
 import Svg exposing (Svg)
 
 
@@ -119,67 +118,61 @@ update message model =
 view : Model -> List (Html Msg)
 view model =
     [ ViewHelpers.simpleHeader
-    , case model.tab of
-        LoginTab ->
-            viewLogin model
+    , div [ class "main" ] <|
+        case model.tab of
+            LoginTab ->
+                viewLogin model
 
-        RegisterTab ->
-            viewRegister model
+            RegisterTab ->
+                viewRegister model
     , [ LoginTab, RegisterTab ]
         |> L.map (\tab -> ViewHelpers.mkTab SwitchTab tab model.tab <| stringFromTab tab)
         |> footer [ class "tabs" ]
     ]
 
 
-viewLogin : Model -> Html Msg
+viewLogin : Model -> List (Html Msg)
 viewLogin model =
-    div [ id "login", class "main" ]
-        [ div [ class "section google" ]
-            [ h4 [] [ text "Quick Sign in (recommended)..." ]
-            , img
-                [ src "images/google_signin.png"
-                , onClick GoogleSignin
-                , alt "Click to sign-in with Google"
-                ]
-                []
+    [ div [ class "section google" ]
+        [ h4 [] [ text "Quick Sign in (recommended)..." ]
+        , img
+            [ src "images/google_signin.png"
+            , onClick GoogleSignin
+            , alt "Click to sign-in with Google"
             ]
-        , div [ class "section" ]
-            [ h4 [] [ text "...Or with email address" ]
-            , Html.form
-                [ onSubmit Submit ]
-                [ B.inputWithLabel UpdateEmail "Email" "email" model.email
-                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                , button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
-                ]
-
-            --            , button [ class "btn btn-default", onClick (SwitchTab RegisterTab) ]
-            --                [ strong [] [ text "New?" ]
-            --                , text " Register email address"
-            --                ]
+            []
+        ]
+    , div [ class "section" ]
+        [ h4 [] [ text "...Or with email address" ]
+        , Html.form
+            [ onSubmit Submit ]
+            [ B.inputWithLabel UpdateEmail "Email" "email" model.email
+            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+            , button [ type_ "submit", class "btn btn-primary" ] [ text "Login" ]
             ]
         ]
+    ]
 
 
-viewRegister : Model -> Html Msg
+viewRegister : Model -> List (Html Msg)
 viewRegister model =
     let
         isDisabled =
             model.password == "" || model.password /= model.password2 || model.displayName == ""
     in
-    div [ id "register", class "main" ]
-        [ div [ class "section" ]
-            [ Html.form
-                [ onSubmit SubmitRegistration ]
-                [ B.inputWithLabel UpdateDisplayName "Name" "name" model.displayName
-                , B.inputWithLabel UpdateEmail "Email" "email" model.email
-                , B.passwordWithLabel UpdatePassword "Password" "password" model.password
-                , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
-                , button
-                    [ type_ "submit"
-                    , class "btn btn-primary"
-                    , disabled isDisabled
-                    ]
-                    [ text "Register" ]
+    [ div [ class "section" ]
+        [ Html.form
+            [ onSubmit SubmitRegistration ]
+            [ B.inputWithLabel UpdateDisplayName "Name" "name" model.displayName
+            , B.inputWithLabel UpdateEmail "Email" "email" model.email
+            , B.passwordWithLabel UpdatePassword "Password" "password" model.password
+            , B.passwordWithLabel UpdatePassword2 "Retype Password" "password2" model.password2
+            , button
+                [ type_ "submit"
+                , class "btn btn-primary"
+                , disabled isDisabled
                 ]
+                [ text "Register" ]
             ]
         ]
+    ]

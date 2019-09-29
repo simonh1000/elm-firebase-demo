@@ -14,10 +14,6 @@ var app = Elm.Main.init({ flags: "https://us-central1-hampton-xmas2019.cloudfunc
 
 app.ports.toJs.subscribe(data => {
     switch (data.tag) {
-        case "RemoveAppShell":
-            let rm = document.querySelector(".removable");
-            if (rm) rm.remove();
-            break;
         case "LogRollbar":
             Rollbar.info({
                 source: "elm",

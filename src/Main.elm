@@ -55,7 +55,6 @@ init cloudFunction =
     ( { blank | page = InitAuth, cloudFunction = cloudFunction }
     , Cmd.batch
         [ FB.setUpAuthListener
-        , Ports.sendToJs <| Ports.RemoveAppShell ""
         ]
     )
 

@@ -40,7 +40,7 @@ body > div:not(.app) {
         flex-direction: column;
         align-items: stretch;
         // width up to 400px
-        width: 100%
+        width: 100%;
         max-width: 400px;
         margin-top: 10px;
         margin-bottom: 10px;
@@ -90,7 +90,6 @@ body > div:not(.app) {
         }
 
         .section {
-            width: 400px;
             margin: 15px auto;
         }
 
@@ -231,6 +230,7 @@ footer {
 // ....
 
 .section {
+    width: 100%;
     background-color: white;
     padding: 10px;
     border-radius: 3px;
@@ -250,9 +250,6 @@ footer {
         max-width: 900px;
         margin-left: auto;
         margin-right: auto;
-    }
-    .section.settings {
-        max-width: 500px;
     }
 }
 
