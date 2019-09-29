@@ -373,7 +373,7 @@ viewSuggestions model lst =
                 [ onClick (EditSuggestion present)
                 , class "btn btn-success"
                 ]
-                [ span [ class "mr-2" ] [ MImage.edit Color.white 24 ]
+                [ span [ class "mr-2" ] [ MImage.edit Color.white 20 ]
                 , text "Edit"
                 ]
 

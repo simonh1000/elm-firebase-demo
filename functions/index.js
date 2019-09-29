@@ -31,13 +31,13 @@ exports.sendNotification = functions.database
                 // Don't show any notifications before ....
                 let endPhase1 = new Date("15 oct 2019");
                 let now = new Date();
+                // cannot return a null here
                 let present =
                     now < endPhase1
-                        ? null
-                        : (present = event.data.child("description").val());
+                        ? ""
+                        : event.data.child("description").val();
 
                 var topic = "presents";
-                // console.log(`* ${person} added ${present}`);
                 var payload = {
                     data: { person, present }
                 };

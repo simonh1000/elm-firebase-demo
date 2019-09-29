@@ -25,9 +25,9 @@ messaging.setBackgroundMessageHandler(function(payload) {
     // );
     const notificationTitle = "Presents update: " + payload.data.person;
     const notificationOptions = {
-        body: payload.data.present
-            ? "Added new idea: " + payload.data.present
-            : "",
+        body: (payload.data.present != "")
+            ? "Suggests: " + payload.data.present
+            : "Details available in October",
         icon: "./images/icons/icon-192x192.png"
     };
 
