@@ -25,6 +25,7 @@ example/dist
 ignore
 /dist
 /src/**/*.config.js
+src/assets/config/firebase-config.js
 functions/*.adminsdk.json
 secrets.js
 yarn.lock
