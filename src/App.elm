@@ -2,7 +2,7 @@ module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
 import Color
-import Common.CoreHelpers exposing (ifThenElse)
+import Common.CoreHelpers exposing (formatPluralRegular, ifThenElse)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB exposing (FBCommand(..))
@@ -72,7 +72,12 @@ update cloudFunction message model =
             ( { model | tab = tab, editor = blank.editor }, Cmd.none )
 
         ConfirmIsPhase2 isPhase2 ->
-            ( { model | isPhase2 = isPhase2 }, Cmd.none )
+            ( { model
+                | isPhase2 = isPhase2
+                , tab = ifThenElse isPhase2 Family MySuggestions
+              }
+            , Cmd.none
+            )
 
         -- Main page
         Claim otherRef presentRef ->
@@ -198,7 +203,6 @@ handleSnapshot mbUser snapshot model =
                 -- User already registered; copy userName to model (whether needed or not)
                 ( Just userData, _ ) ->
                     ( newModel |> setDisplayName userData.meta.name
-                      --                    , handleSubscribe userData.meta.notifications
                     , Cmd.none
                     )
 
@@ -206,11 +210,7 @@ handleSnapshot mbUser snapshot model =
                     -- This is a new user as we have the username and the database does not know it
                     -- so we need to set up notifications
                     ( newModel
-                    , Cmd.batch
-                        [ setMeta newModel.user.uid "name" <| Encode.string displayName
-
-                        --                        , handleSubscribe True
-                        ]
+                    , setMeta newModel.user.uid "name" <| Encode.string displayName
                     )
 
                 ( Nothing, Nothing ) ->
@@ -219,12 +219,6 @@ handleSnapshot mbUser snapshot model =
                     , Cmd.none
                     )
 
-        -- ( Just userData, Just _ ) ->
-        --     -- all subsequent snapshots
-        --     ( { model | xmas = xmas }
-        --     , renewNotificationsSub userData.meta.notifications
-        --       -- , Cmd.none
-        --     )
         Err err ->
             ( { model | userMessage = ErrorMessage <| "handleSnapshot: " ++ Decode.errorToString err }
               --            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
@@ -281,7 +275,7 @@ view model =
                 viewSettings model
     , case model.userMessage of
         NoMessage ->
-            viewFooter model.tab
+            viewFooter model.isPhase2 model.tab
 
         SuccessMessage txt ->
             footer [ class "container success" ] [ text txt ]
@@ -318,7 +312,7 @@ viewFamily model others =
 viewOtherPhase1 : ( String, UserData ) -> Html Msg
 viewOtherPhase1 ( _, { meta, presents } ) =
     div [ class "person section" ]
-        [ div [] [ text <| meta.name ++ ": " ++ String.fromInt (Dict.size presents) ++ " suggestion(s)" ] ]
+        [ text <| meta.name ++ ": " ++ formatPluralRegular (Dict.size presents) " suggestion" ]
 
 
 viewOther : ( String, UserData ) -> Html Msg
@@ -592,10 +586,11 @@ viewNavbar model =
         ]
 
 
-viewFooter : AppTab -> Html Msg
-viewFooter tab =
-    [ Family, MySuggestions, MyClaims, Settings ]
-        |> L.map (\t -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
+viewFooter : Bool -> AppTab -> Html Msg
+viewFooter isPhase2 tab =
+    [ ( True, Family ), ( True, MySuggestions ), ( isPhase2, MyClaims ), ( True, Settings ) ]
+        |> L.filter Tuple.first
+        |> L.map (\( _, t ) -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
         |> footer [ class "tabs" ]
 
 

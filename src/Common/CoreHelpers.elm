@@ -1,15 +1,10 @@
 module Common.CoreHelpers exposing (..)
 
--- ONLY FOR THINGS THAT ARE TOTALLY UN-REMIX SPECIFIC
-
 import Array exposing (Array)
 import Dict exposing (Dict)
-import Html.Attributes
-import Json.Decode as Jdec exposing (Decoder)
-import Json.Encode as Jenc
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import List as L
-import Regex
-import Set exposing (Set)
 import Task exposing (Task)
 import Tuple
 
@@ -99,6 +94,16 @@ addCmd c ( m1, c1 ) =
     ( m1, Cmd.batch [ c, c1 ] )
 
 
+bindMaybe_ : (a -> b -> ( b, Cmd msg )) -> ( b, Maybe a ) -> ( b, Cmd msg )
+bindMaybe_ update ( m, mbC ) =
+    case mbC of
+        Just c ->
+            update c m
+
+        Nothing ->
+            ( m, Cmd.none )
+
+
 {-| m |> addNone
 -}
 addNone : m -> ( m, Cmd msg )
@@ -115,6 +120,37 @@ addNothing ( m, c ) =
 -- STRINGS
 
 
+formatPluralRegular : Int -> String -> String
+formatPluralRegular nb singular =
+    formatPluralIrregular nb singular (singular ++ "s")
+
+
+{-| Format plural for nouns which have an irregular plural
+
+  - 0, child, children -> 0 children
+  - 1, child, children -> 1 child
+  - 10, child, children -> 10 children
+
+-}
+formatPluralIrregular : Int -> String -> String -> String
+formatPluralIrregular nb singular plural =
+    if nb == 0 then
+        "0 " ++ plural
+
+    else if nb == 1 then
+        "1 " ++ singular
+
+    else
+        String.fromInt nb ++ " " ++ plural
+
+
+{-| Format plural for nouns which have a regular plural (meaning the plural is the singular+ 's'
+
+  - 0, day -> 0 days
+  - 1, day -> 1 day
+  - 10, day -> 10 day
+
+-}
 stringFromBool : Bool -> String
 stringFromBool t =
     if t then
@@ -126,7 +162,7 @@ stringFromBool t =
 
 escapeString : String -> String
 escapeString =
-    Jenc.string >> Jenc.encode 0
+    Encode.string >> Encode.encode 0
 
 
 
@@ -135,26 +171,26 @@ escapeString =
 
 andMap : Decoder a -> Decoder (a -> b) -> Decoder b
 andMap =
-    Jdec.map2 (|>)
+    Decode.map2 (|>)
 
 
 decodeOnError : (String -> Decoder a) -> Decoder a -> Decoder a
 decodeOnError fn dec =
-    Jdec.value
-        |> Jdec.andThen
+    Decode.value
+        |> Decode.andThen
             (\val ->
-                case Jdec.decodeValue dec val of
+                case Decode.decodeValue dec val of
                     Ok res ->
-                        Jdec.succeed res
+                        Decode.succeed res
 
                     Err err ->
-                        fn <| Jdec.errorToString err
+                        fn <| Decode.errorToString err
             )
 
 
 decodeSimpleCustomType : String -> a -> Decoder a
 decodeSimpleCustomType tgt tp =
-    exactMatchString Jdec.string tgt (Jdec.succeed tp)
+    exactMatchString Decode.string tgt (Decode.succeed tp)
 
 
 {-| Useful for decoding AST in that it allows you to check for the existence
@@ -162,67 +198,33 @@ of a string matching some constructor before proceeding further
 -}
 exactMatch : String -> String -> Decoder a -> Decoder a
 exactMatch fieldname tgt dec =
-    exactMatchString (Jdec.field fieldname Jdec.string) tgt dec
+    exactMatchString (Decode.field fieldname Decode.string) tgt dec
 
 
 exactMatchString : Decoder String -> String -> Decoder a -> Decoder a
 exactMatchString matchDecoder match dec =
     matchDecoder
-        |> Jdec.andThen
+        |> Decode.andThen
             (\str ->
                 if str == match then
                     dec
 
                 else
-                    Jdec.fail <| "[exactMatch2] tgt: " ++ match ++ " /= " ++ str
+                    Decode.fail <| "[exactMatch2] tgt: " ++ match ++ " /= " ++ str
             )
 
 
 exactMatchGeneral : Decoder a -> a -> Decoder b -> Decoder b
 exactMatchGeneral matchDecoder match dec =
     matchDecoder
-        |> Jdec.andThen
+        |> Decode.andThen
             (\val ->
                 if val == match then
                     dec
 
                 else
-                    Jdec.fail <| "[exactMatch3] no match found"
+                    Decode.fail <| "[exactMatch3] no match found"
             )
-
-
-
--- MAYBE
-
-
-isJust : Maybe a -> Bool
-isJust m =
-    m /= Nothing
-
-
-isNothing : Maybe a -> Bool
-isNothing m =
-    m == Nothing
-
-
-foldMaybe : (a -> b -> Maybe b) -> Maybe b -> List a -> Maybe b
-foldMaybe f bMaybe lst =
-    L.foldl (\a acc -> acc |> Maybe.andThen (f a)) bMaybe lst
-
-
-foldRMaybe : (a -> b -> Maybe b) -> Maybe b -> List a -> Maybe b
-foldRMaybe f bMaybe lst =
-    L.foldr (\a acc -> acc |> Maybe.andThen (f a)) bMaybe lst
-
-
-mapMaybe : (a -> Maybe c) -> List a -> Maybe (List c)
-mapMaybe fn lst =
-    let
-        go : a -> List c -> Maybe (List c)
-        go item acc =
-            Maybe.map (\item_ -> item_ :: acc) (fn item)
-    in
-    foldRMaybe go (Just []) lst
 
 
 
@@ -247,16 +249,6 @@ mapResult fn lst =
             Result.map (\item_ -> item_ :: acc) (fn item)
     in
     foldRResult go (Ok []) lst
-
-
-recoverResult : (err -> a) -> Result err a -> a
-recoverResult fn res =
-    case res of
-        Ok a ->
-            a
-
-        Err err ->
-            fn err
 
 
 taskFromResult : Result x a -> Task x a
@@ -526,26 +518,3 @@ deleteFromArray idx arr =
             Array.slice (idx + 1) (Array.length arr) arr
     in
     Array.append a1 a2
-
-
-
---
--- bind : (m -> ( m, Cmd b )) -> ( m, Cmd b ) -> ( m, Cmd b )
--- bind update ( m1, c1 ) =
---     let
---         ( m2, c2 ) =
---             update m1
---     in
---         ( m2, Cmd.batch [ c1, c2 ] )
---
---
-
-
-bindMaybe_ : (a -> b -> ( b, Cmd msg )) -> ( b, Maybe a ) -> ( b, Cmd msg )
-bindMaybe_ update ( m, mbC ) =
-    case mbC of
-        Just c ->
-            update c m
-
-        Nothing ->
-            ( m, Cmd.none )

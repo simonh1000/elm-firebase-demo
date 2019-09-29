@@ -22,18 +22,43 @@ npm run prod && firebase deploy --only hosting
 
 ## Installation
 
-Add you config to `/src/assets/firebase-init.js`
+You need to provide 3 files 
+
+###`/src/assets/config/firebase-config.js`
 
 ```js
-var config = {
-  apiKey: "AI..................",
-  authDomain: "xxxxxxx.firebaseapp.com",
-  databaseURL: "https://xxxxxxxx.firebaseio.com",
-  projectId: "xxxxxxx",
-  storageBucket: "xxxxxxx.appspot.com",
-  messagingSenderId: "123456"
+export var firebaseConfig = {
+  apiKey: ",
+  authDomain: "",
+  databaseURL: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
 };
-export default config;
+```
+
+## src/Firebase/fbsw.config.js
+
+```
+var prod = {
+  messagingSenderId: "12345",
+  url: "https://xxxxxxx.firebaseapp.com/"
+};
+self.config = self.config || dev;
+```
+
+.... and connect the cloud functions code to the admin sdk, following https://firebase.google.com/docs/admin/setup
+
+
+### .firebaserc
+
+```
+{
+  "projects": {
+    "default": "<project-name>>"
+  }
+}
 ```
 
 ### Set up auth
@@ -61,18 +86,6 @@ npm run localfunctions
 - start the database so that you can test rules `firebase serve --only database`
 - Get some sort of command line to access the functions: `npm run shell`
 
-
-## src/Firebase/fbsw.config.js
-```
-var prod = {
-  messagingSenderId: "58123453",
-  url: "https://xxxxxxx.firebaseapp.com/"
-};
-self.config = self.config || dev;
-```
-
-.... and connect the cloud functions code to the admin sdk, following https://firebase.google.com/docs/admin/setup
-
 ## ngrok 
 
 ngrok http 3000 -host-header="localhost:3000"
@@ -81,11 +94,13 @@ ngrok http 3000 -host-header="localhost:3000"
 
 ## Changelog
 
- - 2.1.0:
+ - 2.0.0: 2019 re-write
 
 
 ## ToDo
 
+ * InScreen notification
+ * Make rollbar work only on production
  * Generate sw.js directly in ./dist
  * Delete item (with warning)
  * add click-action to notification
