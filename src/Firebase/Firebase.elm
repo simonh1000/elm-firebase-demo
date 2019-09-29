@@ -7,7 +7,9 @@ import Result.Extra as RE
 
 
 type alias PortMsg =
-    { message : String, payload : Value }
+    { message : String
+    , payload : Value
+    }
 
 
 port elmToFb : PortMsg -> Cmd msg
@@ -18,30 +20,23 @@ port fbToElm : (Value -> msg) -> Sub msg
 
 
 -- ----------------------------------------------
--- Subscriptions
+-- Incoming subscriptions (via port)
 -- ----------------------------------------------
-
-
-type FBResponse
-    = AuthState (Result String FBUser)
-    | Snapshot Value -- this library does not know the structure of your data
-    | MessagingToken String
-    | CFError String -- ??
-    | Error String
-    | NotificationsRefused -- user has blocked use
-    | NewNotification Notification -- will only be received if app is in 'focus'
-    | UnhandledResponse String
-
-
-type alias FBMsg =
-    { message : String
-    , payload : Value
-    }
 
 
 subscriptions : (FBResponse -> msg) -> Sub msg
 subscriptions msgConstructor =
     fbToElm (decodeIncoming msgConstructor)
+
+
+type FBResponse
+    = NewAuthState AuthState -- details of the user
+    | Snapshot Value -- this library does not know the structure of your data
+    | MessagingToken String -- the token needed to (un)subscribe for notifications
+    | NotificationsRefused -- user has blocked use
+    | NewNotification Notification -- will only be received if app is in 'focus'
+    | Error String
+    | UnhandledResponse String
 
 
 decodeIncoming : (FBResponse -> msg) -> Value -> msg
@@ -59,10 +54,9 @@ fbResponseDecoder =
                 |> Decode.map constructor
     in
     Decode.oneOf
-        [ mkDec "authstate" decodeAuthState AuthState
+        [ mkDec "authstate" decodeAuthState NewAuthState
         , mkDec "snapshot" Decode.value Snapshot
         , mkDec "MessagingToken" Decode.string MessagingToken
-        , mkDec "CFError" decoderError CFError
         , mkDec "Error" decoderError Error
         , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
         , mkDec "NewNotification" decodeNotification NewNotification
@@ -73,6 +67,53 @@ fbResponseDecoder =
 decoderError : Decoder String
 decoderError =
     Decode.field "message" Decode.string
+
+
+
+-- AuthState
+
+
+type AuthState
+    = AuthenticatedUser FBUser
+    | NoUser
+
+
+decodeAuthState : Decoder AuthState
+decodeAuthState =
+    Decode.oneOf
+        [ Decode.map AuthenticatedUser userDecoder
+        , Decode.null NoUser
+        ]
+
+
+
+-- FBUser
+
+
+type alias FBUser =
+    { email : String
+    , uid : String
+    , displayName : Maybe String
+    , photoURL : Maybe String
+    }
+
+
+blankFBUser : FBUser
+blankFBUser =
+    { email = ""
+    , uid = ""
+    , displayName = Nothing
+    , photoURL = Nothing
+    }
+
+
+userDecoder : Decoder FBUser
+userDecoder =
+    Decode.map4 FBUser
+        (Decode.field "email" Decode.string)
+        (Decode.field "uid" Decode.string)
+        (Decode.maybe <| Decode.field "displayName" Decode.string)
+        (Decode.maybe <| Decode.field "photoURL" Decode.string)
 
 
 
@@ -93,7 +134,9 @@ decodeNotification =
 
 
 
+-- ----------------------------------------------
 -- Outgoing messages
+-- ----------------------------------------------
 
 
 type FBCommand
@@ -118,47 +161,34 @@ fbCommandToString cmd =
             "ListenAuthState"
 
 
-
--- AUTHENTICATION
-
-
+{-| -}
 setUpAuthListener : Cmd msg
 setUpAuthListener =
     sendToFirebase ListenAuthState
 
 
-type alias FBUser =
-    { email : String
-    , uid : String
-    , displayName : Maybe String
-    , photoURL : Maybe String
-    }
+
+-- auth related
 
 
-init : FBUser
-init =
-    { email = ""
-    , uid = ""
-    , displayName = Nothing
-    , photoURL = Nothing
-    }
+signin : String -> String -> Cmd msg
+signin email password =
+    elmToFb <| PortMsg "signin" (encodeCredentials email password)
 
 
-decodeAuthState : Decoder (Result String FBUser)
-decodeAuthState =
-    Decode.oneOf
-        [ Decode.map Ok userDecoder
-        , Decode.null (Err "nouser")
-        ]
+signinGoogle : Cmd msg
+signinGoogle =
+    elmToFb <| PortMsg "signinGoogle" Encode.null
 
 
-userDecoder : Decoder FBUser
-userDecoder =
-    Decode.map4 FBUser
-        (Decode.field "email" Decode.string)
-        (Decode.field "uid" Decode.string)
-        (Decode.maybe <| Decode.field "displayName" Decode.string)
-        (Decode.maybe <| Decode.field "photoURL" Decode.string)
+signout : Cmd msg
+signout =
+    elmToFb <| PortMsg "signout" Encode.null
+
+
+register : String -> String -> Cmd msg
+register email password =
+    elmToFb <| PortMsg "register" (encodeCredentials email password)
 
 
 encodeCredentials : String -> String -> Value
@@ -169,33 +199,13 @@ encodeCredentials email password =
         ]
 
 
-signin : String -> String -> Cmd msg
-signin email password =
-    elmToFb <| FBMsg "signin" (encodeCredentials email password)
-
-
-signinGoogle : Cmd msg
-signinGoogle =
-    elmToFb <| FBMsg "signinGoogle" Encode.null
-
-
-signout : Cmd msg
-signout =
-    elmToFb <| FBMsg "signout" Encode.null
-
-
-register : String -> String -> Cmd msg
-register email password =
-    elmToFb <| FBMsg "register" (encodeCredentials email password)
-
-
 
 -- DATABASE
 
 
 subscribe : String -> Cmd msg
 subscribe ref =
-    elmToFb <| FBMsg "subscribe" <| Encode.string ref
+    elmToFb <| PortMsg "subscribe" <| Encode.string ref
 
 
 push : String -> Encode.Value -> Cmd msg
@@ -204,7 +214,7 @@ push ref val =
     , ( "payload", val )
     ]
         |> Encode.object
-        |> FBMsg "push"
+        |> PortMsg "push"
         |> elmToFb
 
 
@@ -214,7 +224,7 @@ set ref val =
     , ( "payload", val )
     ]
         |> Encode.object
-        |> FBMsg "set"
+        |> PortMsg "set"
         |> elmToFb
 
 
@@ -226,10 +236,10 @@ update ref val =
     , ( "payload", val )
     ]
         |> Encode.object
-        |> FBMsg "update"
+        |> PortMsg "update"
         |> elmToFb
 
 
 remove : String -> Cmd msg
 remove ref =
-    elmToFb <| FBMsg "remove" (Encode.string ref)
+    elmToFb <| PortMsg "remove" (Encode.string ref)

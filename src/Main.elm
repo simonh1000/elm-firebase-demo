@@ -5,7 +5,7 @@ import Auth
 import Browser
 import Common.CoreHelpers exposing (addCmd)
 import Common.ViewHelpers as ViewHelpers
-import Firebase.Firebase as FB exposing (FBCommand(..), FBResponse(..), FBUser)
+import Firebase.Firebase as FB exposing (AuthState(..), FBCommand(..), FBResponse(..), FBUser)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode exposing (Decoder, Value)
@@ -52,10 +52,8 @@ type alias Flags =
 
 init : String -> ( Model, Cmd Msg )
 init cloudFunction =
-    ( { blank | page = InitAuth, cloudFunction = cloudFunction }
-    , Cmd.batch
-        [ FB.setUpAuthListener
-        ]
+    ( { blank | cloudFunction = cloudFunction }
+    , FB.setUpAuthListener
     )
 
 
@@ -88,8 +86,8 @@ update message model =
 
         FBMsgHandler fbResponse ->
             case fbResponse of
-                AuthState mbUser ->
-                    handleAuthChange mbUser model
+                NewAuthState authstate ->
+                    handleAuthChange authstate model
 
                 Snapshot payload ->
                     handleSnapshot payload model
@@ -107,22 +105,23 @@ update message model =
                     --                    in
                     ( model, Cmd.none )
 
-                CFError err ->
-                    ( { model | userMessage = Just err }, Cmd.none )
-
                 Error err ->
-                    ( { model | userMessage = Just err }, Cmd.none )
+                    ( { model | userMessage = Just err }
+                    , Ports.rollbar <| "Ports error: " ++ err
+                    )
 
                 UnhandledResponse res ->
-                    ( { model | userMessage = Just <| "Need handler for " ++ res }, Cmd.none )
+                    ( model
+                    , Ports.rollbar <| "Need ports handler for " ++ res
+                    )
 
 
 {-| the user information is richer for a google login than for an email login
 -}
-handleAuthChange : Result String FBUser -> Model -> ( Model, Cmd Msg )
-handleAuthChange mbUser model =
-    case mbUser of
-        Ok user ->
+handleAuthChange : AuthState -> Model -> ( Model, Cmd Msg )
+handleAuthChange authState model =
+    case authState of
+        AuthenticatedUser user ->
             let
                 displayName =
                     case ( user.displayName, model.auth.displayName /= "" ) of
@@ -141,15 +140,15 @@ handleAuthChange mbUser model =
                         , userMessage = Nothing
                     }
             in
-            -- If user exists, then subscribe to db changes
+            -- Next, subscribe to the db
             ( newModel, FB.subscribe "/" )
 
-        Err "nouser" ->
-            ( { model | page = AuthPage, userMessage = Just "Unexpectedly lost details of the user" }, Cmd.none )
-
-        Err err ->
-            ( { model | page = AuthPage, userMessage = Just err }
-            , Ports.sendToJs <| Ports.LogRollbar <| "handleAuthChange " ++ err
+        NoUser ->
+            ( { model
+                | page = AuthPage
+                , userMessage = Just "Please login"
+              }
+            , Cmd.none
             )
 
 

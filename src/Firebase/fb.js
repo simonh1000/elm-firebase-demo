@@ -3,6 +3,8 @@ const Rollbar = require("../js/rollbar");
 // import helpers for messaging
 // get the non-SW config
 import { firebaseConfig } from "../assets/config/firebase-config";
+const AUTH_STATE = "authstate";
+
 // Initialise firebase using config data
 firebase.initializeApp(firebaseConfig);
 
@@ -53,29 +55,22 @@ function handler({ message, payload }, fbToElm) {
 
 function makeUserObject(user) {
     return {
-        message: "authstate",
-        payload: {
-            email: user.email,
-            uid: user.uid,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            token: user.token
-        }
+        email: user.email,
+        uid: user.uid,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        token: user.token
     };
 }
 
+// creates listener for auth state. if no existing user information then send a null
+// which will trigger a switch to the login page
 function createAuthListener(fbToElm) {
     firebase.auth().onAuthStateChanged(function(user) {
-        // console.log("[createAuthListener]", user);
-
-        if (user) {
-            fbToElm(makeUserObject(user));
-        } else {
-            fbToElm({
-                message: "authstate",
-                payload: null
-            });
-        }
+        fbToElm({
+            message: AUTH_STATE,
+            payload: user ? makeUserObject(user) : null
+        });
     });
 }
 
@@ -249,7 +244,7 @@ function getMessagingTokenWithValidBrowser(cb) {
                 }
             });
         } else {
-            console.warn("Unable to get permission to notify.");
+            console.warn("requestPermission failed", permission);
             cb({
                 message: "NotificationsRefused",
                 payload: "Unable to get permission to notify"

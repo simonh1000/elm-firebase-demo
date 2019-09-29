@@ -658,6 +658,10 @@ makeSetPresentRef str otherRef presentRef =
     [ otherRef, "presents", presentRef, str ] |> String.join "/"
 
 
+
+-- (Un)Subscribe for notifications
+
+
 postToFirebaseFunction : String -> String -> String -> Cmd Msg
 postToFirebaseFunction url userId token =
     let
@@ -673,5 +677,12 @@ postToFirebaseFunction url userId token =
     Http.post
         { url = url
         , body = body
-        , expect = Http.expectJson ConfirmNotifications Ports.decodeFBFunction
+        , expect = Http.expectJson ConfirmNotifications decodeCloudFunctionResponse
         }
+
+
+decodeCloudFunctionResponse : Decoder TaggedPayload
+decodeCloudFunctionResponse =
+    Decode.map2 TaggedPayload
+        (Decode.field "message" Decode.string)
+        (Decode.field "payload" Decode.value)

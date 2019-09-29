@@ -74,7 +74,7 @@ type alias Model =
 blank : Model
 blank =
     { tab = Family
-    , user = FB.init
+    , user = FB.blankFBUser
     , messagingToken = Nothing
     , xmas = Dict.empty
     , userMessage = NoMessage
