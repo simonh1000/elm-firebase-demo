@@ -27,7 +27,6 @@ function handler({ message, payload }, fbToElm) {
             signinGoogle(fbToElm);
             break;
         case "signout":
-            "";
             signout();
             break;
         case "subscribe":
