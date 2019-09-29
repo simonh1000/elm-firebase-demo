@@ -3,7 +3,7 @@ module Model exposing (..)
 import Color exposing (Color)
 import Common.CoreHelpers exposing (andMap, foldResult, ifThenElse)
 import Dict exposing (Dict)
-import Firebase.Firebase as FB
+import Firebase.Firebase as FB exposing (FBUser)
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode
 import List as L
@@ -61,9 +61,9 @@ type UserMessage
 
 type alias Model =
     { tab : AppTab
-    , user : FB.FBUser
+    , user : FBUser
     , messagingToken : Maybe String
-    , xmas : Dict String UserData
+    , userData : Dict String UserData
     , userMessage : UserMessage
     , editor : Present
     , editorCollapsed : Bool
@@ -76,7 +76,7 @@ blank =
     { tab = Family
     , user = FB.blankFBUser
     , messagingToken = Nothing
-    , xmas = Dict.empty
+    , userData = Dict.empty
     , userMessage = NoMessage
     , editor = blankPresent
     , editorCollapsed = True

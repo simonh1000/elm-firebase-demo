@@ -28,7 +28,8 @@ initCmd =
         [ Time.now
             |> Task.map checkIfPhase2
             |> Task.perform ConfirmIsPhase2
-        , FB.sendToFirebase FB.GetMessagingToken
+        , -- this will return over the Firebase port as MessagingToken
+          FB.sendToFirebase FB.GetMessagingToken
         ]
 
 
@@ -185,7 +186,6 @@ update cloudFunction message model =
 
 
 {-| If snapshot lacks displayName, then add it to the DB
-Now we have the (possible) notifications preference, so use that
 
 FIXME we are renewing subscriptions every time a subscription comes in
 
@@ -201,7 +201,7 @@ handleSnapshot mbUser snapshot model =
             let
                 newModel =
                     { model
-                        | xmas = xmas
+                        | userData = xmas
                         , user = user
                         , -- if we got a snapshot then no need to show progress/error
                           userMessage = NoMessage
@@ -216,21 +216,18 @@ handleSnapshot mbUser snapshot model =
 
                 ( Nothing, Just displayName ) ->
                     -- This is a new user as we have the username and the database does not know it
-                    -- so we need to set up notifications
                     ( newModel
                     , setMeta newModel.user.uid "name" <| Encode.string displayName
                     )
 
                 ( Nothing, Nothing ) ->
                     ( { newModel | userMessage = ErrorMessage <| "Unexpected error - no display name present" }
-                      --                    , rollbar <| "Missing username for: " ++ model.user.uid
-                    , Cmd.none
+                    , Ports.rollbar <| "Missing username for: " ++ model.user.uid
                     )
 
         Err err ->
             ( { model | userMessage = ErrorMessage <| "handleSnapshot: " ++ Decode.errorToString err }
-              --            , rollbar <| "handleSnapshot: " ++ Decode.errorToString err
-            , Cmd.none
+            , Ports.rollbar <| "handleSnapshot: " ++ Decode.errorToString err
             )
 
 
@@ -261,7 +258,7 @@ handleToken : String -> String -> Model -> ( Model, Cmd Msg )
 handleToken cloudFunction token model =
     let
         cmd =
-            case Dict.get model.user.uid model.xmas of
+            case Dict.get model.user.uid model.userData of
                 Just { meta } ->
                     if meta.notifications == NotificationsUnset then
                         -- register for notifications
@@ -286,7 +283,7 @@ view : Model -> List (Html Msg)
 view model =
     let
         ( mine, others ) =
-            model.xmas
+            model.userData
                 |> Dict.toList
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
@@ -538,7 +535,7 @@ viewSettings : Model -> List (Html Msg)
 viewSettings model =
     let
         notifications =
-            model.xmas
+            model.userData
                 |> Dict.get model.user.uid
                 |> Maybe.map (.meta >> .notifications >> (==) YesPlease)
                 |> Maybe.withDefault False
@@ -666,7 +663,6 @@ savePresent model =
     case model.editor.uid of
         Just uid_ ->
             -- update existing present
-            -- FIXME should UPDATE description and link, NOT REPLACE everything
             FB.update ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
 
         Nothing ->

@@ -84,8 +84,7 @@ ngrok http 3000 -host-header="localhost:3000"
 ## ToDo
 
 -   InScreen notification
+-   remove duplicative userMessage
 -   Make rollbar work only on production
--   add click-action to notification
--   Generate sw.js directly in ./dist
 -   Delete item (with warning)
 -   Add firebase rules so that first person to claim can't be overwritten

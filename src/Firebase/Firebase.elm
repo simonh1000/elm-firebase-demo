@@ -205,41 +205,40 @@ encodeCredentials email password =
 
 subscribe : String -> Cmd msg
 subscribe ref =
-    elmToFb <| PortMsg "subscribe" <| Encode.string ref
+    Encode.string ref
+        |> PortMsg "subscribe"
+        |> elmToFb
 
 
 push : String -> Encode.Value -> Cmd msg
 push ref val =
-    [ ( "ref", Encode.string ref )
-    , ( "payload", val )
-    ]
-        |> Encode.object
-        |> PortMsg "push"
-        |> elmToFb
+    mkStdCmd "push" ref val
 
 
 set : String -> Encode.Value -> Cmd msg
 set ref val =
-    [ ( "ref", Encode.string ref )
-    , ( "payload", val )
-    ]
-        |> Encode.object
-        |> PortMsg "set"
-        |> elmToFb
+    mkStdCmd "set" ref val
 
 
 {-| updates key values at the ref, but does not replace completely
 -}
 update : String -> Encode.Value -> Cmd msg
 update ref val =
+    mkStdCmd "update" ref val
+
+
+mkStdCmd : String -> String -> Encode.Value -> Cmd msg
+mkStdCmd cmd ref val =
     [ ( "ref", Encode.string ref )
     , ( "payload", val )
     ]
         |> Encode.object
-        |> PortMsg "update"
+        |> PortMsg cmd
         |> elmToFb
 
 
 remove : String -> Cmd msg
 remove ref =
-    elmToFb <| PortMsg "remove" (Encode.string ref)
+    Encode.string ref
+        |> PortMsg "remove"
+        |> elmToFb

@@ -178,7 +178,7 @@ handleSnapshot payload model =
             update (AppMsg <| App.HandleSnapshot Nothing payload) newModel
 
         _ ->
-            -- not clear how we could reach here for any other page
+            -- IMPOSSIBLE STATE!
             ( model, Cmd.none )
 
 
