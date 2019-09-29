@@ -73,20 +73,6 @@ npm run prod && firebase deploy --only hosting
 
 ## Test functions locally
 
-firebase serve --only functions,database
-
-https://firebase.google.com/docs/functions/local-emulator
-firebase emulators:start
-
-```
-firebase setup:emulators:database
-
-npm run localfunctions
-```
-
--   start the database so that you can test rules `firebase serve --only database`
--   Get some sort of command line to access the functions: `npm run shell`
-
 ## ngrok
 
 ngrok http 3000 -host-header="localhost:3000"

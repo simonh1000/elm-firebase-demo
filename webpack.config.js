@@ -9,6 +9,8 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 // to extract the css as a separate file
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
+const Dotenv = require("dotenv-webpack");
+
 var MODE =
     process.env.npm_lifecycle_event === "prod" ? "production" : "development";
 var withDebug = !process.env["npm_config_nodebug"] && MODE !== "production";
@@ -34,7 +36,8 @@ var common = {
             template: "src/index.html",
             // inject details of output file at end of body
             inject: "body"
-        })
+        }),
+        new Dotenv()
     ],
     resolve: {
         modules: [path.join(__dirname, "src"), "node_modules"],

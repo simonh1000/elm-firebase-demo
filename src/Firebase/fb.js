@@ -200,13 +200,13 @@ function subscribe(fbToElm, _ref) {
 }
 
 function logger(msg) {
-    let reg = new RegExp("hampton-xmas");
+    let reg = new RegExp("localhost");
 
     if (reg.test(window.location.href)) {
+        console.error("[logger]", msg);
+    } else {
         console.log("Sending to rollbar", msg);
         Rollbar.error(msg);
-    } else {
-        console.error("[logger]", msg);
     }
 }
 

@@ -10,8 +10,9 @@ require("./styles.scss");
 
 const { Elm } = require("./Main");
 
+// CLOUD_URL or EMULATOR_URL
 var app = Elm.Main.init({
-    flags: "https://us-central1-hampton-xmas2019.cloudfunctions.net/"
+    flags: process.env.CLOUD_URL
 });
 
 app.ports.toJs.subscribe(data => {
