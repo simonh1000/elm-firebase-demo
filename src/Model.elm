@@ -6,6 +6,8 @@ import Firebase.Firebase as FB
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode
 import List as L
+import Material.Icons.Action as MAction
+import Material.Icons.Social as MSocial
 
 
 type alias Model =
@@ -55,20 +57,19 @@ type AppTab
     | Settings
 
 
-stringFromTab : AppTab -> ( String, String )
 stringFromTab tab =
     case tab of
         Family ->
-            ( "account-group", "Family" )
+            ( MSocial.people, "Family" )
 
         MySuggestions ->
-            ( "account", "Suggestions" )
+            ( MSocial.person, "Suggestions" )
 
         MyClaims ->
-            ( "file-document-box-check-outline", "Claims" )
+            ( MAction.bookmark, "Claims" )
 
         Settings ->
-            ( "settings", "" )
+            ( MAction.settings_application, "" )
 
 
 

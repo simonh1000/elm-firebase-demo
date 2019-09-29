@@ -15,6 +15,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import List as L
 import Material.Icons.Action as MAction
+import Material.Icons.Image as MImage
 import Model exposing (..)
 import Ports exposing (TaggedPayload)
 import Task
@@ -164,9 +165,7 @@ update cloudFunction message model =
                     ( { model | userMessage = ErrorMessage <| "[ConfirmNotifications] network error while attempting to change notificiations" }, Cmd.none )
 
         SignOut ->
-            ( blank
-            , FB.signout
-            )
+            ( blank, FB.signout )
 
         HandleSnapshot mbUser value ->
             handleSnapshot mbUser value model
@@ -386,7 +385,7 @@ viewSuggestions model lst =
                     [ onClick (EditSuggestion present)
                     , class "btn btn-success"
                     ]
-                    [ span [ class "mr-1" ] [ matIcon "pencil-outline" ]
+                    [ span [ class "mr-2" ] [ MImage.edit Color.white 24 ]
                     , text "Edit"
                     ]
                 ]
@@ -460,7 +459,7 @@ makeDescription { description, link } =
         Just link_ ->
             div [ class "description" ]
                 [ text description
-                , a [ href link_, target "_blank" ] [ matIcon "open-in-new" ]
+                , a [ href link_, target "_blank" ] [ MAction.open_in_new Color.white 24 ]
                 ]
 
         Nothing ->

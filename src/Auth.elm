@@ -1,13 +1,17 @@
 module Auth exposing (AuthTab(..), Config, Model, Msg(..), blank, update, view, viewLogin, viewRegister)
 
 import Bootstrap as B
+import Color exposing (Color)
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import List as L
+import Material.Icons.Action as MAction
+import Material.Icons.Social as MSocial
 import Model exposing (setDisplayName)
+import Svg exposing (Svg)
 
 
 type alias Model =
@@ -36,13 +40,15 @@ type AuthTab
     | RegisterTab
 
 
+{-| -}
+stringFromTab : AuthTab -> ( Color -> Int -> Svg msg, String )
 stringFromTab tab =
     case tab of
         LoginTab ->
-            ( "login", "Login" )
+            ( MAction.exit_to_app, "Login" )
 
         RegisterTab ->
-            ( "account-plus", "Register" )
+            ( MSocial.person_add, "Register" )
 
 
 
