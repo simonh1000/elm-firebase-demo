@@ -19,16 +19,16 @@ const messaging = firebase.messaging();
 
 // SW will handle background messages while app handles foreground ones
 messaging.setBackgroundMessageHandler(function(payload) {
-    console.log(
-        "[firebase-messaging-sw.js] Received background message ",
-        payload
-    );
-    // click_action should open app - not sure that click_action has any effect at all
+    // console.log(
+    //     "[firebase-messaging-sw.js] Received background message ",
+    //     payload
+    // );
     const notificationTitle = "Presents update: " + payload.data.person;
     const notificationOptions = {
-        body: "Added new idea: " + payload.data.present,
-        icon: "./images/icons/present-192x192.png",
-        click_action: self.config.url
+        body: payload.data.present
+            ? "Added new idea: " + payload.data.present
+            : "",
+        icon: "./images/icons/icon-192x192.png"
     };
 
     return self.registration.showNotification(
@@ -39,8 +39,6 @@ messaging.setBackgroundMessageHandler(function(payload) {
 
 // Do something with a click
 self.addEventListener("notificationclick", function(event) {
-    console.log("[firebase-messaging-sw] Notification click Received.");
-
     event.notification.close();
     // Open the app
     event.waitUntil(clients.openWindow(self.config.ur));
