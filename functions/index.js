@@ -1,52 +1,52 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
-// my helpers
+const databaseURL = "https://hampton-xmas2019.firebaseio.com";
+
+console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    databaseURL
+});
+
+// notification registration handlers
 const messaging = require("./messaging");
-
-admin.initializeApp();
-
-// Messaging HTTP functions
 exports.subscribe = functions.https.onRequest(messaging.subscribe);
 exports.unsubscribe = functions.https.onRequest(messaging.unsubscribe);
 
+// Database watcher
+// When new present created, inform users
+exports.sendNotification = functions.database
+    .ref("/{userId}/presents/{presentId}")
+    .onCreate(event => {
+        // https://firebase.google.com/docs/reference/admin/node/admin.database.Reference
+        return event.ref.parent.parent
+            .child("meta/name")
+            .once("value")
+            .then(snapshot => {
+                // Grab the current value of what was written to the Realtime Database.
+                let person = snapshot.val();
 
-// When present first created, inform users
-exports.sendNotification = functions.database.ref("/{userId}/presents/{presentId}").onCreate(event => {
-    // https://firebase.google.com/docs/reference/admin/node/admin.database.Reference
-    return event.ref.parent.parent
-        .child("meta/name")
-        .once("value")
-        .then(snapshot => {
-            // Grab the current value of what was written to the Realtime Database.
-            let person = snapshot.val();
+                // Don't show any notifications before ....
+                let endPhase1 = new Date("15 oct 2019");
+                let now = new Date();
+                let present =
+                    now < endPhase1
+                        ? null
+                        : (present = event.data.child("description").val());
 
-            // Don't show any notifications before ....
-            let endPhase1 = new Date("15 oct 2019");
-            let now = new Date();
-            let present;
-            if (now < endPhase1) {
-                present = person + " <visible October 15>";
-            } else {
-                present = event.data.child("description").val();
-            }
+                var topic = "presents";
+                // console.log(`* ${person} added ${present}`);
+                var payload = {
+                    data: { person, present }
+                };
 
-            var topic = "presents";
-            // console.log(`* ${person} added ${present}`);
-            var payload = {
-                data: { person, present }
-            };
-
-            // https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_topic
-            return admin.messaging().sendToTopic(topic, payload);
-        })
-//        .then( response => {
-//            console.log("Message(s) sent", response);
-//        })
-        .catch(error => console.error("Error sending message:", error));
-});
-
-
+                // https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_topic
+                return admin.messaging().sendToTopic(topic, payload);
+            })
+            .catch(error => console.error("Error sending message:", error));
+    });
 
 //// When present added to database, inform users
 //exports.sendNotification =
