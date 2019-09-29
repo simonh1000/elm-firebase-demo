@@ -1,4 +1,4 @@
-module Bootstrap exposing (inputWithLabel, passwordWithLabel)
+module Common.Bootstrap exposing (inputWithLabel, passwordWithLabel)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)

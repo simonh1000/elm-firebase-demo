@@ -2,15 +2,17 @@
 
 // this will instantiate the service worker
 // bulk of the content of the service worker is in src/assets/service-worker.js
-require("./sw-installer");
+require("./js/sw-installer");
 
-import { Rollbar} from "./rollbar";
+import { Rollbar } from "./js/rollbar";
 
 require("./styles.scss");
 
 const { Elm } = require("./Main");
 
-var app = Elm.Main.init({ flags: "https://us-central1-hampton-xmas2019.cloudfunctions.net/" });
+var app = Elm.Main.init({
+    flags: "https://us-central1-hampton-xmas2019.cloudfunctions.net/"
+});
 
 app.ports.toJs.subscribe(data => {
     switch (data.tag) {

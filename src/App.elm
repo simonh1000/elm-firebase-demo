@@ -1,7 +1,7 @@
 module App exposing (Msg(..), initCmd, update, view)
 
-import Bootstrap as B
 import Color
+import Common.Bootstrap as B
 import Common.CoreHelpers exposing (formatPluralRegular, ifThenElse)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)

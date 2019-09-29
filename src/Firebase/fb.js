@@ -1,4 +1,4 @@
-const Rollbar = require("../rollbar");
+const Rollbar = require("../js/rollbar");
 
 // import helpers for messaging
 // get the non-SW config
@@ -261,7 +261,7 @@ function getMessagingTokenWithValidBrowser(cb) {
     // - the user clicks on an app notification created by a service worker
     //   `messaging.setBackgroundMessageHandler` handler.
     messaging.onMessage(payload => {
-        console.log("[getMessagingToken] Message received. ", payload);
+        console.log("[getMessagingToken] Foreground Message", payload);
         cb({
             message: "NewNotification",
             payload: payload.data

@@ -40,9 +40,9 @@ exports.sendNotification = functions.database.ref("/{userId}/presents/{presentId
             // https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_topic
             return admin.messaging().sendToTopic(topic, payload);
         })
-        .then( response => {
-            console.log("Message(s) sent", response);
-        })
+//        .then( response => {
+//            console.log("Message(s) sent", response);
+//        })
         .catch(error => console.error("Error sending message:", error));
 });
 

@@ -3,7 +3,6 @@ const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 var topic = "presents";
 
-// const secrets = require('./secrets');
 
 exports.subscribe = function subscribe(req, res) {
     // https://firebase.google.com/docs/functions/http-events

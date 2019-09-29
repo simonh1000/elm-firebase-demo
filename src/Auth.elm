@@ -1,7 +1,7 @@
 module Auth exposing (AuthTab(..), Config, Model, Msg(..), blank, update, view, viewLogin, viewRegister)
 
-import Bootstrap as B
 import Color exposing (Color)
+import Common.Bootstrap as B
 import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB
 import Html exposing (..)

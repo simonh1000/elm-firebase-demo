@@ -24,10 +24,10 @@ messaging.setBackgroundMessageHandler(function(payload) {
         payload
     );
     // click_action should open app - not sure that click_action has any effect at all
-    const notificationTitle = "Presents Update for " + payload.data.person;
+    const notificationTitle = "Presents update: " + payload.data.person;
     const notificationOptions = {
         body: "Added new idea: " + payload.data.present,
-        icon: "/images/icons/present-192x192.png",
+        icon: "./images/icons/present-192x192.png",
         click_action: self.config.url
     };
 
