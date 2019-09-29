@@ -422,6 +422,14 @@ viewSuggestions model lst =
 
 viewPresentEditor : Bool -> Present -> Html Msg
 viewPresentEditor isPhase2 editor =
+    let
+        ( delText, delHtm ) =
+            if isPhase2 then
+                ( "Delete*", div [ class "mt-1" ] [ text "* Warning: someone may already have committed to buy this!" ] )
+
+            else
+                ( "Delete", text "" )
+    in
     div [ class "new-present section" ]
         [ h4 []
             [ case editor.uid of
@@ -443,7 +451,7 @@ viewPresentEditor isPhase2 editor =
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case editor.uid of
                     Just uid ->
-                        button [ class "btn btn-danger", onClick (DeleteSuggestion uid) ] [ text "Delete*" ]
+                        button [ class "btn btn-danger", onClick (DeleteSuggestion uid) ] [ text delText ]
 
                     Nothing ->
                         text ""
@@ -454,11 +462,7 @@ viewPresentEditor isPhase2 editor =
                     ]
                     [ text "Save" ]
                 ]
-            , if isPhase2 then
-                div [ class "mt-1" ] [ text "* Warning: someone may already have committed to buy this!" ]
-
-              else
-                text ""
+            , delHtm
             ]
         ]
 

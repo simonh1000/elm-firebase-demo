@@ -57,9 +57,9 @@ fbResponseDecoder =
         [ mkDec "authstate" decodeAuthState NewAuthState
         , mkDec "snapshot" Decode.value Snapshot
         , mkDec "MessagingToken" Decode.string MessagingToken
-        , mkDec "Error" decoderError Error
-        , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
         , mkDec "NewNotification" decodeNotification NewNotification
+        , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
+        , mkDec "Error" decoderError Error
         , Decode.field "message" Decode.string |> Decode.map UnhandledResponse
         ]
 

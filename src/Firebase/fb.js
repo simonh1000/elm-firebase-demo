@@ -3,7 +3,13 @@ const Rollbar = require("../js/rollbar");
 // import helpers for messaging
 // get the non-SW config
 import { firebaseConfig } from "../assets/config/firebase-config";
+
 const AUTH_STATE = "authstate";
+const SNAPSHOT = "snapshot";
+const MESSAGING_TOKEN = "MessagingToken";
+const NEW_NOTIFICATION = "NewNotification";
+const NOTIFICATIONS_REFUSED = "NotificationsRefused";
+const ERROR = "Error";
 
 // Initialise firebase using config data
 firebase.initializeApp(firebaseConfig);
@@ -82,7 +88,7 @@ function signin(email, password, fbToElm) {
             console.log("Signin success", res);
         })
         .catch(function(err) {
-            fbToElm({ message: "error", payload: err });
+            fbToElm({ message: ERROR, payload: err });
             logger(err);
         });
 }
@@ -95,7 +101,7 @@ function register(email, password, fbToElm) {
             console.log("Register success", res);
         })
         .catch(function(err) {
-            fbToElm({ message: "error", payload: err });
+            fbToElm({ message: ERROR, payload: err });
             logger(err);
         });
 }
@@ -119,7 +125,7 @@ function signinGoogle(fbToElm) {
         .catch(function(error) {
             logger(error);
             fbToElm({
-                message: "Error",
+                message: ERROR,
                 payload: error
             });
         });
@@ -172,7 +178,7 @@ function subscribe(fbToElm, _ref) {
         .on("value", snapshot => {
             // console.log("snapshot", snapshot.val());
             fbToElm({
-                message: "snapshot",
+                message: SNAPSHOT,
                 payload: {
                     key: _ref,
                     value: snapshot.val()
@@ -238,7 +244,7 @@ function getMessagingTokenWithValidBrowser(cb) {
                     cb(mkTokenResp(currentToken));
                 } else {
                     cb({
-                        message: "Error",
+                        message: ERROR,
                         payload: "getToken returned no data"
                     });
                 }
@@ -246,7 +252,7 @@ function getMessagingTokenWithValidBrowser(cb) {
         } else {
             console.warn("requestPermission failed", permission);
             cb({
-                message: "NotificationsRefused",
+                message: NOTIFICATIONS_REFUSED,
                 payload: "Unable to get permission to notify"
             });
         }
@@ -258,7 +264,7 @@ function getMessagingTokenWithValidBrowser(cb) {
     messaging.onMessage(payload => {
         console.log("[getMessagingToken] Foreground Message", payload);
         cb({
-            message: "NewNotification",
+            message: NEW_NOTIFICATION,
             payload: payload.data
         });
     });
@@ -277,7 +283,7 @@ function getMessagingTokenWithValidBrowser(cb) {
 
 function mkTokenResp(token) {
     return {
-        message: "MessagingToken",
+        message: MESSAGING_TOKEN,
         payload: token
     };
 }
