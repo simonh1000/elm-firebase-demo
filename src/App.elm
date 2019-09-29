@@ -565,6 +565,8 @@ viewSettings model =
                 ]
             ]
         ]
+    , div [ class "section" ]
+        [ span [ class "small" ] [ text "Version: RC-1" ] ]
     ]
 
 
