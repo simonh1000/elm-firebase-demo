@@ -49,8 +49,9 @@ type Msg
     | Unclaim String String
       -- Suggestions
     | EditSuggestion Present
-    | UpdateSuggestionDescription String
+    | UpdateSuggestionTitle String
     | UpdateSuggestionLink String
+    | UpdateSuggestionComment String
     | SubmitSuggestion
     | CancelEditor
     | DeleteSuggestion String
@@ -98,14 +99,21 @@ update cloudFunction message model =
             , Cmd.none
             )
 
-        UpdateSuggestionDescription description ->
-            ( updateEditor (\ed -> { ed | description = description }) model
+        UpdateSuggestionTitle description ->
+            ( updateEditor (\ed -> { ed | title = description }) model
             , Cmd.none
             )
 
         UpdateSuggestionLink link ->
             ( updateEditor
                 (\ed -> { ed | link = ifThenElse (link == "") Nothing (Just link) })
+                model
+            , Cmd.none
+            )
+
+        UpdateSuggestionComment comment ->
+            ( updateEditor
+                (\ed -> { ed | buyingAdvice = ifThenElse (comment == "") Nothing (Just comment) })
                 model
             , Cmd.none
             )
@@ -419,10 +427,13 @@ viewPresentEditor isPhase2 editor =
                     text "New suggestion"
             ]
         , div [ id "new-present-form" ]
-            [ B.inputWithLabel UpdateSuggestionDescription "Description" "newpresent" editor.description
+            [ B.inputWithLabel UpdateSuggestionTitle "Title" "newpresent" editor.title
             , editor.link
                 |> Maybe.withDefault ""
                 |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "newpresentlink"
+            , editor.buyingAdvice
+                |> Maybe.withDefault ""
+                |> B.inputWithLabel UpdateSuggestionComment "Buying advice (optional)" "newpresentlink"
             , div [ class "flex-h flex-spread" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case editor.uid of
@@ -434,7 +445,7 @@ viewPresentEditor isPhase2 editor =
                 , button
                     [ class "btn btn-success"
                     , onClick SubmitSuggestion
-                    , disabled <| editor.description == ""
+                    , disabled <| editor.title == ""
                     ]
                     [ text "Save" ]
                 ]
@@ -448,16 +459,16 @@ viewPresentEditor isPhase2 editor =
 
 
 makeDescription : Present -> Html Msg
-makeDescription { description, link } =
+makeDescription { title, link } =
     case link of
         Just link_ ->
             div [ class "description" ]
-                [ text description
+                [ text title
                 , a [ href link_, target "_blank" ] [ MAction.open_in_new Color.white 24 ]
                 ]
 
         Nothing ->
-            text description
+            text title
 
 
 

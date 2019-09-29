@@ -1,5 +1,6 @@
 module Model exposing (..)
 
+import Color exposing (Color)
 import Common.CoreHelpers exposing (andMap, foldResult)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
@@ -8,6 +9,54 @@ import Json.Encode as Encode
 import List as L
 import Material.Icons.Action as MAction
 import Material.Icons.Social as MSocial
+import Svg exposing (Svg)
+
+
+
+-- -----------------------
+-- Main: Page
+-- -----------------------
+
+
+type Page
+    = InitAuth -- checking auth status
+    | Subscribing FB.FBUser -- making snapshot request
+    | AuthPage
+    | AppPage
+
+
+stringFromPage : Page -> String
+stringFromPage page =
+    case page of
+        InitAuth ->
+            "InitAuth"
+
+        Subscribing _ ->
+            "Subscribing"
+
+        AuthPage ->
+            "AuthPage"
+
+        AppPage ->
+            "AppPage"
+
+
+
+-- -----------------------
+-- Main: UserMessage
+-- -----------------------
+
+
+type UserMessage
+    = NoMessage
+    | SuccessMessage String
+    | ErrorMessage String
+
+
+
+-- -----------------------
+-- App: Model
+-- -----------------------
 
 
 type alias Model =
@@ -57,6 +106,7 @@ type AppTab
     | Settings
 
 
+stringFromTab : AppTab -> ( Color -> Int -> Svg msg, String )
 stringFromTab tab =
     case tab of
         Family ->
@@ -70,45 +120,6 @@ stringFromTab tab =
 
         Settings ->
             ( MAction.settings_application, "" )
-
-
-
---
-
-
-type Page
-    = InitAuth -- checking auth status
-    | Subscribing FB.FBUser -- making snapshot request
-    | AuthPage
-    | AppPage
-
-
-stringFromPage : Page -> String
-stringFromPage page =
-    case page of
-        InitAuth ->
-            "InitAuth"
-
-        Subscribing _ ->
-            "Subscribing"
-
-        AuthPage ->
-            "AuthPage"
-
-        AppPage ->
-            "AppPage"
-
-
-
--- -----------------------
--- UserMessage
--- -----------------------
-
-
-type UserMessage
-    = NoMessage
-    | SuccessMessage String
-    | ErrorMessage String
 
 
 
@@ -175,13 +186,16 @@ decodeUserMeta =
 
 
 
--- DECODER
+-- -----------------------
+-- Present
+-- -----------------------
 
 
 type alias Present =
     { uid : Maybe String
-    , description : String
+    , title : String
     , link : Maybe String
+    , buyingAdvice : Maybe String
     , status : PresentStatus
     }
 
@@ -189,8 +203,9 @@ type alias Present =
 blankPresent : Present
 blankPresent =
     { uid = Nothing
-    , description = ""
+    , title = ""
     , link = Nothing
+    , buyingAdvice = Nothing
     , status = Available
     }
 
@@ -222,28 +237,25 @@ decoderPresent myId id =
     succeed (Present <| Just id)
         |> andMap (field "description" string)
         |> andMap (maybe <| field "link" string)
+        |> andMap (maybe <| field "buying-advice" string)
         |> andMap (decodePresentStatus myId)
 
 
 encodePresent : String -> Present -> Encode.Value
 encodePresent myId p =
-    let
-        commonData =
-            ( "description", Encode.string p.description ) :: encodePresentStatus myId p.status
-
-        dataToEncode =
-            case p.link of
-                Just link_ ->
-                    ( "link", Encode.string link_ ) :: commonData
-
-                Nothing ->
-                    commonData
-    in
-    Encode.object dataToEncode
+    [ Just ( "description", Encode.string p.title )
+    , encodePresentStatus myId p.status
+    , p.link |> Maybe.map (\link_ -> ( "link", Encode.string link_ ))
+    , p.buyingAdvice |> Maybe.map (\txt -> ( "buying-advice", Encode.string txt ))
+    ]
+        |> L.filterMap identity
+        |> Encode.object
 
 
 
+-- -----------------------
 -- PresentStatus
+-- -----------------------
 
 
 type PresentStatus
@@ -272,12 +284,12 @@ decodePresentStatus myId =
             )
 
 
-encodePresentStatus : String -> PresentStatus -> List ( String, Value )
+encodePresentStatus : String -> PresentStatus -> Maybe ( String, Value )
 encodePresentStatus myId presentStatus =
     case presentStatus of
         ClaimedByMe _ ->
             -- TODO purchased???
-            [ ( "takenBy", Encode.string myId ) ]
+            Just ( "takenBy", Encode.string myId )
 
         _ ->
-            []
+            Nothing
