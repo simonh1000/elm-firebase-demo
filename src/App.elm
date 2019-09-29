@@ -574,7 +574,7 @@ viewFooter isPhase2 tab =
     [ ( True, Family ), ( True, MySuggestions ), ( isPhase2, MyClaims ), ( True, Settings ) ]
         |> L.filter Tuple.first
         |> L.map (\( _, t ) -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
-        |> footer [ class "tabs" ]
+        |> footer [ class "flex-h flex-aligned flex-spread tabs" ]
 
 
 
