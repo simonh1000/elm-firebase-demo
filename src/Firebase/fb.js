@@ -232,6 +232,7 @@ function getMessagingToken(cb) {
 function getMessagingTokenWithValidBrowser(cb) {
     const messaging = firebase.messaging();
     // next line essential for getToken to work
+    // console.log("*** usePublicVapidKey")
     messaging.usePublicVapidKey(vapidKey);
 
     Notification.requestPermission().then(permission => {
