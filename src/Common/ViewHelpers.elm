@@ -9,10 +9,8 @@ import Html.Events exposing (onClick)
 
 simpleHeader : Html msg
 simpleHeader =
-    header []
-        [ div [ class "container flex-h" ]
-            [ h4 [] [ text "Xmas 2019" ] ]
-        ]
+    header [ class "flex-h flex-aligned flex-spread" ]
+        [ h4 [] [ text "Xmas 2019" ] ]
 
 
 
