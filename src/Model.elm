@@ -1,7 +1,7 @@
 module Model exposing (..)
 
 import Color exposing (Color)
-import Common.CoreHelpers exposing (andMap, foldResult)
+import Common.CoreHelpers exposing (andMap, foldResult, ifThenElse)
 import Dict exposing (Dict)
 import Firebase.Firebase as FB
 import Json.Decode as Decode exposing (..)
@@ -174,7 +174,7 @@ converter ( a, b ) =
 
 type alias UserMeta =
     { name : String
-    , notifications : Bool
+    , notifications : Notifications
     }
 
 
@@ -182,7 +182,36 @@ decodeUserMeta : Decoder UserMeta
 decodeUserMeta =
     Decode.map2 UserMeta
         (field "name" string)
-        (oneOf [ field "notifications" bool, succeed False ])
+        (oneOf [ decoderNotifications, succeed NotificationsUnset ])
+
+
+type Notifications
+    = YesPlease
+    | NoThanks
+    | NotificationsUnset
+
+
+decoderNotifications : Decoder Notifications
+decoderNotifications =
+    let
+        convert val =
+            ifThenElse val YesPlease NoThanks
+    in
+    field "notifications" bool
+        |> Decode.map convert
+
+
+encodeNotifications : Notifications -> Maybe ( String, Value )
+encodeNotifications n =
+    case n of
+        YesPlease ->
+            Just ( "notifications", Encode.bool True )
+
+        NoThanks ->
+            Just ( "notifications", Encode.bool False )
+
+        NotificationsUnset ->
+            Nothing
 
 
 

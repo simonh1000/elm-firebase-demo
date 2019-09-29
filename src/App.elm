@@ -1,4 +1,4 @@
-module App exposing (Msg(..), initCmd, update, view)
+module App exposing (Msg(..), handleToken, initCmd, update, view)
 
 import Color
 import Common.Bootstrap as B
@@ -251,6 +251,29 @@ checkIfPhase2 now =
 
         Err _ ->
             False
+
+
+
+--  helper for Port Handler
+
+
+handleToken : String -> String -> Model -> ( Model, Cmd Msg )
+handleToken cloudFunction token model =
+    let
+        cmd =
+            case Dict.get model.user.uid model.xmas of
+                Just { meta } ->
+                    if meta.notifications == NotificationsUnset then
+                        -- register for notifications
+                        postToFirebaseFunction (cloudFunction ++ "subscribe") model.user.uid token
+
+                    else
+                        Cmd.none
+
+                Nothing ->
+                    Cmd.none
+    in
+    ( { model | messagingToken = Just token }, cmd )
 
 
 
@@ -517,8 +540,8 @@ viewSettings model =
         notifications =
             model.xmas
                 |> Dict.get model.user.uid
-                |> Maybe.map (.meta >> .notifications)
-                |> Maybe.withDefault True
+                |> Maybe.map (.meta >> .notifications >> (==) YesPlease)
+                |> Maybe.withDefault False
 
         mkPresentTmpl htms =
             li [ class "present flex-h" ] htms

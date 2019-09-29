@@ -93,7 +93,12 @@ update message model =
                     handleSnapshot payload model
 
                 MessagingToken token ->
-                    ( updateApp (\m -> { m | messagingToken = Just token }) model, Cmd.none )
+                    -- will only happen once we are in main app
+                    let
+                        ( m, c ) =
+                            App.handleToken model.cloudFunction token model.app
+                    in
+                    ( updateApp (\_ -> m) model, Cmd.map AppMsg c )
 
                 NotificationsRefused ->
                     ( { model | userMessage = Just "NotificationsRefused" }, Cmd.none )
