@@ -1,5 +1,4 @@
 // Part of the Service Worker code
-// may mean the console.log does not work?
 
 // Give the service worker access to Firebase Messaging.
 // Note that you can only use Firebase Messaging here, other Firebase libraries

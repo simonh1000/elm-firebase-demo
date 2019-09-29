@@ -1,7 +1,7 @@
 "use strict";
 
-// loads the service worker
-// TODO use a library to make a great SW
+// this will instantiate the service worker
+// bulk of the content of the service worker is in src/assets/service-worker.js
 require("./sw-installer");
 
 import { Rollbar} from "./rollbar";
