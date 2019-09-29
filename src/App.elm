@@ -326,45 +326,33 @@ viewOtherPhase1 ( _, { meta, presents } ) =
 viewOther : ( String, UserData ) -> Html Msg
 viewOther ( userRef, { meta, presents } ) =
     let
-        mkButton clickMsg title =
+        mkButton cls clickMsg title =
             button
-                [ class "btn btn-primary"
+                [ class <| "btn btn-primary " ++ cls
                 , onClick clickMsg
                 ]
                 [ text title ]
 
-        viewPresent presentRef present =
+        viewPresent_ presentRef present =
             let
-                ( cls, htm ) =
+                btn =
                     case present.status of
                         Available ->
-                            ( "available"
-                            , mkButton (Claim userRef presentRef) "Claim"
-                            )
+                            mkButton "" (Claim userRef presentRef) "Claim"
 
                         ClaimedByMe _ ->
-                            ( "ClaimedByMe"
-                            , mkButton (Unclaim userRef presentRef) "Claimed"
-                            )
+                            mkButton "btn-success" (Unclaim userRef presentRef) "Claimed"
 
                         ClaimedBySomeone ->
-                            ( "text-secondary", badge "light" "Taken" )
+                            badge "light" "Taken"
             in
-            li [ class <| "present flex-h " ++ cls ]
-                [ makeDescription present
-                , htm
-                ]
-
-        ps =
-            presents
-                |> Dict.map viewPresent
-                |> Dict.values
+            viewPresent btn present
     in
-    case ps of
+    case presents |> Dict.map viewPresent_ |> Dict.values of
         [] ->
             text ""
 
-        _ ->
+        ps ->
             div [ class "shadow-sm bg-white rounded person section" ]
                 [ h4 [] [ text meta.name ]
                 , ul [ class "present-list" ] ps
@@ -380,16 +368,13 @@ viewOther ( userRef, { meta, presents } ) =
 viewSuggestions : Model -> List ( String, UserData ) -> List (Html Msg)
 viewSuggestions model lst =
     let
-        viewPresent present =
-            li [ class "present flex-h flex-spread" ]
-                [ makeDescription present
-                , button
-                    [ onClick (EditSuggestion present)
-                    , class "btn btn-success"
-                    ]
-                    [ span [ class "mr-2" ] [ MImage.edit Color.white 24 ]
-                    , text "Edit"
-                    ]
+        mkButton present =
+            button
+                [ onClick (EditSuggestion present)
+                , class "btn btn-success"
+                ]
+                [ span [ class "mr-2" ] [ MImage.edit Color.white 24 ]
+                , text "Edit"
                 ]
 
         myPresents =
@@ -401,7 +386,7 @@ viewSuggestions model lst =
 
                         lst_ ->
                             lst_
-                                |> L.map viewPresent
+                                |> L.map (\present -> viewPresent (mkButton present) present)
                                 |> ul [ class "present-list" ]
 
                 [] ->
@@ -458,19 +443,6 @@ viewPresentEditor isPhase2 editor =
         ]
 
 
-makeDescription : Present -> Html Msg
-makeDescription { title, link } =
-    case link of
-        Just link_ ->
-            div [ class "description" ]
-                [ text title
-                , a [ href link_, target "_blank" ] [ MAction.open_in_new Color.white 24 ]
-                ]
-
-        Nothing ->
-            text title
-
-
 
 -- ------------------
 -- Claims Tab
@@ -489,15 +461,15 @@ viewClaims others =
 
                     else
                         ( "Claimed", "btn-warning" )
+
+                btn =
+                    button
+                        [ onClick <| TogglePurchased oRef presentRef (not purchased)
+                        , class <| "btn " ++ cls
+                        ]
+                        [ text status ]
             in
-            li [ class "present flex-h flex-spread" ]
-                [ makeDescription present
-                , button
-                    [ onClick <| TogglePurchased oRef presentRef (not purchased)
-                    , class <| "btn " ++ cls
-                    ]
-                    [ text status ]
-                ]
+            viewPresent btn present
 
         mkItemsForPerson : ( String, UserData ) -> Maybe (Html Msg)
         mkItemsForPerson ( oRef, other ) =
@@ -603,6 +575,28 @@ viewFooter isPhase2 tab =
         |> L.filter Tuple.first
         |> L.map (\( _, t ) -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
         |> footer [ class "tabs" ]
+
+
+
+-- helpers
+
+
+viewPresent : Html Msg -> Present -> Html Msg
+viewPresent btn p =
+    li [ class "present flex-v" ]
+        [ div [ class "flex-h flex-spread" ]
+            [ div [ class "description" ]
+                [ text p.title
+                , p.link
+                    |> Maybe.map (\link_ -> a [ href link_, target "_blank" ] [ MAction.open_in_new Color.white 24 ])
+                    |> Maybe.withDefault (text "")
+                ]
+            , btn
+            ]
+        , p.buyingAdvice
+            |> Maybe.map (\txt -> div [ class "small" ] [ text txt ])
+            |> Maybe.withDefault (text "")
+        ]
 
 
 mkPrimaryButton : msg -> String -> List (Html msg) -> Html msg
