@@ -1,6 +1,7 @@
 module App exposing (Msg(..), initCmd, update, view)
 
 import Bootstrap as B
+import Color
 import Common.CoreHelpers exposing (ifThenElse)
 import Common.ViewHelpers as ViewHelpers exposing (..)
 import Dict exposing (Dict)
@@ -13,6 +14,7 @@ import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import List as L
+import Material.Icons.Action as MAction
 import Model exposing (..)
 import Ports exposing (TaggedPayload)
 import Task
@@ -139,7 +141,7 @@ update cloudFunction message model =
         ConfirmNotifications res ->
             case res of
                 Ok msg ->
-                    case Debug.log "" msg.tag of
+                    case msg.tag of
                         "SubscriptionOk" ->
                             -- persist confirmation to user data
                             ( { model | userMessage = SuccessMessage "Storing new preference" }
@@ -323,26 +325,25 @@ viewOtherPhase1 ( _, { meta, presents } ) =
 viewOther : ( String, UserData ) -> Html Msg
 viewOther ( userRef, { meta, presents } ) =
     let
+        mkButton clickMsg title =
+            button
+                [ class "btn btn-primary"
+                , onClick clickMsg
+                ]
+                [ text title ]
+
         viewPresent presentRef present =
             let
                 ( cls, htm ) =
                     case present.status of
                         Available ->
                             ( "available"
-                            , button
-                                [ class "btn btn-primary btn-sm"
-                                , onClick <| Claim userRef presentRef
-                                ]
-                                [ text "Claim" ]
+                            , mkButton (Claim userRef presentRef) "Claim"
                             )
 
                         ClaimedByMe _ ->
                             ( "ClaimedByMe"
-                            , button
-                                [ class "btn btn-success btn-sm"
-                                , onClick <| Unclaim userRef presentRef
-                                ]
-                                [ text "Claimed" ]
+                            , mkButton (Unclaim userRef presentRef) "Claimed"
                             )
 
                         ClaimedBySomeone ->
@@ -383,7 +384,7 @@ viewSuggestions model lst =
                 [ makeDescription present
                 , button
                     [ onClick (EditSuggestion present)
-                    , class "btn btn-success btn-sm"
+                    , class "btn btn-success"
                     ]
                     [ span [ class "mr-1" ] [ matIcon "pencil-outline" ]
                     , text "Edit"
@@ -480,14 +481,18 @@ viewClaims others =
             let
                 ( status, cls ) =
                     if purchased then
-                        ( "Purchased", class "btn btn-success btn-sm" )
+                        ( "Purchased", "btn-success" )
 
                     else
-                        ( "Claimed", class "btn btn-warning btn-sm" )
+                        ( "Claimed", "btn-warning" )
             in
             li [ class "present flex-h flex-spread" ]
                 [ makeDescription present
-                , button [ onClick <| TogglePurchased oRef presentRef (not purchased), cls ] [ text status ]
+                , button
+                    [ onClick <| TogglePurchased oRef presentRef (not purchased)
+                    , class <| "btn " ++ cls
+                    ]
+                    [ text status ]
                 ]
 
         mkItemsForPerson : ( String, UserData ) -> Maybe (Html Msg)
@@ -547,17 +552,17 @@ viewSettings model =
         , ul [ class "present-list" ]
             [ mkPresentTmpl
                 [ div [] [ text "Notifications" ]
-                , span [ onClick (ToggleNotifications <| not notifications) ]
-                    [ if notifications then
-                        badge "success clickable" "on"
-
-                      else
-                        badge "danger clickable" "off"
-                    ]
+                , mkPrimaryButton (ToggleNotifications <| not notifications)
+                    (ifThenElse notifications "btn-success" "btn-danger")
+                    [ span [ class "mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
                 ]
             , mkPresentTmpl
-                [ div [ class "text-danger" ] [ text "Signout" ]
-                , div [ class "text-danger" ] [ matIconMsg SignOut "logout" ]
+                [ div [ class "text-danger" ] []
+                , mkPrimaryButton SignOut
+                    "btn-danger"
+                    [ span [ class "mr-2" ] [ MAction.exit_to_app Color.white 20 ]
+                    , text "Sign out"
+                    ]
                 ]
             ]
         ]
@@ -593,6 +598,15 @@ viewFooter tab =
     [ Family, MySuggestions, MyClaims, Settings ]
         |> L.map (\t -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
         |> footer [ class "tabs" ]
+
+
+mkPrimaryButton : msg -> String -> List (Html msg) -> Html msg
+mkPrimaryButton clickMsg cls htms =
+    button
+        [ onClick clickMsg
+        , class <| "btn btn-primary " ++ cls
+        ]
+        htms
 
 
 

@@ -10,7 +10,7 @@ require("./styles.scss");
 
 const { Elm } = require("./Main");
 
-var app = Elm.Main.init({ flags: "https://us-central1-***REMOVED***.cloudfunctions.net/" });
+var app = Elm.Main.init({ flags: "https://us-central1-hampton-xmas2019.cloudfunctions.net/" });
 
 app.ports.toJs.subscribe(data => {
     switch (data.tag) {
