@@ -1,20 +1,23 @@
 const path = require("path");
 const webpack = require("webpack");
 const merge = require("webpack-merge");
-const elmMinify = require("elm-minify");
 
+const ClosurePlugin = require("closure-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
-const CleanWebpackPlugin = require("clean-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 // to extract the css as a separate file
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 var MODE =
     process.env.npm_lifecycle_event === "prod" ? "production" : "development";
-var withDebug = !process.env["npm_config_nodebug"];
+var withDebug = !process.env["npm_config_nodebug"] && MODE !== "production";
 // this may help for Yarn users
 // var withDebug = !npmParams.includes("--nodebug");
-console.log('\x1b[36m%s\x1b[0m', `** elm-webpack-starter: mode "${MODE}", withDebug: ${withDebug}\n`);
+console.log(
+    "\x1b[36m%s\x1b[0m",
+    `** elm-webpack-starter: mode "${MODE}", withDebug: ${withDebug}\n`
+);
 
 var common = {
     mode: MODE,
@@ -99,9 +102,7 @@ if (MODE === "development") {
                             loader: "elm-webpack-loader",
                             options: {
                                 // add Elm's debug overlay to output
-                                debug: withDebug,
-                                //
-                                forceWatch: true
+                                debug: withDebug
                             }
                         }
                     ]
@@ -113,11 +114,16 @@ if (MODE === "development") {
             stats: "errors-only",
             contentBase: path.join(__dirname, "src/assets"),
             historyApiFallback: true,
-            // feel free to delete this section if you don't need anything like this
             before(app) {
-                // on port 3000
-                app.get("/test", function(req, res) {
-                    res.json({ result: "OK" });
+                // Make fbsw.config.js available
+                app.get("/Firebase/:fname", (req, res) => {
+                    console.log(
+                        "[devserver] Firebase directory",
+                        req.params.fname
+                    );
+                    res.sendFile(
+                        path.join(__dirname, "src/Firebase/", req.params.fname)
+                    );
                 });
             }
         }
@@ -125,9 +131,23 @@ if (MODE === "development") {
 }
 if (MODE === "production") {
     module.exports = merge(common, {
+        optimization: {
+            minimizer: [
+                new ClosurePlugin(
+                    { mode: "STANDARD" },
+                    {
+                        // compiler flags here
+                        //
+                        // for debugging help, try these:
+                        //
+                        // formatting: 'PRETTY_PRINT',
+                        // debug: true
+                        // renaming: false
+                    }
+                )
+            ]
+        },
         plugins: [
-            // Minify elm code
-            new elmMinify.WebpackPlugin(),
             // Delete everything from output-path (/dist) and report to user
             new CleanWebpackPlugin({
                 root: __dirname,

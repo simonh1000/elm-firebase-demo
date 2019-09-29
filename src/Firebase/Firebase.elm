@@ -1,7 +1,9 @@
-port module Firebase.Firebase exposing (FBCommand(..), FBMsg, FBResponse(..), FBUser, PortMsg, decodeAuthState, elmToFb, encodeCredentials, fbToElm, init, push, register, remove, sendToFirebase, set, setUpAuthListener, signin, signinGoogle, signout, subscribe, subscriptions, toFBResponse, userDecoder)
+port module Firebase.Firebase exposing (..)
 
-import Json.Decode as Json exposing (..)
-import Json.Encode as E
+import Common.CoreHelpers exposing (exactMatchString)
+import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Encode as Encode
+import Result.Extra as RE
 
 
 type alias PortMsg =
@@ -11,7 +13,7 @@ type alias PortMsg =
 port elmToFb : PortMsg -> Cmd msg
 
 
-port fbToElm : (PortMsg -> msg) -> Sub msg
+port fbToElm : (Value -> msg) -> Sub msg
 
 
 
@@ -21,12 +23,14 @@ port fbToElm : (PortMsg -> msg) -> Sub msg
 
 
 type FBResponse
-    = SubscriptionOk
-    | UnsubscribeOk
-    | NoUserPermission -- user has blocked use
-    | CFError
-    | NewMessage -- from the subscribed service
-    | UnhandledResponse
+    = AuthState (Result String FBUser)
+    | Snapshot Value -- this library does not know the structure of your data
+    | MessagingToken String
+    | CFError String -- ??
+    | Error String
+    | NotificationsRefused -- user has blocked use
+    | NewNotification Notification -- will only be received if app is in 'focus'
+    | UnhandledResponse String
 
 
 type alias FBMsg =
@@ -35,27 +39,57 @@ type alias FBMsg =
     }
 
 
-subscriptions : (PortMsg -> msg) -> Sub msg
-subscriptions fbMsgHandler =
-    fbToElm fbMsgHandler
+subscriptions : (FBResponse -> msg) -> Sub msg
+subscriptions msgConstructor =
+    fbToElm (decodeIncoming msgConstructor)
 
 
-toFBResponse s =
-    case s of
-        "SubscriptionOk" ->
-            SubscriptionOk
+decodeIncoming : (FBResponse -> msg) -> Value -> msg
+decodeIncoming msgConstructor value =
+    Decode.decodeValue fbResponseDecoder value
+        |> Result.map msgConstructor
+        |> RE.extract (Decode.errorToString >> Error >> msgConstructor)
 
-        "UnsubscribeOk" ->
-            UnsubscribeOk
 
-        "NoUserPermission" ->
-            NoUserPermission
+fbResponseDecoder : Decoder FBResponse
+fbResponseDecoder =
+    let
+        mkDec tgt dec constructor =
+            exactMatchString (Decode.field "message" Decode.string) tgt (Decode.field "payload" dec)
+                |> Decode.map constructor
+    in
+    Decode.oneOf
+        [ mkDec "authstate" decodeAuthState AuthState
+        , mkDec "snapshot" Decode.value Snapshot
+        , mkDec "MessagingToken" Decode.string MessagingToken
+        , mkDec "CFError" decoderError CFError
+        , mkDec "Error" decoderError Error
+        , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
+        , mkDec "NewNotification" decodeNotification NewNotification
+        , Decode.field "message" Decode.string |> Decode.map UnhandledResponse
+        ]
 
-        "CFError" ->
-            CFError
 
-        _ ->
-            UnhandledResponse
+decoderError : Decoder String
+decoderError =
+    Decode.field "message" Decode.string
+
+
+
+-- Notification
+
+
+type alias Notification =
+    { person : String
+    , present : String
+    }
+
+
+decodeNotification : Decoder Notification
+decodeNotification =
+    Decode.map2 Notification
+        (Decode.field "person" Decode.string)
+        (Decode.field "present" Decode.string)
 
 
 
@@ -63,34 +97,25 @@ toFBResponse s =
 
 
 type FBCommand
-    = StartNotifications String
-    | StopNotifications String
+    = GetMessagingToken -- request firebase.messaging to provide its messaging token
     | ListenAuthState
-
-
-
--- fbCommandToString : FBCommand -> String
--- fbCommandToString cmd =
---     case cmd of
---     StartNotifications _ ->
---         "StartNotifications"
---     StopNotifications _ ->
---             "StopNotifications"
---     ListenAuthState ->
---         "ListenAuthState"
 
 
 sendToFirebase : FBCommand -> Cmd msg
 sendToFirebase cmd =
     case cmd of
-        StartNotifications userId ->
-            elmToFb <| { message = "StartNotifications", payload = E.string userId }
-
-        StopNotifications userId ->
-            elmToFb <| { message = "StopNotifications", payload = E.string userId }
-
         _ ->
-            elmToFb <| { message = Debug.toString cmd, payload = E.null }
+            elmToFb <| { message = fbCommandToString cmd, payload = Encode.null }
+
+
+fbCommandToString : FBCommand -> String
+fbCommandToString cmd =
+    case cmd of
+        GetMessagingToken ->
+            "GetMessagingToken"
+
+        ListenAuthState ->
+            "ListenAuthState"
 
 
 
@@ -121,26 +146,26 @@ init =
 
 decodeAuthState : Decoder (Result String FBUser)
 decodeAuthState =
-    oneOf
-        [ map Ok userDecoder
-        , null (Err "nouser")
+    Decode.oneOf
+        [ Decode.map Ok userDecoder
+        , Decode.null (Err "nouser")
         ]
 
 
 userDecoder : Decoder FBUser
 userDecoder =
-    map4 FBUser
-        (field "email" string)
-        (field "uid" string)
-        (maybe <| field "displayName" string)
-        (maybe <| field "photoURL" string)
+    Decode.map4 FBUser
+        (Decode.field "email" Decode.string)
+        (Decode.field "uid" Decode.string)
+        (Decode.maybe <| Decode.field "displayName" Decode.string)
+        (Decode.maybe <| Decode.field "photoURL" Decode.string)
 
 
 encodeCredentials : String -> String -> Value
 encodeCredentials email password =
-    E.object
-        [ ( "email", E.string email )
-        , ( "password", E.string password )
+    Encode.object
+        [ ( "email", Encode.string email )
+        , ( "password", Encode.string password )
         ]
 
 
@@ -151,12 +176,12 @@ signin email password =
 
 signinGoogle : Cmd msg
 signinGoogle =
-    elmToFb <| FBMsg "signinGoogle" E.null
+    elmToFb <| FBMsg "signinGoogle" Encode.null
 
 
 signout : Cmd msg
 signout =
-    elmToFb <| FBMsg "signout" E.null
+    elmToFb <| FBMsg "signout" Encode.null
 
 
 register : String -> String -> Cmd msg
@@ -170,29 +195,41 @@ register email password =
 
 subscribe : String -> Cmd msg
 subscribe ref =
-    elmToFb <| FBMsg "subscribe" <| E.string ref
+    elmToFb <| FBMsg "subscribe" <| Encode.string ref
 
 
-push : String -> E.Value -> Cmd msg
+push : String -> Encode.Value -> Cmd msg
 push ref val =
-    [ ( "ref", E.string ref )
+    [ ( "ref", Encode.string ref )
     , ( "payload", val )
     ]
-        |> E.object
+        |> Encode.object
         |> FBMsg "push"
         |> elmToFb
 
 
-set : String -> E.Value -> Cmd msg
+set : String -> Encode.Value -> Cmd msg
 set ref val =
-    [ ( "ref", E.string ref )
+    [ ( "ref", Encode.string ref )
     , ( "payload", val )
     ]
-        |> E.object
+        |> Encode.object
         |> FBMsg "set"
+        |> elmToFb
+
+
+{-| updates key values at the ref, but does not replace completely
+-}
+update : String -> Encode.Value -> Cmd msg
+update ref val =
+    [ ( "ref", Encode.string ref )
+    , ( "payload", val )
+    ]
+        |> Encode.object
+        |> FBMsg "update"
         |> elmToFb
 
 
 remove : String -> Cmd msg
 remove ref =
-    elmToFb <| FBMsg "remove" (E.string ref)
+    elmToFb <| FBMsg "remove" (Encode.string ref)

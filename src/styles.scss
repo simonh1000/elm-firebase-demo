@@ -1,21 +1,36 @@
-$border-color: #ddd; // LAYOUT  ++ see css for larger screens
+$border-color: #ddd; // LAYOUT ++ see css for larger screens
 $green: #0a691f;
+$green-icon: #29a745;
+$green-accent: #d8f1de;
 $red: #880d0d;
-$bkg-colour: #ddd;
+$bkg-colour: #dedede;
+
+@import "~bootstrap/scss/bootstrap";
+
+// move elm dev tool to left
+body > div:not(.app) {
+    left: 6px;
+    right: initial !important;
+}
 
 .app {
+    background-color: $bkg-colour;
     // repeat settings inlined
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
 
     header {
         flex: 0 0 60px;
     }
 
     footer {
-        flex: 0 0 40px;
+        flex: 0 0 50px;
+        display: flex;
+        align-items: center;
     }
 
     .main {
@@ -23,95 +38,96 @@ $bkg-colour: #ddd;
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        overflow: hidden;
-        padding-top: 20px;
-        padding-bottom: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .main {
     }
 
-    .main.myclaims,
-    .main.picker {
-        .container {
-            overflow-y: auto;
-        }
-    }
 }
 
-#picker {
-    .claims,
-    .my-ideas,
-    .others {
-        overflow-y: auto;
-        max-height: 100%;
+.initauth, .subscribing {
+    .loading {
+        justify-content: center;
+        align-items: center;
     }
-
-    .my-ideas {
-        padding-bottom: 20px;
-    }
-
-    .person {
-        background-color: white;
-        margin-bottom: 15px;
-    }
-
-    .new-present {
+    img {
         margin-bottom: 20px;
     }
-
-    ul {
-        list-style: none;
-        padding-left: 0;
-        margin-bottom: 0;
-
-        li.present {
-            // height: 34px;
-            justify-content: space-between;
-            margin-bottom: -1px;
-            border: 1px solid $border-color;
-            padding: 5px;
-
-            span {
-                font-size: 14px;
-            }
-        }
-    }
 }
-
-.app {
-    .main {
-        position: relative;
-        // Spinner centered
-        &.initauth,
-        &.subscribe {
-            justify-content: center;
-            align-items: center;
-        }
-
-        .new-present {
-            transition: flex 0.3s ease-out; // note that we're transitioning flex, not height!
-            flex: 0 0;
-        }
-
-        .my-presents {
-            overflow-y: auto;
-        }
-    }
-}
-
-#login,
-#register {
+// ****************************
+// Auth page
+// ****************************
+.authpage {
     overflow: auto;
 
     form {
         margin-bottom: 15px;
     }
+    .google {
+        margin-bottom: 30px;
+        border: 1px solid $border-color;
+
+        img {
+            height: 45px;
+        }
+    }
+
+    form {
+        margin-top: 15px;
+    }
+    @media (min-width: 576px) {
+        margin: 0 auto;
+
+        h1 {
+            text-align: center;
+        }
+
+        .section {
+            width: 400px;
+            margin: 15px auto;
+        }
+
+        .container {
+            width: 400px;
+        }
+    }
+}
+
+
+// ****************************
+// App page
+// ****************************
+
+ul.present-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+
+    li.present {
+        // height: 34px;
+        justify-content: space-between;
+        margin-bottom: -1px;
+        border: 1px solid $border-color;
+        padding: 5px;
+
+        span {
+            font-size: 14px;
+        }
+        &.ClaimedBySomeone {
+            color: grey;
+        }
+    }
+    .description a {
+        margin-left: 5px;
+    }
 }
 // plus see css for larger screens
 .sidebar {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
     display: flex;
     margin-left: -100%;
     transition: margin-left 0.3s ease-in-out;
@@ -149,73 +165,66 @@ $bkg-colour: #ddd;
         }
     }
 }
-@media (min-width: 576px) {
-    .app {
-        .main {
-            flex-direction: column;
-        }
 
-        #picker {
-            display: flex;
-            flex-direction: column;
-        }
+// ****************************
+// Common
+// ****************************
 
-        .main.claims,
-        .main.picker {
-            .container {
-                overflow-y: hidden;
-
-                .row {
-                    height: 100%;
-                    overflow: hidden;
-                }
-            }
-
-            .my-ideas {
-                padding-bottom: 0;
-            }
-        }
-
-        .sidebar-inner {
-            width: auto;
-            flex: 0 1 400px;
-            margin: 0 auto;
-        }
-
-        .sidebar-remainder {
-            flex: 1 1;
-        }
-    }
-}
-// OTHER
-body {
-    background-color: $bkg-colour;
-}
-
-footer,
 header {
+    padding: 10px;
     width: 100%;
     background-color: $green;
     &, a, h4 {
-        color: white;
+        color: $green-accent;
     }
     a:hover {
         color: #ddd;
     }
     h4 {
-        margin-left: 15px;
         margin-bottom: 0;
-    }
-
-    .container,
-    .container > div {
-        height: 100%;
     }
 
     .avatar {
         height: 30px;
         border-radius: 100%;
         margin-left: 15px;
+    }
+}
+
+footer {
+    background-color: white;
+
+    &.tabs {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        .tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: $green;
+            padding: 5px 5px;
+            flex-basis: 50px;
+            flex-grow: 1;
+            &.narrow {
+                flex-grow: 0;
+            }
+              -webkit-touch-callout: none; /* iOS Safari */
+                -webkit-user-select: none; /* Safari */
+                 -khtml-user-select: none; /* Konqueror HTML */
+                   -moz-user-select: none; /* Old versions of Firefox */
+                    -ms-user-select: none; /* Internet Explorer/Edge */
+                        user-select: none; /* Non-prefixed version, currently
+                                              supported by Chrome, Opera and Firefox */
+        }
+        .tab.active {
+            background-color: $bkg-colour;
+            color: $green;
+        }
+        .tab + .tab {
+            border-left: 1px solid #ccc;
+        }
     }
 }
 // ....
@@ -225,45 +234,30 @@ header {
     padding: 10px;
     border-radius: 3px;
     border: 1px solid #ddd;
+    margin-bottom: 20px;
 
     input {
         background-color: #ddd;
     }
 }
 
-#login,
-#register {
-    .google {
-        margin-bottom: 30px;
-        border: 1px solid $border-color;
-        padding: 3px 10px;
-
-        img {
-            height: 45px;
-        }
+@media (min-width: 576px) {
+    body {
+        background-color: white;
     }
-
-    form {
-        margin-top: 15px;
+    .app {
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
     }
-    @media (min-width: 576px) {
-        margin: 0 auto;
-        padding-top: 50px;
-
-        h1 {
-            text-align: center;
-        }
-
-        .section {
-            width: 400px;
-            margin: 15px auto;
-        }
-
-        .container {
-            width: 400px;
-        }
+    .section.settings {
+        max-width: 500px;
     }
 }
+
+
+
+
 
 h1, h2 {
     margin-bottom: 20px;
@@ -276,15 +270,18 @@ h1, h2, h3, h4 {
     display: flex;
     align-items: center;
 
-    &.spread {
-        justify-content: space-between;
-    }
+}
+.flex-spread {
+    justify-content: space-between;
 }
 
 .flex-baseline {
     align-items: baseline;
 }
 
+.success {
+    color: $green;
+}
 .warning {
     color: #ee3333;
 }
@@ -296,39 +293,11 @@ h1, h2, h3, h4 {
 
 .badge {
     font-weight: normal;
-}
-/* The switch - the box around the slider */
-// binding toggle
-
-.switch {
-    position: relative;
-    flex-shrink: 0;
-    background: $red;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    height: 20px;
-    width: 30px;
-    border-radius: 2px;
-    margin-right: 6px;
-
-    &:before {
-        content: "";
-        position: absolute;
-        z-index: 1;
-        top: 2px;
-        left: 2px;
-        width: 14px;
-        height: 16px;
-        border-radius: 1px;
-        background: white;
-        transition: all 0.3s ease-in-out;
+    &.bg-danger, &.bg-success {
+        color: white;
     }
 }
-
-.switch.on {
-    background: $green;
-
-    &:before {
-        left: 13px;
-    }
+// Bootstrap overrides
+.form-group label {
+    font-size: smaller;
 }

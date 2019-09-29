@@ -1,38 +1,38 @@
 "use strict";
 
-// require("./rollbar");
+// loads the service worker
+// TODO use a library to make a great SW
 require("./sw-installer");
-require("bootstrap-loader");
+
+import { Rollbar} from "./rollbar";
+
 require("./styles.scss");
 
-let d = new Date();
-const {Elm} = require('./Main');
-var app = Elm.Main.init({
-    flags: {now: d.getTime()}
-});
+const { Elm } = require("./Main");
 
-// Once Elm is running, remove the existing 'appshell'
-app.ports.removeAppShell.subscribe(() => {
-    let rm = document.querySelector(".removable");
-    if (rm) rm.remove();
+var app = Elm.Main.init({ flags: "https://us-central1-hampton-xmas2019.cloudfunctions.net/" });
+
+app.ports.toJs.subscribe(data => {
+    switch (data.tag) {
+        case "RemoveAppShell":
+            let rm = document.querySelector(".removable");
+            if (rm) rm.remove();
+            break;
+        case "LogRollbar":
+            Rollbar.info({
+                source: "elm",
+                message: data.payload
+            });
+            break;
+        default:
+            console.error(data);
+    }
 });
 
 // F i r e b a s e
 
-// ********** C O N F I G
-import config from "./Firebase/fb.config";
-
-console.log("Using project:", config.projectId);
-firebase.initializeApp(config);
-// Load main firebase handler
+// Set up Elm to use Firebase handler
 import fb from "./Firebase/fb";
-// Finally, set up Elm to use Firebase handler
-app.ports.elmToFb.subscribe(msg => fb.handler(msg, app.ports.fbToElm.send));
-
-// rollbar
-app.ports.rollbar.subscribe(msg => {
-    fb.logger({
-        source: "elm",
-        message: msg
-    });
-});
+app.ports.elmToFb.subscribe(msg =>
+    fb.handler(msg, val => app.ports.fbToElm.send(val))
+);
