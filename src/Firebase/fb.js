@@ -5,7 +5,6 @@ const Rollbar = require("../rollbar");
 import { firebaseConfig } from "../assets/config/firebase-config";
 // Initialise firebase using config data
 firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
 
 // Elm message handler
 function handler({ message, payload }, fbToElm) {
@@ -224,12 +223,21 @@ const vapidKey =
     "BHjECplRVszZL2J92EptDzETrwr1YjPWx9XeKNyR3qUBb0iVT3mGPUrV2unnJCtdi9OUNF6IiQIKOTOdUUjl7Gk";
 
 function getMessagingToken(cb) {
+    // messaging not supported in e.g. Safari
+    if (firebase.messaging.isSupported() && Notification) {
+        getMessagingTokenWithValidBrowser(cb);
+    } else {
+        console.warn("Can't do notifications");
+    }
+}
+function getMessagingTokenWithValidBrowser(cb) {
+    const messaging = firebase.messaging();
     // next line essential for getToken to work
     messaging.usePublicVapidKey(vapidKey);
 
     Notification.requestPermission().then(permission => {
         if (permission === "granted") {
-            //            console.log("Notification permission granted.");
+            // console.log("Notification permission granted.");
             return messaging.getToken().then(function(currentToken) {
                 if (currentToken) {
                     cb(mkTokenResp(currentToken));
@@ -241,7 +249,7 @@ function getMessagingToken(cb) {
                 }
             });
         } else {
-            console.warning("Unable to get permission to notify.");
+            console.warn("Unable to get permission to notify.");
             cb({
                 message: "NotificationsRefused",
                 payload: "Unable to get permission to notify"
