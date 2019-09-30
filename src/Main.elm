@@ -22,7 +22,6 @@ type alias Model =
     { auth : Auth.Model
     , app : AppM.Model
     , page : Page
-    , cloudFunction : String
     , userMessage : Maybe String
     }
 
@@ -32,7 +31,6 @@ blank =
     { auth = Auth.blank
     , app = AppM.blank
     , page = InitAuth
-    , cloudFunction = ""
     , userMessage = Nothing
     }
 
@@ -43,22 +41,24 @@ updateApp fn model =
 
 
 
---
+-- Init
 
 
 type alias Flags =
-    { now : Int }
+    { cloudFunction : String
+    , version : String
+    }
 
 
-init : String -> ( Model, Cmd Msg )
-init cloudFunction =
-    ( { blank | cloudFunction = cloudFunction }
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( updateApp (\app -> { app | cloudFunction = flags.cloudFunction, version = flags.version }) blank
     , FB.setUpAuthListener
     )
 
 
 
---
+-- Update
 
 
 type Msg
@@ -80,7 +80,7 @@ update message model =
         AppMsg msg ->
             let
                 ( app, c ) =
-                    App.update model.cloudFunction msg model.app
+                    App.update msg model.app
             in
             ( { model | app = app }, Cmd.map AppMsg c )
 
@@ -96,7 +96,7 @@ update message model =
                     -- will only happen once we are in main app
                     let
                         ( m, c ) =
-                            App.handleToken model.cloudFunction token model.app
+                            App.handleToken token model.app
                     in
                     ( updateApp (\_ -> m) model, Cmd.map AppMsg c )
 

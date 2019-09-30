@@ -37,7 +37,10 @@ var common = {
             // inject details of output file at end of body
             inject: "body"
         }),
-        new Dotenv()
+        new Dotenv(),
+        new webpack.DefinePlugin({
+            VERSION: JSON.stringify(require("./package.json").version)
+        })
     ],
     resolve: {
         modules: [path.join(__dirname, "src"), "node_modules"],

@@ -66,8 +66,8 @@ type Msg
     | HandleSnapshot (Maybe FB.FBUser) Value
 
 
-update : String -> Msg -> Model -> ( Model, Cmd Msg )
-update cloudFunction message model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update message model =
     case message of
         -- Registration page
         SwitchTab tab ->
@@ -140,12 +140,12 @@ update cloudFunction message model =
                 Just token ->
                     if notifications then
                         ( { model | userMessage = SuccessMessage "Attempting to subscribe" }
-                        , postToFirebaseFunction (cloudFunction ++ "subscribe") model.user.uid token
+                        , postToFirebaseFunction (model.cloudFunction ++ "subscribe") model.user.uid token
                         )
 
                     else
                         ( { model | userMessage = SuccessMessage "Attempting to unsubscribe" }
-                        , postToFirebaseFunction (cloudFunction ++ "unsubscribe") model.user.uid token
+                        , postToFirebaseFunction (model.cloudFunction ++ "unsubscribe") model.user.uid token
                         )
 
                 Nothing ->
@@ -254,15 +254,15 @@ checkIfPhase2 now =
 --  helper for Port Handler
 
 
-handleToken : String -> String -> Model -> ( Model, Cmd Msg )
-handleToken cloudFunction token model =
+handleToken : String -> Model -> ( Model, Cmd Msg )
+handleToken token model =
     let
         cmd =
             case Dict.get model.user.uid model.userData of
                 Just { meta } ->
                     if meta.notifications == NotificationsUnset then
                         -- register for notifications
-                        postToFirebaseFunction (cloudFunction ++ "subscribe") model.user.uid token
+                        postToFirebaseFunction (model.cloudFunction ++ "subscribe") model.user.uid token
 
                     else
                         Cmd.none
@@ -567,7 +567,7 @@ viewSettings model =
             ]
         ]
     , div [ class "section" ]
-        [ span [ class "small" ] [ text "Version: RC-3" ] ]
+        [ span [ class "small" ] [ text <| "Version: " ++ model.version ] ]
     ]
 
 

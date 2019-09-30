@@ -61,6 +61,8 @@ type UserMessage
 
 type alias Model =
     { tab : AppTab
+    , cloudFunction : String
+    , version : String
     , user : FBUser
     , messagingToken : Maybe String
     , userData : Dict String UserData
@@ -74,6 +76,8 @@ type alias Model =
 blank : Model
 blank =
     { tab = Family
+    , cloudFunction = ""
+    , version = ""
     , user = FB.blankFBUser
     , messagingToken = Nothing
     , userData = Dict.empty
