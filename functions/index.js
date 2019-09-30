@@ -2,9 +2,9 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
 const databaseURL = "https://hampton-xmas2019.firebaseio.com";
+const endPhase1 = new Date("1 nov 2019");
 
-console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
-
+// initialising may help with using the local emulators?
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),
     databaseURL
@@ -28,8 +28,7 @@ exports.sendNotification = functions.database
                 // Grab the current value of what was written to the Realtime Database.
                 let person = snapshot.val();
 
-                // Don't show any notifications before ....
-                let endPhase1 = new Date("15 oct 2019");
+                // Don't provide presnet details before ....
                 let now = new Date();
                 // cannot return a null here
                 let present =
@@ -37,13 +36,12 @@ exports.sendNotification = functions.database
                         ? ""
                         : event.data.child("description").val();
 
-                var topic = "presents";
                 var payload = {
                     data: { person, present }
                 };
 
                 // https://firebase.google.com/docs/cloud-messaging/admin/send-messages#send_to_a_topic
-                return admin.messaging().sendToTopic(topic, payload);
+                return admin.messaging().sendToTopic(messaging.topic, payload);
             })
             .catch(error => console.error("Error sending message:", error));
     });

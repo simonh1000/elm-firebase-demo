@@ -5,7 +5,7 @@
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 
-var topic = "presents";
+exports.topic = "presents";
 
 exports.subscribe = function subscribe(req, res) {
     common(true, req, res);

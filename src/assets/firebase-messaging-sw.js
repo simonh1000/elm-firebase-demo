@@ -23,11 +23,15 @@ messaging.setBackgroundMessageHandler(function(payload) {
     //     "[firebase-messaging-sw.js] Received background message ",
     //     payload
     // );
+    // Don't show any notifications before ....
+    let endPhase1 = new Date("1 nov 2019");
+    let now = new Date();
+
     const notificationTitle = "Presents update: " + payload.data.person;
     const notificationOptions = {
-        body: (payload.data.present != "")
-            ? "Suggests: " + payload.data.present
-            : "Details available in October",
+        body: (now < endPhase1)
+            ? "Details available in November"
+            : "Suggests: " + payload.data.present,
         icon: "./images/icons/icon-192x192.png"
     };
 
