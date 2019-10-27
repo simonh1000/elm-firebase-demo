@@ -1,7 +1,7 @@
 {
     "author": "Simon Hampton",
     "name": "elm-pwa-demo",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Elm PWA demo",
     "main": "index.js",
     "scripts": {
@@ -9,6 +9,7 @@
         "dev": "webpack-dev-server --hot --inline --port 3000",
         "build": "webpack",
         "prod": "webpack -p",
+        "deploy": "npm run prod && firebase deploy --only hosting",
         "dist": "cd dist && angular-http-server",
         "localfunctions": "firebase serve --only functions"
     },
@@ -25,10 +26,10 @@
         "closure-webpack-plugin": "^2.0.1",
         "copy-webpack-plugin": "^5.0.3",
         "css-loader": "^3.0.0",
-        "elm": "^0.19.0-no-deps",
+        "elm": "^0.19.1-2",
         "elm-analyse": "^0.16.4",
         "elm-hot-webpack-loader": "^1.1.1",
-        "elm-test": "^0.19.0-rev6",
+        "elm-test": "^0.19.1-1",
         "elm-webpack-loader": "^6.0.0",
         "file-loader": "^4.0.0",
         "google-closure-compiler": "^20190909.0.0",

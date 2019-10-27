@@ -7,7 +7,8 @@ require("./js/sw-installer");
 import { Rollbar } from "./js/rollbar";
 
 const cloudFunction = process.env.CLOUD_URL;
-const version = VERSION;
+// from package.json (via webpack.config)
+console.log("VERSION", VERSION);
 
 require("./styles.scss");
 
@@ -15,7 +16,7 @@ const { Elm } = require("./Main");
 
 // CLOUD_URL or EMULATOR_URL
 var app = Elm.Main.init({
-    flags: { cloudFunction, version }
+    flags: { cloudFunction, "version": VERSION }
 });
 
 app.ports.toJs.subscribe(data => {

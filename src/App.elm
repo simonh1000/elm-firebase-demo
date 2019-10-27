@@ -9,7 +9,7 @@ import Firebase.Firebase as FB exposing (FBCommand(..))
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http
+import Http exposing (Error(..))
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -18,6 +18,7 @@ import Material.Icons.Action as MAction
 import Material.Icons.Image as MImage
 import Model exposing (..)
 import Ports exposing (TaggedPayload)
+import Process
 import Task
 import Time exposing (Posix)
 
@@ -61,6 +62,7 @@ type Msg
       -- Settings
     | ToggleNotifications Bool -- turn on/off subscription for notifications of changes
     | ConfirmNotifications (Result Http.Error TaggedPayload)
+    | ClearErrorMessage
     | SignOut
       -- used by Main
     | HandleSnapshot (Maybe FB.FBUser) Value
@@ -175,14 +177,41 @@ update message model =
                         _ ->
                             ( { model | userMessage = ErrorMessage <| "[ConfirmNotifications] unhandled " ++ msg.tag }, Cmd.none )
 
-                Err _ ->
-                    ( { model | userMessage = ErrorMessage <| "[ConfirmNotifications] network error while attempting to change notificiations" }, Cmd.none )
+                Err err ->
+                    ( { model | userMessage = ErrorMessage <| "[ConfirmNotifications] network error while attempting to change notifications" }
+                    , Cmd.batch
+                        [ Process.sleep 5000 |> Task.perform (\_ -> ClearErrorMessage)
+                        , Ports.rollbar <| httpErrorToString err
+                        ]
+                    )
+
+        ClearErrorMessage ->
+            ( { model | userMessage = NoMessage }, Cmd.none )
 
         SignOut ->
             ( blank, FB.signout )
 
         HandleSnapshot mbUser value ->
             handleSnapshot mbUser value model
+
+
+httpErrorToString : Http.Error -> String
+httpErrorToString err =
+    case err of
+        BadUrl url ->
+            "BadUrl: " ++ url
+
+        Timeout ->
+            "Timeout"
+
+        NetworkError ->
+            "NetworkError"
+
+        BadStatus _ ->
+            "BadStatus"
+
+        BadBody s ->
+            "BadBody: " ++ s
 
 
 {-| If snapshot lacks displayName, then add it to the DB
