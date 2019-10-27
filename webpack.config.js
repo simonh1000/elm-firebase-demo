@@ -9,6 +9,9 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 // to extract the css as a separate file
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
+// service worker
+const WorkboxWebpackPlugin = require("workbox-webpack-plugin");
+
 const Dotenv = require("dotenv-webpack");
 
 var MODE =
@@ -40,6 +43,10 @@ var common = {
         new Dotenv(),
         new webpack.DefinePlugin({
             VERSION: JSON.stringify(require("./package.json").version)
+        }),
+        new WorkboxWebpackPlugin.InjectManifest({
+          swSrc: "./src/js/service-worker.js",
+          swDest: "service-worker.js"
         })
     ],
     resolve: {
