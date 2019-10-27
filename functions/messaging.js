@@ -5,7 +5,8 @@
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 
-exports.topic = "presents";
+const topic = "presents";
+exports.topic = topic;
 
 exports.subscribe = function subscribe(req, res) {
     common(true, req, res);
@@ -19,7 +20,7 @@ function common(isSubscribe, req, res) {
     var messaging = admin.messaging();
     var token = req.body.token;
     const msg = isSubscribe ? "SubscriptionOk" : "UnsubscribeOk";
-    console.log("common", isSubscribe, token);
+    // console.log("common", isSubscribe, token);
     res.set("Access-Control-Allow-Origin", "*");
     // https://firebase.google.com/docs/cloud-messaging/admin/manage-topic-subscriptions
     cors(req, res, () => {
