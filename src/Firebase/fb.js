@@ -84,12 +84,10 @@ function signin(email, password, fbToElm) {
     firebase
         .auth()
         .signInWithEmailAndPassword(email, password)
-        .then(res => {
-            console.log("Signin success", res);
-        })
-        .catch(function(err) {
+        .catch(err => {
+            // elm will work out what to do wth the error
+            console.error("signin", err);
             fbToElm({ message: ERROR, payload: err });
-            logger(err);
         });
 }
 
@@ -97,12 +95,8 @@ function register(email, password, fbToElm) {
     firebase
         .auth()
         .createUserWithEmailAndPassword(email, password)
-        .then(res => {
-            console.log("Register success", res);
-        })
         .catch(function(err) {
             fbToElm({ message: ERROR, payload: err });
-            logger(err);
         });
 }
 
@@ -123,7 +117,6 @@ function signinGoogle(fbToElm) {
             fbToElm(makeUserObject(result.user));
         })
         .catch(function(error) {
-            logger(error);
             fbToElm({
                 message: ERROR,
                 payload: error

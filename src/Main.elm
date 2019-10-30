@@ -111,9 +111,7 @@ update message model =
                     ( model, Cmd.none )
 
                 Error err ->
-                    ( { model | userMessage = Just err }
-                    , Ports.rollbar <| "Ports error: " ++ err
-                    )
+                    update (Debug.log "FBMsgHandler" <| AuthMsg <| Auth.OnLoginError err) model
 
                 UnhandledResponse res ->
                     ( model

@@ -63,6 +63,7 @@ type Msg
     | SubmitRegistration
     | GoogleSignin
     | SwitchTab AuthTab
+    | OnLoginError String
 
 
 type alias Config msg =
@@ -97,9 +98,7 @@ update message model =
 
         -- Registration page
         SwitchTab tab ->
-            ( { model | tab = tab }
-            , Cmd.none
-            )
+            ( { model | tab = tab }, Cmd.none )
 
         SubmitRegistration ->
             ( { model | userMessage = Nothing }
@@ -107,12 +106,13 @@ update message model =
             )
 
         UpdatePassword2 password2 ->
-            ( { model | password2 = password2 }
-            , Cmd.none
-            )
+            ( { model | password2 = password2 }, Cmd.none )
 
         UpdateDisplayName displayName ->
             ( { model | displayName = displayName }, Cmd.none )
+
+        OnLoginError err ->
+            ( { model | userMessage = Just err }, Cmd.none )
 
 
 view : Model -> List (Html Msg)
@@ -125,6 +125,9 @@ view model =
 
             RegisterTab ->
                 viewRegister model
+    , model.userMessage
+        |> Maybe.map (\str -> div [ class "warning" ] [ text str ])
+        |> Maybe.withDefault (text "")
     , [ LoginTab, RegisterTab ]
         |> L.map (\tab -> ViewHelpers.mkTab SwitchTab tab model.tab <| stringFromTab tab)
         |> footer [ class "tabs" ]
