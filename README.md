@@ -68,7 +68,8 @@ Check the following are pointing to production assets:
 -   Update package.json
 
 ```
-npm run prod && firebase deploy --only hosting
+npm run deploy
+(i.e. npm run prod && firebase deploy --only hosting)
 ```
 
 ## Test functions locally

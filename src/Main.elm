@@ -111,7 +111,7 @@ update message model =
                     ( model, Cmd.none )
 
                 Error err ->
-                    update (Debug.log "FBMsgHandler" <| AuthMsg <| Auth.OnLoginError err) model
+                    update (AuthMsg <| Auth.OnLoginError err) model
 
                 UnhandledResponse res ->
                     ( model
