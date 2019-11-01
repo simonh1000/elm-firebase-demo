@@ -28,13 +28,15 @@ exports.sendNotification = functions.database
                 // Grab the current value of what was written to the Realtime Database.
                 let person = snapshot.val();
 
-                // Don't provide presnet details before ....
+                // Don't provide present details before ....
                 let now = new Date();
+                let eventData = event.val();
+                // console.log(eventData);
                 // cannot return a null here
                 let present =
                     now < endPhase1
                         ? ""
-                        : event.data.child("description").val();
+                        : eventData["description"];
 
                 var payload = {
                     data: { person, present }
