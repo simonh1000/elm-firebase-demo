@@ -16,6 +16,7 @@ import Json.Encode as Encode exposing (Value)
 import List as L
 import Material.Icons.Action as MAction
 import Material.Icons.Image as MImage
+import Maybe.Extra exposing (isJust)
 import Model exposing (..)
 import Ports exposing (TaggedPayload)
 import Process
@@ -357,12 +358,19 @@ viewFamily model others =
 
             else
                 viewOtherPhase1
+
+        txt =
+            if model.isPhase2 then
+                "Our present requests"
+
+            else
+                "Until mid-October, only summary details are available"
     in
     if List.isEmpty others then
         [ text "Awaiting first present ideas" ]
 
     else
-        h4 [] [ text "Until mid-October, only summary details are available" ]
+        h4 [] [ text txt ]
             :: L.map fn others
 
 
@@ -387,13 +395,13 @@ viewOther ( userRef, { meta, presents } ) =
                 btn =
                     case present.status of
                         Available ->
-                            mkButton "" (Claim userRef presentRef) "Claim"
+                            mkButton "ml-1 " (Claim userRef presentRef) "Claim"
 
                         ClaimedByMe _ ->
-                            mkButton "btn-success" (Unclaim userRef presentRef) "Claimed"
+                            mkButton "ml-1 btn-success" (Unclaim userRef presentRef) "Claimed"
 
                         ClaimedBySomeone ->
-                            badge "light" "Taken"
+                            badge "ml-1 light" "Taken"
             in
             viewPresent btn present
     in
@@ -453,7 +461,7 @@ viewPresentEditor : Bool -> Present -> Html Msg
 viewPresentEditor isPhase2 editor =
     let
         ( delText, delHtm ) =
-            if isPhase2 then
+            if isPhase2 && isJust editor.uid then
                 ( "Delete*", div [ class "mt-1" ] [ text "* Warning: someone may already have committed to buy this!" ] )
 
             else
@@ -594,9 +602,8 @@ viewSettings model =
                     ]
                 ]
             ]
+        , div [ class "small mt-5" ] [ text <| "Version: " ++ model.version ]
         ]
-    , div [ class "section" ]
-        [ span [ class "small" ] [ text <| "Version: " ++ model.version ] ]
     ]
 
 

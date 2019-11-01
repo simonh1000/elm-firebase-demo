@@ -8,7 +8,7 @@ import { Rollbar } from "./js/rollbar";
 
 const cloudFunction = process.env.CLOUD_URL;
 // from package.json (via webpack.config)
-console.log("VERSION", VERSION);
+console.log("*******VERSION", VERSION);
 
 require("./styles.scss");
 

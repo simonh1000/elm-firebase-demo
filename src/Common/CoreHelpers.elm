@@ -17,7 +17,6 @@ import Tuple
 --            Debug.log "" (String.left 1000 <| Debug.toString message)
 --    in
 --    message
--- To prepare for 0.19
 
 
 curry : (( a, b ) -> c) -> a -> b -> c
