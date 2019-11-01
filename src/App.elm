@@ -401,7 +401,7 @@ viewOther ( userRef, { meta, presents } ) =
                             mkButton "ml-1 btn-success" (Unclaim userRef presentRef) "Claimed"
 
                         ClaimedBySomeone ->
-                            badge "ml-1 light" "Taken"
+                            badge "ml-1 pill badge-light" "Taken"
             in
             viewPresent btn present
     in
@@ -411,7 +411,7 @@ viewOther ( userRef, { meta, presents } ) =
 
         ps ->
             div [ class "shadow-sm bg-white rounded person section" ]
-                [ h4 [] [ text meta.name ]
+                [ h4 [] [ meta.name |> String.split " " |> L.head |> Maybe.withDefault meta.name |> text ]
                 , ul [ class "present-list" ] ps
                 ]
 
@@ -650,7 +650,7 @@ viewPresent btn p =
             [ div [ class "description" ]
                 [ text p.title
                 , p.link
-                    |> Maybe.map (\link_ -> a [ href link_, target "_blank" ] [ MAction.open_in_new Color.white 24 ])
+                    |> Maybe.map (\link_ -> a [ href link_, target "_blank" ] [ MAction.open_in_new Color.blue 20 ])
                     |> Maybe.withDefault (text "")
                 ]
             , btn
