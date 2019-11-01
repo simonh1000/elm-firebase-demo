@@ -65,7 +65,7 @@ type alias Model =
     , version : String
     , user : FBUser
     , messagingToken : Maybe String
-    , userData : Dict String UserData
+    , userData : Dict String UserData --
     , userMessage : UserMessage
     , editor : Present
     , editorCollapsed : Bool

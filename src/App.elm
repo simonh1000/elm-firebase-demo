@@ -314,6 +314,7 @@ view model =
     let
         ( mine, others ) =
             model.userData
+                |> Dict.remove "eLXgT6ZB2fWDSmzID4QpEfoXt953"
                 |> Dict.toList
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
