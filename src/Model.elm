@@ -1,5 +1,6 @@
 module Model exposing (..)
 
+import Auth
 import Color exposing (Color)
 import Common.CoreHelpers exposing (andMap, foldResult, ifThenElse)
 import Dict exposing (Dict)
@@ -10,6 +11,32 @@ import List as L
 import Material.Icons.Action as MAction
 import Material.Icons.Social as MSocial
 import Svg exposing (Svg)
+
+
+
+-- Model
+
+
+type alias Model =
+    { auth : Auth.Model
+    , app : AppModel
+    , page : Page
+    , userMessage : Maybe String
+    }
+
+
+blank : Model
+blank =
+    { auth = Auth.blank
+    , app = blankAppModel
+    , page = InitAuth
+    , userMessage = Nothing
+    }
+
+
+updateApp : (AppModel -> AppModel) -> Model -> Model
+updateApp fn model =
+    { model | app = fn model.app }
 
 
 
@@ -59,7 +86,7 @@ type UserMessage
 -- -----------------------
 
 
-type alias Model =
+type alias AppModel =
     { tab : AppTab
     , cloudFunction : String
     , version : String
@@ -73,8 +100,8 @@ type alias Model =
     }
 
 
-blank : Model
-blank =
+blankAppModel : AppModel
+blankAppModel =
     { tab = Family
     , cloudFunction = ""
     , version = ""
@@ -88,7 +115,7 @@ blank =
     }
 
 
-setDisplayName : String -> Model -> Model
+setDisplayName : String -> AppModel -> AppModel
 setDisplayName displayName model =
     let
         user =

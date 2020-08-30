@@ -37,7 +37,7 @@ initCmd =
 
 phase2 : String
 phase2 =
-    "2019-11-01"
+    "2020-11-01"
 
 
 
@@ -69,12 +69,12 @@ type Msg
     | HandleSnapshot (Maybe FB.FBUser) Value
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> AppModel -> ( AppModel, Cmd Msg )
 update message model =
     case message of
         -- Registration page
         SwitchTab tab ->
-            ( { model | tab = tab, editor = blank.editor }, Cmd.none )
+            ( { model | tab = tab, editor = blankAppModel.editor }, Cmd.none )
 
         ConfirmIsPhase2 isPhase2 ->
             ( { model
@@ -190,7 +190,7 @@ update message model =
             ( { model | userMessage = NoMessage }, Cmd.none )
 
         SignOut ->
-            ( blank, FB.signout )
+            ( blankAppModel, FB.signout )
 
         HandleSnapshot mbUser value ->
             handleSnapshot mbUser value model
@@ -220,7 +220,7 @@ httpErrorToString err =
 FIXME we are renewing subscriptions every time a subscription comes in
 
 -}
-handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
+handleSnapshot : Maybe FB.FBUser -> Value -> AppModel -> ( AppModel, Cmd Msg )
 handleSnapshot mbUser snapshot model =
     let
         user =
@@ -265,7 +265,7 @@ handleSnapshot mbUser snapshot model =
 -- Model update helpers
 
 
-updateEditor : (Present -> Present) -> Model -> Model
+updateEditor : (Present -> Present) -> AppModel -> AppModel
 updateEditor fn model =
     { model | editor = fn model.editor }
 
@@ -284,7 +284,7 @@ checkIfPhase2 now =
 --  helper for Port Handler
 
 
-handleToken : String -> Model -> ( Model, Cmd Msg )
+handleToken : String -> AppModel -> ( AppModel, Cmd Msg )
 handleToken token model =
     let
         cmd =
@@ -309,7 +309,7 @@ handleToken token model =
 -- ---------------------------------------
 
 
-view : Model -> List (Html Msg)
+view : AppModel -> List (Html Msg)
 view model =
     let
         ( mine, others ) =
@@ -350,7 +350,7 @@ view model =
 -- ------------------
 
 
-viewFamily : Model -> List ( String, UserData ) -> List (Html Msg)
+viewFamily : AppModel -> List ( String, UserData ) -> List (Html Msg)
 viewFamily model others =
     let
         fn =
@@ -365,7 +365,7 @@ viewFamily model others =
                 "Our present requests"
 
             else
-                "Until mid-October, only summary details are available"
+                "Until " ++ phase2 ++ ", only summary details are available"
     in
     if List.isEmpty others then
         [ text "Awaiting first present ideas" ]
@@ -423,7 +423,7 @@ viewOther ( userRef, { meta, presents } ) =
 -- ------------------
 
 
-viewSuggestions : Model -> List ( String, UserData ) -> List (Html Msg)
+viewSuggestions : AppModel -> List ( String, UserData ) -> List (Html Msg)
 viewSuggestions model lst =
     let
         mkButton present =
@@ -478,13 +478,13 @@ viewPresentEditor isPhase2 editor =
                     text "New suggestion"
             ]
         , div [ id "new-present-form" ]
-            [ B.inputWithLabel UpdateSuggestionTitle "Title" "newpresent" editor.title
+            [ B.inputWithLabel UpdateSuggestionTitle "Title" "new-present-title" editor.title
             , editor.link
                 |> Maybe.withDefault ""
-                |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "newpresentlink"
+                |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "new-present-link"
             , editor.buyingAdvice
                 |> Maybe.withDefault ""
-                |> B.inputWithLabel UpdateSuggestionComment "Buying advice (optional)" "newpresentlink"
+                |> B.inputWithLabel UpdateSuggestionComment "Buying advice (optional)" "new-present-advice"
             , div [ class "flex-h flex-spread" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case editor.uid of
@@ -573,7 +573,7 @@ viewClaims others =
 -- ------------------
 
 
-viewSettings : Model -> List (Html Msg)
+viewSettings : AppModel -> List (Html Msg)
 viewSettings model =
     let
         notifications =
@@ -614,10 +614,10 @@ viewSettings model =
 -- ------------------
 
 
-viewNavbar : Model -> Html Msg
+viewNavbar : AppModel -> Html Msg
 viewNavbar model =
     header [ class "flex-h flex-aligned flex-spread" ]
-        [ h4 [] [ text "Xmas 2019" ]
+        [ xmasHeader
         , div [ class "flex-h flex-aligned" ]
             [ model.user.displayName
                 |> Maybe.map (text >> L.singleton >> strong [])
@@ -694,12 +694,12 @@ unclaim otherRef presentRef =
     FB.remove <| makeSetPresentRef "takenBy" otherRef presentRef
 
 
-delete : Model -> String -> Cmd Msg
+delete : AppModel -> String -> Cmd Msg
 delete model ref =
     FB.remove ("/" ++ model.user.uid ++ "/presents/" ++ ref)
 
 
-savePresent : Model -> Cmd Msg
+savePresent : AppModel -> Cmd Msg
 savePresent model =
     case model.editor.uid of
         Just uid_ ->

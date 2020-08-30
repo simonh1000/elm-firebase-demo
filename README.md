@@ -72,6 +72,9 @@ npm run deploy
 (i.e. npm run prod && firebase deploy --only hosting)
 ```
 
+## Rollbar
+
+
 ## Test functions locally
 
 ## ngrok

@@ -10,34 +10,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode exposing (Decoder, Value)
 import Json.Encode as Encode
-import Model as AppM exposing (Page(..))
+import Model exposing (..)
 import Ports
-
-
-
--- Model
-
-
-type alias Model =
-    { auth : Auth.Model
-    , app : AppM.Model
-    , page : Page
-    , userMessage : Maybe String
-    }
-
-
-blank : Model
-blank =
-    { auth = Auth.blank
-    , app = AppM.blank
-    , page = InitAuth
-    , userMessage = Nothing
-    }
-
-
-updateApp : (AppM.Model -> AppM.Model) -> Model -> Model
-updateApp fn model =
-    { model | app = fn model.app }
 
 
 
@@ -47,6 +21,8 @@ updateApp fn model =
 type alias Flags =
     { cloudFunction : String
     , version : String
+
+    -- TODO add phase 2 start
     }
 
 
@@ -64,7 +40,7 @@ init flags =
 type Msg
     = AuthMsg Auth.Msg
     | AppMsg App.Msg
-    | FBMsgHandler FB.FBResponse
+    | FirebasePortMsg FB.FBResponse
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -84,7 +60,7 @@ update message model =
             in
             ( { model | app = app }, Cmd.map AppMsg c )
 
-        FBMsgHandler fbResponse ->
+        FirebasePortMsg fbResponse ->
             case fbResponse of
                 NewAuthState authstate ->
                     handleAuthChange authstate model
@@ -202,7 +178,7 @@ view model =
             ]
 
         wrap htm =
-            div [ class <| "app " ++ String.toLower (AppM.stringFromPage model.page) ] htm
+            div [ class <| "app " ++ String.toLower (stringFromPage model.page) ] htm
     in
     case model.page of
         InitAuth ->
@@ -234,7 +210,7 @@ setMeta uid key val =
 main =
     Browser.document
         { init = init
-        , view = \m -> { title = "Xmas 2019", body = [ view m ] }
+        , view = \m -> { title = ViewHelpers.title, body = [ view m ] }
         , update = update
-        , subscriptions = \_ -> FB.subscriptions FBMsgHandler
+        , subscriptions = \_ -> FB.subscriptions FirebasePortMsg
         }

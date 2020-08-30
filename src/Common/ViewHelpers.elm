@@ -9,8 +9,40 @@ import Html.Events exposing (onClick)
 
 simpleHeader : Html msg
 simpleHeader =
-    header [ class "flex-h flex-aligned flex-spread" ]
-        [ h4 [] [ text "Xmas 2019" ] ]
+    header [ class "flex-h flex-aligned flex-spread" ] [ xmasHeader ]
+
+
+xmasHeader : Html msg
+xmasHeader =
+    h4 [] [ text title ]
+
+
+title =
+    "Xmas 2020"
+
+
+mkTab : (c -> msg) -> c -> c -> ( Color.Color -> Int -> Html msg, String ) -> Html msg
+mkTab msgConstructor tab selectedTab ( icon, txt ) =
+    let
+        green =
+            Color.rgb255 41 167 69
+    in
+    div
+        [ classList
+            [ ( "tab clickable", True )
+            , ( "active", tab == selectedTab )
+            , ( "narrow", txt == "" )
+            ]
+        , onClick <| msgConstructor tab
+        ]
+        [ icon green 18
+        , small [] [ text txt ]
+        ]
+
+
+badge : String -> String -> Html msg
+badge cl t =
+    span [ class <| "badge badge-" ++ cl ] [ text t ]
 
 
 
@@ -27,26 +59,3 @@ simpleHeader =
 --        , style "user-select" "none"
 --        ]
 --        [ text icon ]
-
-
-mkTab : (c -> msg) -> c -> c -> ( Color.Color -> Int -> Html msg, String ) -> Html msg
-mkTab msgConstructor tab selectedTab ( icon, txt ) =
-    let
-        green =
-            Color.rgb255 41 167 69
-    in
-    div
-        [ "tab clickable"
-            |> addSuffixIf (tab == selectedTab) " active"
-            |> addSuffixIf (txt == "") " narrow"
-            |> class
-        , onClick <| msgConstructor tab
-        ]
-        [ icon green 18
-        , small [] [ text txt ]
-        ]
-
-
-badge : String -> String -> Html msg
-badge cl t =
-    span [ class <| "badge badge-" ++ cl ] [ text t ]

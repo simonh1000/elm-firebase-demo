@@ -6,7 +6,8 @@ const ClosurePlugin = require("closure-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-// to extract the css as a separate file
+
+// Production CSS assets - separate, minimised file
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 // service worker
@@ -16,7 +17,7 @@ const Dotenv = require("dotenv-webpack");
 
 var MODE =
     process.env.npm_lifecycle_event === "prod" ? "production" : "development";
-var withDebug = !process.env["npm_config_nodebug"] && MODE !== "production";
+var withDebug = !process.env["npm_config_nodebug"] && MODE == "development";
 // this may help for Yarn users
 // var withDebug = !npmParams.includes("--nodebug");
 console.log(
@@ -115,7 +116,9 @@ if (MODE === "development") {
                             loader: "elm-webpack-loader",
                             options: {
                                 // add Elm's debug overlay to output
-                                debug: withDebug
+                                debug: withDebug,
+                                //
+                                forceWatch: true
                             }
                         }
                     ]
@@ -127,6 +130,7 @@ if (MODE === "development") {
             stats: "errors-only",
             contentBase: path.join(__dirname, "src/assets"),
             historyApiFallback: true,
+            // feel free to delete this section if you don't need anything like this
             before(app) {
                 // Make fbsw.config.js available
                 app.get("/Firebase/:fname", (req, res) => {
@@ -142,6 +146,7 @@ if (MODE === "development") {
         }
     });
 }
+
 if (MODE === "production") {
     module.exports = merge(common, {
         optimization: {
@@ -157,7 +162,8 @@ if (MODE === "production") {
                         // debug: true
                         // renaming: false
                     }
-                )
+                ),
+                new OptimizeCSSAssetsPlugin({})
             ]
         },
         plugins: [

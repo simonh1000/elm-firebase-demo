@@ -234,6 +234,7 @@ function getMessagingTokenWithValidBrowser(cb) {
             // console.log("Notification permission granted.");
             return messaging.getToken().then(function(currentToken) {
                 if (currentToken) {
+                    console.log("messaging token", currentToken);
                     cb(mkTokenResp(currentToken));
                 } else {
                     cb({

@@ -24,7 +24,7 @@ messaging.setBackgroundMessageHandler(function(payload) {
     //     payload
     // );
     // Don't show any notifications before ....
-    let endPhase1 = new Date("1 nov 2019");
+    let endPhase1 = new Date("1 nov 2020");
     let now = new Date();
 
     const notificationTitle = "Presents update: " + payload.data.person;
@@ -45,5 +45,5 @@ messaging.setBackgroundMessageHandler(function(payload) {
 self.addEventListener("notificationclick", function(event) {
     event.notification.close();
     // Open the app
-    event.waitUntil(clients.openWindow(self.config.ur));
+    event.waitUntil(clients.openWindow(self.config.url));
 });

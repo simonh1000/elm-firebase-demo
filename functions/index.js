@@ -2,7 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
 const databaseURL = "https://hampton-xmas2019.firebaseio.com";
-const endPhase1 = new Date("1 nov 2019");
+const endPhase1 = new Date("1 nov 2020");
 
 // initialising may help with using the local emulators?
 admin.initializeApp({
