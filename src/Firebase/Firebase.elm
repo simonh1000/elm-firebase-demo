@@ -42,8 +42,8 @@ type FBResponse
 decodeIncoming : (FBResponse -> msg) -> Value -> msg
 decodeIncoming msgConstructor value =
     Decode.decodeValue fbResponseDecoder value
-        |> Result.map msgConstructor
-        |> RE.extract (Decode.errorToString >> Error >> msgConstructor)
+        |> RE.extract (Decode.errorToString >> UnhandledResponse)
+        |> msgConstructor
 
 
 fbResponseDecoder : Decoder FBResponse
@@ -59,14 +59,10 @@ fbResponseDecoder =
         , mkDec "MessagingToken" Decode.string MessagingToken
         , mkDec "NewNotification" decodeNotification NewNotification
         , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
-        , mkDec "Error" decoderError Error
-        , Decode.field "message" Decode.string |> Decode.map UnhandledResponse
+        , mkDec "Error" Decode.string Error
+
+        --, Decode.field "message" Decode.string |> Decode.map UnhandledResponse
         ]
-
-
-decoderError : Decoder String
-decoderError =
-    Decode.field "message" Decode.string
 
 
 
