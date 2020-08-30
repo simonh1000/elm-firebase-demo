@@ -96,6 +96,7 @@ type alias AppModel =
     , userMessage : UserMessage
     , editor : Present
     , editorCollapsed : Bool
+    , phase2 : String
     , isPhase2 : Bool
     }
 
@@ -111,6 +112,7 @@ blankAppModel =
     , userMessage = NoMessage
     , editor = blankPresent
     , editorCollapsed = True
+    , phase2 = "2020-11-01"
     , isPhase2 = False
     }
 

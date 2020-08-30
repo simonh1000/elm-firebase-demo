@@ -24,20 +24,15 @@ import Task
 import Time exposing (Posix)
 
 
-initCmd : Cmd Msg
-initCmd =
+initCmd : String -> Cmd Msg
+initCmd phase2 =
     Cmd.batch
         [ Time.now
-            |> Task.map checkIfPhase2
+            |> Task.map (checkIfPhase2 phase2)
             |> Task.perform ConfirmIsPhase2
         , -- this will return over the Firebase port as MessagingToken
           FB.sendToFirebase FB.GetMessagingToken
         ]
-
-
-phase2 : String
-phase2 =
-    "2020-11-01"
 
 
 
@@ -270,8 +265,8 @@ updateEditor fn model =
     { model | editor = fn model.editor }
 
 
-checkIfPhase2 : Posix -> Bool
-checkIfPhase2 now =
+checkIfPhase2 : String -> Posix -> Bool
+checkIfPhase2 phase2 now =
     case Iso8601.toTime phase2 of
         Ok endPhase1 ->
             Time.posixToMillis now > Time.posixToMillis endPhase1
@@ -365,7 +360,7 @@ viewFamily model others =
                 "Our present requests"
 
             else
-                "Until " ++ phase2 ++ ", only summary details are available"
+                "Until " ++ model.phase2 ++ ", only summary details are available"
     in
     if List.isEmpty others then
         [ text "Awaiting first present ideas" ]

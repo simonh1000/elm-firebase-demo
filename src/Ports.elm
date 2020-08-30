@@ -14,12 +14,16 @@ type alias TaggedPayload =
 
 
 type PortMsg
-    = LogRollbar String
+    = LogError String
+    | LogRollbar String
 
 
 sendToJs : PortMsg -> Cmd msg
 sendToJs portMsg =
     case portMsg of
+        LogError str ->
+            toJs <| TaggedPayload "LogError" <| Encode.string str
+
         LogRollbar str ->
             toJs <| TaggedPayload "LogRollbar" <| Encode.string str
 

@@ -21,6 +21,7 @@ import Ports
 type alias Flags =
     { cloudFunction : String
     , version : String
+    , phase2 : String
 
     -- TODO add phase 2 start
     }
@@ -28,7 +29,15 @@ type alias Flags =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( updateApp (\app -> { app | cloudFunction = flags.cloudFunction, version = flags.version }) blank
+    ( updateApp
+        (\app ->
+            { app
+                | cloudFunction = flags.cloudFunction
+                , version = flags.version
+                , phase2 = flags.phase2
+            }
+        )
+        blank
     , FB.setUpAuthListener
     )
 
@@ -146,7 +155,7 @@ handleSnapshot payload model =
     case model.page of
         Subscribing user ->
             update (AppMsg <| App.HandleSnapshot (Just user) payload) newModel
-                |> addCmd (Cmd.map AppMsg App.initCmd)
+                |> addCmd (Cmd.map AppMsg (App.initCmd model.app.phase2))
 
         AppPage ->
             update (AppMsg <| App.HandleSnapshot Nothing payload) newModel

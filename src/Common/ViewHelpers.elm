@@ -1,7 +1,6 @@
 module Common.ViewHelpers exposing (..)
 
 import Color
-import Common.CoreHelpers exposing (addSuffixIf)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)

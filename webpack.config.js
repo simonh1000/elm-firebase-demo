@@ -9,6 +9,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 // Production CSS assets - separate, minimised file
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 
 // service worker
 const WorkboxWebpackPlugin = require("workbox-webpack-plugin");
@@ -32,27 +33,27 @@ var common = {
         path: path.join(__dirname, "dist"),
         publicPath: "/",
         // FIXME webpack -p automatically adds hash when building for production
-        filename: MODE == "production" ? "[name]-[hash].js" : "index.js"
+        filename: MODE == "production" ? "[name]-[hash].js" : "index.js",
     },
     plugins: [
         new HTMLWebpackPlugin({
             // Use this template to get basic responsive meta tags
             template: "src/index.html",
             // inject details of output file at end of body
-            inject: "body"
+            inject: "body",
         }),
         new Dotenv(),
         new webpack.DefinePlugin({
-            VERSION: JSON.stringify(require("./package.json").version)
+            VERSION: JSON.stringify(require("./package.json").version),
         }),
         new WorkboxWebpackPlugin.InjectManifest({
-          swSrc: "./src/js/service-worker.js",
-          swDest: "service-worker.js"
-        })
+            swSrc: "./src/js/service-worker.js",
+            swDest: "service-worker.js",
+        }),
     ],
     resolve: {
         modules: [path.join(__dirname, "src"), "node_modules"],
-        extensions: [".js", ".elm", ".scss", ".png"]
+        extensions: [".js", ".elm", ".scss", ".png"],
     },
     module: {
         rules: [
@@ -60,19 +61,23 @@ var common = {
                 test: /\.js$/,
                 exclude: /node_modules/,
                 use: {
-                    loader: "babel-loader"
-                }
+                    loader: "babel-loader",
+                },
             },
             {
                 test: /\.scss$/,
                 exclude: [/elm-stuff/, /node_modules/],
                 // see https://github.com/webpack-contrib/css-loader#url
-                loaders: ["style-loader", "css-loader?url=false", "sass-loader"]
+                loaders: [
+                    "style-loader",
+                    "css-loader?url=false",
+                    "sass-loader",
+                ],
             },
             {
                 test: /\.css$/,
                 exclude: [/elm-stuff/, /node_modules/],
-                loaders: ["style-loader", "css-loader?url=false"]
+                loaders: ["style-loader", "css-loader?url=false"],
             },
             {
                 test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
@@ -80,21 +85,21 @@ var common = {
                 loader: "url-loader",
                 options: {
                     limit: 10000,
-                    mimetype: "application/font-woff"
-                }
+                    mimetype: "application/font-woff",
+                },
             },
             {
                 test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
                 exclude: [/elm-stuff/, /node_modules/],
-                loader: "file-loader"
+                loader: "file-loader",
             },
             {
                 test: /\.(jpe?g|png|gif|svg)$/i,
                 exclude: [/elm-stuff/, /node_modules/],
-                loader: "file-loader"
-            }
-        ]
-    }
+                loader: "file-loader",
+            },
+        ],
+    },
 };
 
 if (MODE === "development") {
@@ -103,7 +108,7 @@ if (MODE === "development") {
             // Suggested for hot-loading
             new webpack.NamedModulesPlugin(),
             // Prevents compilation errors causing the hot loader to lose state
-            new webpack.NoEmitOnErrorsPlugin()
+            new webpack.NoEmitOnErrorsPlugin(),
         ],
         module: {
             rules: [
@@ -118,12 +123,12 @@ if (MODE === "development") {
                                 // add Elm's debug overlay to output
                                 debug: withDebug,
                                 //
-                                forceWatch: true
-                            }
-                        }
-                    ]
-                }
-            ]
+                                forceWatch: true,
+                            },
+                        },
+                    ],
+                },
+            ],
         },
         devServer: {
             inline: true,
@@ -142,8 +147,8 @@ if (MODE === "development") {
                         path.join(__dirname, "src/Firebase/", req.params.fname)
                     );
                 });
-            }
-        }
+            },
+        },
     });
 }
 
@@ -163,8 +168,8 @@ if (MODE === "production") {
                         // renaming: false
                     }
                 ),
-                new OptimizeCSSAssetsPlugin({})
-            ]
+                new OptimizeCSSAssetsPlugin({}),
+            ],
         },
         plugins: [
             // Delete everything from output-path (/dist) and report to user
@@ -172,19 +177,19 @@ if (MODE === "production") {
                 root: __dirname,
                 exclude: [],
                 verbose: true,
-                dry: false
+                dry: false,
             }),
             // Copy static assets
             new CopyWebpackPlugin([
                 {
-                    from: "src/assets"
-                }
+                    from: "src/assets",
+                },
             ]),
             new MiniCssExtractPlugin({
                 // Options similar to the same options in webpackOptions.output
                 // both options are optional
-                filename: "[name]-[hash].css"
-            })
+                filename: "[name]-[hash].css",
+            }),
         ],
         module: {
             rules: [
@@ -194,17 +199,17 @@ if (MODE === "production") {
                     use: {
                         loader: "elm-webpack-loader",
                         options: {
-                            optimize: true
-                        }
-                    }
+                            optimize: true,
+                        },
+                    },
                 },
                 {
                     test: /\.css$/,
                     exclude: [/elm-stuff/, /node_modules/],
                     loaders: [
                         MiniCssExtractPlugin.loader,
-                        "css-loader?url=false"
-                    ]
+                        "css-loader?url=false",
+                    ],
                 },
                 {
                     test: /\.scss$/,
@@ -212,10 +217,10 @@ if (MODE === "production") {
                     loaders: [
                         MiniCssExtractPlugin.loader,
                         "css-loader?url=false",
-                        "sass-loader"
-                    ]
-                }
-            ]
-        }
+                        "sass-loader",
+                    ],
+                },
+            ],
+        },
     });
 }

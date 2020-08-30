@@ -2,7 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
 const databaseURL = "https://hampton-xmas2019.firebaseio.com";
-const endPhase1 = new Date("1 nov 2020");
+const phase2 = new Date("1 nov 2020");
 
 // initialising may help with using the local emulators?
 admin.initializeApp({
@@ -34,7 +34,7 @@ exports.sendNotification = functions.database
                 // console.log(eventData);
                 // cannot return a null here
                 let present =
-                    now < endPhase1
+                    now < phase2
                         ? ""
                         : eventData["description"];
 
@@ -66,10 +66,10 @@ exports.sendNotification = functions.database
 //                let person = snapshot.val();
 //
 //                // Don't show any notifications before ....
-//                let endPhase1 = new Date("15 oct 2017");
+//                let phase2 = new Date("15 oct 2017");
 //                let now = new Date();
 //                let present;
-//                if (now < endPhase1) {
+//                if (now < phase2) {
 //                    present = person + " <visible October 15>";
 //                } else {
 //                    present = event.data.child("description").val();
