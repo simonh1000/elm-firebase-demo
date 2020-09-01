@@ -46,8 +46,9 @@ var common = {
         new webpack.DefinePlugin({
             VERSION: JSON.stringify(require("./package.json").version),
         }),
+        // necessary
         new WorkboxWebpackPlugin.InjectManifest({
-            swSrc: "./src/js/service-worker.js",
+            swSrc: "./src/assets/service-worker.js",
             swDest: "service-worker.js",
         }),
     ],

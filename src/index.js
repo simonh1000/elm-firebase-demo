@@ -1,19 +1,21 @@
 "use strict";
 
-// this will instantiate the service worker
-// bulk of the content of the service worker is in src/assets/service-worker.js
-require("./js/sw-installer");
+// Check that service workers are supported
+if ("serviceWorker" in navigator) {
+    // Use the window load event to keep the page load performant
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js");
+    });
+}
 
 // import { Rollbar } from "./js/rollbar";
+require("./styles.scss");
+const { Elm } = require("./Main");
 
+const phase2 = "2020-11-01";
 const cloudFunction = process.env.CLOUD_URL;
 // from package.json (via webpack.config)
 console.log("** VERSION **", VERSION);
-
-require("./styles.scss");
-
-const { Elm } = require("./Main");
-const phase2 = "2020-11-01";
 
 // CLOUD_URL or EMULATOR_URL
 var app = Elm.Main.init({
