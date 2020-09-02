@@ -22,8 +22,6 @@ type alias Flags =
     { cloudFunction : String
     , version : String
     , phase2 : String
-
-    -- TODO add phase 2 start
     }
 
 
@@ -191,7 +189,7 @@ view model =
     in
     case model.page of
         InitAuth ->
-            spinner "Checking credentials" |> wrap
+            spinner "Checking credentials " |> wrap
 
         Subscribing _ ->
             spinner "Getting presents data" |> wrap

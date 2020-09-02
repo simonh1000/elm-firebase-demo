@@ -1,23 +1,24 @@
 "use strict";
 
-// Check that service workers are supported
-if ("serviceWorker" in navigator) {
-    // Use the window load event to keep the page load performant
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/service-worker.js");
-    });
-}
-
 // import { Rollbar } from "./js/rollbar";
 require("./styles.scss");
 const { Elm } = require("./Main");
 
 const phase2 = "2020-11-01";
+// CLOUD_URL or EMULATOR_URL
 const cloudFunction = process.env.CLOUD_URL;
 // from package.json (via webpack.config)
-console.log("** VERSION **", VERSION);
+console.log("** VERSION *", VERSION);
 
-// CLOUD_URL or EMULATOR_URL
+// Register Service Worker
+// if ("serviceWorker" in navigator) {
+//     // Use the window load event to keep the page load performant
+//     window.addEventListener("load", () => {
+//         navigator.serviceWorker.register("/service-worker.js");
+//     });
+// }
+
+// E L M   I N I T
 var app = Elm.Main.init({
     flags: {
         cloudFunction,

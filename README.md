@@ -6,11 +6,11 @@ An Elm experiment to use Firebase to provide a real time Xmas present idea excha
 
 You need to provide 3 files
 
-###`/src/assets/config/firebase-config.js`
+### `/src/assets/config/firebase-config.js`
 
 ```js
 export var firebaseConfig = {
-  apiKey: ",
+  apiKey: "",
   authDomain: "",
   databaseURL: "",
   projectId: "",
@@ -72,8 +72,9 @@ npm run deploy
 (i.e. npm run prod && firebase deploy --only hosting)
 ```
 
-## Rollbar
+## Workbox
 
+- this is installed and operated using the webpack plugin
 
 ## Test functions locally
 
