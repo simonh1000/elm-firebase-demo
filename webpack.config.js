@@ -46,10 +46,11 @@ var common = {
         new webpack.DefinePlugin({
             VERSION: JSON.stringify(require("./package.json").version),
         }),
-        // adds a pre-cache line to my service work, and saves it to the correct location in dest
+        // adds a pre-cache line to my service work
+        // we are using our own service worker as the base (GenerateSW creates the SW from scratch if preferred)
+        // , and saves it to the correct location in dest
         new WorkboxWebpackPlugin.InjectManifest({
             swSrc: "./src/assets/service-worker.js",
-            swDest: "service-worker.js",
         }),
     ],
     resolve: {
