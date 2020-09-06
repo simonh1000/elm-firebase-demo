@@ -49,6 +49,7 @@ var common = {
         // and saves it to the correct location in dest
         new WorkboxWebpackPlugin.InjectManifest({
             swSrc: "./src/assets/service-worker.js",
+            swDest: "service-worker.js",
         }),
     ],
     resolve: {
