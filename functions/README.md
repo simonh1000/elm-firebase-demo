@@ -17,19 +17,3 @@ To test the (un)subscribe functions we can follow https://firebase.google.com/do
 export GOOGLE_APPLICATION_CREDENTIALS="/.../ignore/fbkey.json"
 firebase emulators:start
 ```
-
-## Old
-
-```
-firebase setup:emulators:database
-
-test running:
-firebase serve --only database
-
-
-npm install .....
-firebase emulators:start
-npm run localfunctions
-```
-
--   start the database so that you can test rules `firebase serve --only database`

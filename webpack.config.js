@@ -19,8 +19,7 @@ const Dotenv = require("dotenv-webpack");
 var MODE =
     process.env.npm_lifecycle_event === "prod" ? "production" : "development";
 var withDebug = !process.env["npm_config_nodebug"] && MODE == "development";
-// this may help for Yarn users
-// var withDebug = !npmParams.includes("--nodebug");
+
 console.log(
     "\x1b[36m%s\x1b[0m",
     `** elm-webpack-starter: mode "${MODE}", withDebug: ${withDebug}\n`

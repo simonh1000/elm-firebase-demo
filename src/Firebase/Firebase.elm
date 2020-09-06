@@ -34,7 +34,8 @@ type FBResponse
     | Snapshot Value -- this library does not know the structure of your data
     | MessagingToken String -- the token needed to (un)subscribe for notifications
     | NotificationsRefused -- user has blocked use
-    | NewNotification Notification -- will only be received if app is in 'focus'
+    | PresentNotification Notification -- will only be received if app is in 'focus'
+    | CustomNotification String -- will only be received if app is in 'focus'
     | Error String
     | UnhandledResponse String
 
@@ -57,11 +58,10 @@ fbResponseDecoder =
         [ mkDec "authstate" decodeAuthState NewAuthState
         , mkDec "snapshot" Decode.value Snapshot
         , mkDec "MessagingToken" Decode.string MessagingToken
-        , mkDec "NewNotification" decodeNotification NewNotification
+        , mkDec "NewNotification" decodePresentNotification PresentNotification
+        , mkDec "NewNotification" decodeCustomNotification CustomNotification
         , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
         , mkDec "Error" Decode.string Error
-
-        --, Decode.field "message" Decode.string |> Decode.map UnhandledResponse
         ]
 
 
@@ -122,11 +122,16 @@ type alias Notification =
     }
 
 
-decodeNotification : Decoder Notification
-decodeNotification =
+decodePresentNotification : Decoder Notification
+decodePresentNotification =
     Decode.map2 Notification
         (Decode.field "person" Decode.string)
         (Decode.field "present" Decode.string)
+
+
+decodeCustomNotification : Decoder String
+decodeCustomNotification =
+    Decode.field "notification" Decode.string
 
 
 

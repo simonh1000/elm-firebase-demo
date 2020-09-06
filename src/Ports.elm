@@ -1,6 +1,6 @@
 port module Ports exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, Value)
+import Json.Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 
 

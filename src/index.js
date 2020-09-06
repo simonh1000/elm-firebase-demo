@@ -8,8 +8,10 @@ const { Elm } = require("./Main");
 
 const phase2 = "2020-11-01";
 
-// CLOUD_URL or EMULATOR_URL
+// choose one
+// const cloudFunction = process.env.EMULATOR_URL;
 const cloudFunction = process.env.CLOUD_URL;
+
 // from package.json (via webpack.config)
 console.log("** VERSION **", VERSION);
 

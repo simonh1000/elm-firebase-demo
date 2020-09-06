@@ -17,7 +17,7 @@ xmasHeader =
 
 
 title =
-    "Xmas 2020 - 1"
+    "Xmas 2020"
 
 
 mkTab : (c -> msg) -> c -> c -> ( Color.Color -> Int -> Html msg, String ) -> Html msg

@@ -86,11 +86,18 @@ update message model =
                 NotificationsRefused ->
                     ( { model | userMessage = Just "NotificationsRefused" }, Cmd.none )
 
-                NewNotification notification ->
-                    --                    let
-                    --                        _ =
-                    --                            Debug.log "!!!!!" notification
-                    --                    in
+                PresentNotification notification ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "!!!!!" notification
+                    -- in
+                    ( model, Cmd.none )
+
+                CustomNotification notification ->
+                    --let
+                    --    _ =
+                    --        Debug.log "**custom**" notification
+                    --in
                     ( model, Cmd.none )
 
                 Error err ->
