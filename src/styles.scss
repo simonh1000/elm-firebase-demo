@@ -10,6 +10,7 @@ $bkg-colour: #dedede;
 @import "~bootstrap/scss/mixins";
 @import "~bootstrap/scss/utilities/display";
 @import "~bootstrap/scss/utilities/flex";
+// @import "~bootstrap/scss/bootstrap-grid";
 @import "~bootstrap/scss/root";
 @import "~bootstrap/scss/reboot";
 @import "~bootstrap/scss/type";
@@ -18,7 +19,6 @@ $bkg-colour: #dedede;
 @import "~bootstrap/scss/utilities/spacing";
 @import "~bootstrap/scss/badge";
 
-// @import "~bootstrap/scss/bootstrap-grid";
 
 // move elm dev tool to left
 body > div:not(.app) {
@@ -29,7 +29,7 @@ body > div:not(.app) {
 .app {
     background-color: $bkg-colour;
     // repeat settings inlined
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;

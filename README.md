@@ -76,14 +76,9 @@ npm run deploy
 
 - this is installed and operated using the webpack plugin
 
-## Test functions locally
-
-## ngrok
-
-ngrok http 3000 -host-header="localhost:3000"
-
 ## Changelog
 
+-   3.0.0: 2019 re-write
 -   2.0.0: 2019 re-write
 
 ## ToDo

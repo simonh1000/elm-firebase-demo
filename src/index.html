@@ -12,13 +12,23 @@
         <link rel="apple-touch-icon" href="images/icons/icon-192x192.png">
         <title>2020 Xmas presents</title>
         <style media="screen">
+            html {
+                height: -webkit-fill-available;
+            }
             body {
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
                 background-color: #ddd;
                 margin: 0;
                 font-family: sans-serif;
             }
             .app {
-                height: 100vh;
+                flex-grow: 1;
+                /*height: 100vh;*/
                 display: flex;
                 flex-direction: column;
             }
@@ -34,8 +44,12 @@
     </head>
 
     <body>
-    <header class="removable">Xmas 2020</header>
-        <!-- The core Firebase JS SDK is always required and must be listed first
+    <div class="app">
+        <header class="removable">
+            <h4>Xmas 2020</h4>
+        </header>
+    </div>
+      <!-- The core Firebase JS SDK is always required and must be listed first
     Ideally want to add defer to each script tag
      -->
         <script src="https://www.gstatic.com/firebasejs/6.3.5/firebase-app.js"></script>
