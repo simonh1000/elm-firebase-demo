@@ -1,15 +1,10 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 
-const databaseURL = "https://hampton-xmas-4661b.firebaseio.com";
 const phase2 = new Date("1 nov 2020");
 const customNotificationPassword = "3D#9gxF@";
 
-// initialising may help with using the local emulators?
-admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    databaseURL,
-});
+admin.initializeApp();
 
 // notification registration handlers
 const messaging = require("./messaging");
@@ -19,6 +14,7 @@ exports.customNotification = functions.https.onRequest(customNotification);
 
 // Database watcher
 // When new present created, inform users
+// Changes to suggestions are not notified
 exports.sendNotification = functions.database
     .ref("/{userId}/presents/{presentId}")
     .onCreate((event) => {
