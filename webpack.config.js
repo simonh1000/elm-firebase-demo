@@ -11,7 +11,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 
-// service worker
+// Workbox: service worker
 const WorkboxWebpackPlugin = require("workbox-webpack-plugin");
 
 const Dotenv = require("dotenv-webpack");
@@ -46,9 +46,8 @@ var common = {
         new webpack.DefinePlugin({
             VERSION: JSON.stringify(require("./package.json").version),
         }),
-        // adds a pre-cache line to my service work
-        // we are using our own service worker as the base (GenerateSW creates the SW from scratch if preferred)
-        // , and saves it to the correct location in dest
+        // adds a pre-cache line to my service worker (GenerateSW creates the SW from scratch if preferred),
+        // and saves it to the correct location in dest
         new WorkboxWebpackPlugin.InjectManifest({
             swSrc: "./src/assets/service-worker.js",
         }),

@@ -7,6 +7,7 @@ require("./styles.scss");
 const { Elm } = require("./Main");
 
 const phase2 = "2020-11-01";
+
 // CLOUD_URL or EMULATOR_URL
 const cloudFunction = process.env.CLOUD_URL;
 // from package.json (via webpack.config)
@@ -78,7 +79,7 @@ if ("serviceWorker" in navigator) {
 }
 
 // E L M   I N I T
-var app = Elm.Main.init({
+const app = Elm.Main.init({
     flags: {
         cloudFunction,
         version: VERSION,
