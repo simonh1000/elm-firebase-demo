@@ -3,17 +3,16 @@ importScripts(
 );
 
 if (workbox) {
-    console.log(`Yes! Is Workbox loaded 🎉`);
+    console.log(`Setting up cache 🎉`);
     // The precache manifest lists the names of the files that were processed by webpack and that end up in your dist folder.
     workbox.precaching.precacheAndRoute(self.__precacheManifest);
 
     addEventListener("message", (event) => {
-        console.log("[service-worker.js] message", event.data);
+        // console.log("[service-worker.js] message", event.data);
         if (event.data && event.data.type === "SKIP_WAITING") {
             skipWaiting();
         }
     });
-
 } else {
-    console.log(`Boo! Workbox didn't load 😬`);
+    console.log(`Hmm! Workbox didn't load 😬`);
 }

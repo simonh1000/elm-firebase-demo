@@ -309,7 +309,7 @@ view model =
     let
         ( mine, others ) =
             model.userData
-                |> Dict.remove "eLXgT6ZB2fWDSmzID4QpEfoXt953"
+                |> Dict.filter (\_ user -> user.meta.name /= "dev - ignore")
                 |> Dict.toList
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
@@ -332,10 +332,10 @@ view model =
             viewFooter model.isPhase2 model.tab
 
         SuccessMessage txt ->
-            footer [ class "container success" ] [ text txt ]
+            footer [ class "d-flex justify-content-center align-items-center success" ] [ text txt ]
 
         ErrorMessage txt ->
-            footer [ class "container warning" ] [ text txt ]
+            footer [ class "d-flex justify-content-center align-items-center warning" ] [ text txt ]
     ]
 
 
