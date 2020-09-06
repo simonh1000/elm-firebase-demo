@@ -19,21 +19,39 @@ $bkg-colour: #dedede;
 @import "~bootstrap/scss/utilities/spacing";
 @import "~bootstrap/scss/badge";
 
+.app {
+    background-color: $bkg-colour;
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+}
+
+/*.app {*/
+/*    min-width: 320px;*/
+/*    !*height: 100vh;*!*/
+/*    display: flex;*/
+/*    flex-direction: column;*/
+/*}*/
+
+@media (min-width: 576px) {
+    .app {
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
 
 // move elm dev tool to left
 body > div:not(.app) {
     left: 6px;
     right: initial !important;
 }
-
 .app {
-    background-color: $bkg-colour;
-    // repeat settings inlined
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow: hidden;
     border-left: 1px solid #ccc;
     border-right: 1px solid #ccc;
 
@@ -214,22 +232,6 @@ footer {
         background-color: #ddd;
     }
 }
-
-@media (min-width: 576px) {
-    body {
-        background-color: white;
-    }
-    .app {
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-}
-
-
-
-
-
 h1, h2 {
     margin-bottom: 20px;
 }
