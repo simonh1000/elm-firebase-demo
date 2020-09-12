@@ -8,8 +8,8 @@ import Common.ViewHelpers as ViewHelpers
 import Firebase.Firebase as FB exposing (AuthState(..), FBCommand(..), FBResponse(..), FBUser)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Json.Decode exposing (Decoder, Value)
-import Json.Encode as Encode
 import Model exposing (..)
 import Ports
 
@@ -47,7 +47,9 @@ init flags =
 type Msg
     = AuthMsg Auth.Msg
     | AppMsg App.Msg
+    | UpdateApp
     | FirebasePortMsg FB.FBResponse
+    | NewPortMsg Ports.IncomingMsg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -66,6 +68,9 @@ update message model =
                     App.update msg model.app
             in
             ( { model | app = app }, Cmd.map AppMsg c )
+
+        UpdateApp ->
+            ( { model | updateWaiting = False }, Ports.sendToJs Ports.SkipWaiting )
 
         FirebasePortMsg fbResponse ->
             case fbResponse of
@@ -105,8 +110,20 @@ update message model =
 
                 UnhandledResponse res ->
                     ( model
-                    , Ports.rollbar <| "Need ports handler for " ++ res
+                    , Ports.rollbar <| "Need port handler for" ++ res
                     )
+
+        NewPortMsg incomingMsg ->
+            case incomingMsg of
+                Ports.NewCode _ ->
+                    ( { model | updateWaiting = True }, Cmd.none )
+
+                Ports.UnrecognisedPortMsg taggedPayload ->
+                    --let
+                    --    _ =
+                    --        Debug.log " port" taggedPayload
+                    --in
+                    ( model, Cmd.none )
 
 
 {-| the user information is richer for a google login than for an email login
@@ -191,33 +208,40 @@ view model =
             , userMessage
             ]
 
-        wrap htm =
-            div [ class <| "app " ++ String.toLower (stringFromPage model.page) ] htm
+        wrap mapper htm =
+            div [ class "app d-flex flex-column" ]
+                [ div [ class <| "d-flex flex-column " ++ String.toLower (stringFromPage model.page) ] htm
+                    |> Html.map mapper
+                , if model.updateWaiting then
+                    button
+                        [ class "btn btn-warning update-button"
+                        , onClick UpdateApp
+                        ]
+                        [ text "Update App" ]
+
+                  else
+                    text ""
+                ]
     in
     case model.page of
         InitAuth ->
-            spinner "Checking credentials " |> wrap
+            spinner "Checking credentials" |> wrap AuthMsg
 
         Subscribing _ ->
-            spinner "Getting presents data" |> wrap
+            spinner "Getting presents data" |> wrap AuthMsg
 
         AuthPage ->
-            Auth.view model.auth |> wrap |> Html.map AuthMsg
+            Auth.view model.auth |> wrap AuthMsg
 
         AppPage ->
-            App.view model.app |> wrap |> Html.map AppMsg
+            App.view model.app |> wrap AppMsg
 
 
 
 -- CMDs
-
-
-setMeta : String -> String -> Encode.Value -> Cmd msg
-setMeta uid key val =
-    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
-
-
-
+--setMeta : String -> String -> Encode.Value -> Cmd msg
+--setMeta uid key val =
+--    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
 --
 
 
@@ -226,5 +250,10 @@ main =
         { init = init
         , view = \m -> { title = ViewHelpers.title, body = [ view m ] }
         , update = update
-        , subscriptions = \_ -> FB.subscriptions FirebasePortMsg
+        , subscriptions =
+            \_ ->
+                Sub.batch
+                    [ FB.subscriptions FirebasePortMsg
+                    , Ports.fromJs (Ports.decodeIncomingMsg >> NewPortMsg)
+                    ]
         }

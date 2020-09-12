@@ -22,6 +22,7 @@ type alias Model =
     , app : AppModel
     , page : Page
     , userMessage : Maybe String
+    , updateWaiting : Bool
     }
 
 
@@ -31,6 +32,7 @@ blank =
     , app = blankAppModel
     , page = InitAuth
     , userMessage = Nothing
+    , updateWaiting = False
     }
 
 
@@ -95,7 +97,6 @@ type alias AppModel =
     , userData : Dict String UserData
     , userMessage : UserMessage
     , editor : Present
-    , editorCollapsed : Bool
     , phase2 : String
     , isPhase2 : Bool
     }
@@ -111,7 +112,6 @@ blankAppModel =
     , userData = Dict.empty
     , userMessage = NoMessage
     , editor = blankPresent
-    , editorCollapsed = True
     , phase2 = "2020-11-01"
     , isPhase2 = False
     }

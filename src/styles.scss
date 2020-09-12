@@ -30,12 +30,11 @@ $bkg-colour: #dedede;
     overflow: hidden;
 }
 
-/*.app {*/
-/*    min-width: 320px;*/
-/*    !*height: 100vh;*!*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*}*/
+.app > div {
+    height: 100%;
+    width: 100%;
+    flex-grow: 1;
+}
 
 @media (min-width: 576px) {
     .app {
@@ -45,7 +44,11 @@ $bkg-colour: #dedede;
     }
 }
 
-
+.update-button {
+    position: fixed;
+    bottom: 50px;
+    left: 20px;
+}
 // move elm dev tool to left
 body > div:not(.app) {
     left: 6px;

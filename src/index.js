@@ -16,69 +16,76 @@ const cloudFunction = process.env.CLOUD_URL;
 console.log("** VERSION **", VERSION);
 
 // Register Service Worker
-if ("serviceWorker" in navigator) {
-    var wb = new Workbox("/service-worker.js");
-    let registration;
+// if ("serviceWorker" in navigator) {
+var wb = new Workbox("/service-worker.js");
+let registration;
 
-    // we want to check periodically whether there is an update to the service worker
-    // e.g. for a change in the cache name, indicating an update in the underlying code base
-    setInterval(() => {
-        wb.update();
-    }, 5000);
+// we want to check periodically whether there is an update to the service worker
+// e.g. for a change in the cache name, indicating an update in the underlying code base
+setInterval(() => {
+    wb.update();
+}, 5000);
 
-    const showSkipWaitingPrompt = (event) => {
-        console.log("registration", registration);
-        // `event.wasWaitingBeforeRegister` will be false if this is
-        // the first time the updated service worker is waiting.
-        // When `event.wasWaitingBeforeRegister` is true, a previously
-        // updated service worker is still waiting.
-        // You may want to customize the UI prompt accordingly.
+const showSkipWaitingPrompt = (event) => {
+    console.log("registration", registration);
+    // `event.wasWaitingBeforeRegister` will be false if this is
+    // the first time the updated service worker is waiting.
+    // When `event.wasWaitingBeforeRegister` is true, a previously
+    // updated service worker is still waiting.
+    // You may want to customize the UI prompt accordingly.
 
-        // Assumes your app has some sort of prompt UI element
-        // that a user can either accept or reject.
-        const createUIPrompt = (r) => r;
-        var prompt = createUIPrompt({
-            onAccept: async () => {
-                console.log("running onAccept");
-                // Assuming the user accepted the update, set up a listener
-                // that will reload the page as soon as the previously waiting
-                // service worker has taken control.
-                wb.addEventListener("controlling", (event) => {
-                    console.log("controlling");
-                    window.location.reload();
-                });
+    // Assumes your app has some sort of prompt UI element
+    // that a user can either accept or reject.
+    const createUIPrompt = (r) => r;
+    var prompt = createUIPrompt({
+        onAccept: async () => {
+            console.log("running onAccept");
+            // Assuming the user accepted the update, set up a listener
+            // that will reload the page as soon as the previously waiting
+            // service worker has taken control.
+            wb.addEventListener("controlling", (event) => {
+                console.log("controlling");
+                window.location.reload();
+            });
 
-                if (registration && registration.waiting) {
-                    // Send a message to the waiting service worker,
-                    // instructing it to activate.
-                    // Note: for this to work, you have to add a message
-                    // listener in your service worker. See below.
-                    console.log("Sending SKIP_WAITING");
-                    messageSW(registration.waiting, { type: "SKIP_WAITING" });
-                }
-            },
+            if (registration && registration.waiting) {
+                // Send a message to the waiting service worker,
+                // instructing it to activate.
+                // Note: for this to work, you have to add a message
+                // listener in your service worker. See below.
+                console.log("Sending SKIP_WAITING");
+                messageSW(registration.waiting, { type: "SKIP_WAITING" });
+            }
+        },
 
-            onReject: () => {
-                prompt.dismiss();
-            },
-        });
+        onReject: () => {
+            prompt.dismiss();
+        },
+    });
 
-        console.log("wasWaitingBeforeRegister", event.wasWaitingBeforeRegister);
-        const msg = event.wasWaitingBeforeRegister
-            ? "An existing SW is still waiting to install"
-            : "A new version of the App exists. Click to update to the latest version";
-        if (window.confirm(msg)) {
-            prompt.onAccept();
-        }
-    };
+    console.log("wasWaitingBeforeRegister", event);
+    console.log("wasWaitingBeforeRegister", event.wasWaitingBeforeRegister);
+    const msg = event.wasWaitingBeforeRegister
+        ? "An existing SW is still waiting to install"
+        : "A new version of the App exists. Click to update to the latest version";
+    // if (window.confirm(msg)) {
+    //     prompt.onAccept();
+    // }
+    app.ports.fromJs.send({
+        tag: "NewCode",
+        payload: !!event.wasWaitingBeforeRegister,
+    });
+};
 
-    // Add an event listener to detect when the registered
-    // service worker has installed but is waiting to activate.
-    wb.addEventListener("waiting", showSkipWaitingPrompt);
-    wb.addEventListener("externalwaiting", showSkipWaitingPrompt);
+// if (window.location.host.indexOf("localhost") > -1) {
+// Add an event listener to detect when the registered
+// service worker has installed but is waiting to activate.
+wb.addEventListener("waiting", showSkipWaitingPrompt);
+wb.addEventListener("externalwaiting", showSkipWaitingPrompt);
 
-    wb.register().then((r) => (registration = r));
-}
+wb.register().then((r) => (registration = r));
+// }
+// }
 
 // E L M   I N I T
 const app = Elm.Main.init({
@@ -98,11 +105,12 @@ app.ports.toJs.subscribe((data) => {
             //     message: data.payload,
             // });
             break;
-        case "LogConsole":
-            console.log(data.payload);
-            break;
         case "LogError":
             console.error(data.payload);
+            break;
+        case "SkipWaiting":
+            console.log("SkipWaiting");
+            onAccept().catch((err) => console.error(err));
             break;
         default:
             console.error(data);
@@ -117,3 +125,23 @@ import fb from "./Firebase/fb";
 app.ports.elmToFb.subscribe((msg) =>
     fb.handler(msg, (val) => app.ports.fbToElm.send(val))
 );
+
+async function onAccept() {
+    console.log("running onAccept");
+    // Assuming the user accepted the update, set up a listener
+    // that will reload the page as soon as the previously waiting
+    // service worker has taken control.
+    wb.addEventListener("controlling", (event) => {
+        console.log("controlling");
+        window.location.reload();
+    });
+
+    if (registration && registration.waiting) {
+        // Send a message to the waiting service worker,
+        // instructing it to activate.
+        // Note: for this to work, you have to add a message
+        // listener in your service worker. See below.
+        console.log("Sending SKIP_WAITING");
+        messageSW(registration.waiting, { type: "SKIP_WAITING" });
+    }
+}

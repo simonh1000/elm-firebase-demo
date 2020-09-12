@@ -7,7 +7,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 // enables a new SW to replace an existing one when a user clicks OK to do so
 addEventListener("message", (event) => {
-    // console.log("[service-worker.js] message", event.data);
+    console.log("[service-worker.js] message", event.data);
     if (event.data && event.data.type === "SKIP_WAITING") {
         skipWaiting();
     }

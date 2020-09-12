@@ -20,21 +20,21 @@ title =
     "Xmas 2020"
 
 
-mkTab : (c -> msg) -> c -> c -> ( Color.Color -> Int -> Html msg, String ) -> Html msg
-mkTab msgConstructor tab selectedTab ( icon, txt ) =
-    let
-        green =
-            Color.rgb255 41 167 69
-    in
+appGreen =
+    Color.rgb255 41 167 69
+
+
+mkTab : msg -> Bool -> ( Int -> Html msg, String ) -> Html msg
+mkTab msg isActive ( icon, txt ) =
     div
         [ classList
             [ ( "tab clickable", True )
-            , ( "active", tab == selectedTab )
+            , ( "active", isActive )
             , ( "narrow", txt == "" )
             ]
-        , onClick <| msgConstructor tab
+        , onClick msg
         ]
-        [ icon green 18
+        [ icon 18
         , small [] [ text txt ]
         ]
 

@@ -357,7 +357,7 @@ viewFamily model others =
 
         txt =
             if model.isPhase2 then
-                "Our present requests"
+                "Our present requests "
 
             else
                 "Until " ++ model.phase2 ++ ", only summary details are available"
@@ -629,9 +629,23 @@ viewNavbar model =
 
 viewFooter : Bool -> AppTab -> Html Msg
 viewFooter isPhase2 tab =
-    [ ( True, Family ), ( True, MySuggestions ), ( isPhase2, MyClaims ), ( True, Settings ) ]
-        |> L.filter Tuple.first
-        |> L.map (\( _, t ) -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
+    [ ( True, Family, appGreen )
+    , ( True, MySuggestions, appGreen )
+    , ( isPhase2, MyClaims, appGreen )
+    , ( True, Settings, appGreen )
+    ]
+        |> L.map
+            (\( use, t, col ) ->
+                if use then
+                    let
+                        ( icon, txt ) =
+                            stringFromTab t
+                    in
+                    ViewHelpers.mkTab (SwitchTab t) (t == tab) ( icon col, txt )
+
+                else
+                    text ""
+            )
         |> footer [ class "flex-h flex-aligned flex-spread tabs" ]
 
 

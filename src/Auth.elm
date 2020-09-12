@@ -2,7 +2,7 @@ module Auth exposing (AuthTab(..), Config, Model, Msg(..), blank, update, view, 
 
 import Color exposing (Color)
 import Common.Bootstrap as B
-import Common.ViewHelpers as ViewHelpers
+import Common.ViewHelpers as ViewHelpers exposing (appGreen)
 import Firebase.Firebase as FB
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -129,7 +129,14 @@ view model =
         |> Maybe.map (\str -> div [ class "warning" ] [ text str ])
         |> Maybe.withDefault (text "")
     , [ LoginTab, RegisterTab ]
-        |> L.map (\tab -> ViewHelpers.mkTab SwitchTab tab model.tab <| stringFromTab tab)
+        |> L.map
+            (\tab ->
+                let
+                    ( icon, txt ) =
+                        stringFromTab tab
+                in
+                ViewHelpers.mkTab (SwitchTab tab) (tab == model.tab) <| ( icon appGreen, txt )
+            )
         |> footer [ class "tabs" ]
     ]
 
