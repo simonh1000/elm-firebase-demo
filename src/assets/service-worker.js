@@ -4,12 +4,11 @@ import { CacheFirst, NetworkFirst } from "workbox-strategies";
 
 console.log(`Setting up cache 🎉`);
 
-var cdn = ["https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"];
 // The precache manifest lists the names of the files that were processed by webpack
 // and that end up in your dist folder. Does not include files that were simply copied
 precacheAndRoute(self.__WB_MANIFEST.concat([]));
 
-// TODO check whether this caches the firebase cdn code
+// TODO find approach for the firebase cdn code
 registerRoute(
     /\.js$/,
     new NetworkFirst({
@@ -30,7 +29,13 @@ registerRoute(
 
 // enables a new SW to replace an existing one when a user clicks OK to do so
 addEventListener("message", (event) => {
-    console.log("[service-worker.js] message", event.data);
+    if (
+        event.data.eventType === "keyChanged" ||
+        event.data.eventType === "ping"
+    ) {
+        return;
+    }
+    console.log("[service-worker.js] event.data", event.data);
     if (event.data && event.data.type === "SKIP_WAITING") {
         return skipWaiting();
     }

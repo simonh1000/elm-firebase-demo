@@ -24,10 +24,10 @@ let registration;
 
 // we want to check periodically whether there is an update to the service worker
 // e.g. for a change in the cache name, indicating an update in the underlying code base
-// But the browser does this frequently anyway
-// setInterval(() => {
-//     wb.update();
-// }, 5000);
+const hour = 60 * 60 * 1000;
+setInterval(() => {
+    wb.update();
+}, hour);
 
 const showSkipWaitingPrompt = (event) => {
     console.log("registration", registration);

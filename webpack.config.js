@@ -180,10 +180,19 @@ if (MODE === "production") {
                 verbose: true,
                 dry: false,
             }),
-            // Copy static assets
+            // Copy specific static assets
             new CopyWebpackPlugin([
+                "src/assets/manifest.json",
+                "src/assets/firebase-messaging-sw.js",
                 {
-                    from: "src/assets",
+                    from: "config",
+                    to: "config",
+                    context: "src/assets",
+                },
+                {
+                    from: "images",
+                    to: "images",
+                    context: "src/assets",
                 },
             ]),
             new MiniCssExtractPlugin({
