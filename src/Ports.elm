@@ -22,7 +22,7 @@ type alias TaggedPayload =
 
 type PortMsg
     = LogError String
-    | LogRollbar String
+    | LogRollbar Value
     | SkipWaiting
 
 
@@ -32,8 +32,8 @@ sendToJs portMsg =
         LogError str ->
             toJs <| TaggedPayload "LogError" <| Encode.string str
 
-        LogRollbar str ->
-            toJs <| TaggedPayload "LogRollbar" <| Encode.string str
+        LogRollbar val ->
+            toJs <| TaggedPayload "LogRollbar" val
 
         SkipWaiting ->
             toJs <| TaggedPayload "SkipWaiting" Encode.null
@@ -41,7 +41,7 @@ sendToJs portMsg =
 
 rollbar : String -> Cmd msg
 rollbar =
-    sendToJs << LogRollbar
+    sendToJs << LogRollbar << Encode.string
 
 
 

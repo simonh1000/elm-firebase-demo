@@ -2,7 +2,9 @@
 
 import { Workbox, messageSW } from "workbox-window";
 
-// import { Rollbar } from "./js/rollbar";
+// Rollbar currently included in head of index.html
+// import { Rollbar } from "./assets/js/rollbar";
+
 require("./styles.scss");
 const { Elm } = require("./Main");
 
@@ -71,11 +73,11 @@ const app = Elm.Main.init({
 app.ports.toJs.subscribe((data) => {
     switch (data.tag) {
         case "LogRollbar":
-            console.error(data.payload);
-            // Rollbar.info({
-            //     source: "elm",
-            //     message: data.payload,
-            // });
+            if (location.host.indexOf("localhost") > -1) {
+                console.error(data.payload);
+            } else {
+                Rollbar.error("elm", data.payload);
+            }
             break;
         case "LogError":
             console.error(data.payload);
