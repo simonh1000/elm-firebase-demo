@@ -2,7 +2,7 @@
 
 import { Workbox, messageSW } from "workbox-window";
 
-// Rollbar currently included in head of index.html
+// Rollbar currently included in head of index.html to allow it to attach to global scope
 // import { Rollbar } from "./assets/js/rollbar";
 
 require("./styles.scss");
@@ -24,7 +24,7 @@ let registration;
 
 // we want to check periodically whether there is an update to the service worker
 // e.g. for a change in the cache name, indicating an update in the underlying code base
-const hour = 60 * 60 * 1000;
+const hour = 30 * 60 * 1000;
 setInterval(() => {
     wb.update();
 }, hour);

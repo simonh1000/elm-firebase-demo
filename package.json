@@ -1,7 +1,7 @@
 {
     "author": "Simon Hampton",
     "name": "elm-pwa-demo",
-    "version": "3.0.0-beta-1.5",
+    "version": "3.0.0-beta-1.6",
     "description": "Elm PWA demo",
     "main": "index.js",
     "scripts": {
