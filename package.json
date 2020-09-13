@@ -1,7 +1,7 @@
 {
     "author": "Simon Hampton",
     "name": "elm-pwa-demo",
-    "version": "3.0.0-beta-1",
+    "version": "3.0.0-beta-1.1",
     "description": "Elm PWA demo",
     "main": "index.js",
     "scripts": {
@@ -45,12 +45,14 @@
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.0",
         "webpack-merge": "^4.2.2",
+        "workbox-strategies": "^5.1.3",
+        "workbox-precaching": "^5.1.3",
+        "workbox-routing": "^5.1.3",
         "workbox-webpack-plugin": "^5.1.3",
         "workbox-window": "^5.1.3"
     },
     "dependencies": {
-        "bootstrap": "^4.3.1",
-        "workbox-precaching": "^5.1.3"
+        "bootstrap": "^4.3.1"
     },
     "prettier": {
         "tabWidth": 4

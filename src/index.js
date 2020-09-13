@@ -8,7 +8,7 @@ const { Elm } = require("./Main");
 
 const phase2 = "2020-11-01";
 
-// choose one
+// For testing locally
 // const cloudFunction = process.env.EMULATOR_URL;
 const cloudFunction = process.env.CLOUD_URL;
 
@@ -17,14 +17,15 @@ console.log("** VERSION **", VERSION);
 
 // Register Service Worker
 // if ("serviceWorker" in navigator) {
-var wb = new Workbox("/service-worker.js");
+let wb = new Workbox("/service-worker.js");
 let registration;
 
 // we want to check periodically whether there is an update to the service worker
 // e.g. for a change in the cache name, indicating an update in the underlying code base
-setInterval(() => {
-    wb.update();
-}, 5000);
+// But the browser does this frequently anyway
+// setInterval(() => {
+//     wb.update();
+// }, 5000);
 
 const showSkipWaitingPrompt = (event) => {
     console.log("registration", registration);
@@ -34,40 +35,11 @@ const showSkipWaitingPrompt = (event) => {
     // updated service worker is still waiting.
     // You may want to customize the UI prompt accordingly.
 
-    // Assumes your app has some sort of prompt UI element
-    // that a user can either accept or reject.
-    const createUIPrompt = (r) => r;
-    var prompt = createUIPrompt({
-        onAccept: async () => {
-            console.log("running onAccept");
-            // Assuming the user accepted the update, set up a listener
-            // that will reload the page as soon as the previously waiting
-            // service worker has taken control.
-            wb.addEventListener("controlling", (event) => {
-                console.log("controlling");
-                window.location.reload();
-            });
-
-            if (registration && registration.waiting) {
-                // Send a message to the waiting service worker,
-                // instructing it to activate.
-                // Note: for this to work, you have to add a message
-                // listener in your service worker. See below.
-                console.log("Sending SKIP_WAITING");
-                messageSW(registration.waiting, { type: "SKIP_WAITING" });
-            }
-        },
-
-        onReject: () => {
-            prompt.dismiss();
-        },
-    });
-
-    console.log("wasWaitingBeforeRegister", event);
-    console.log("wasWaitingBeforeRegister", event.wasWaitingBeforeRegister);
-    const msg = event.wasWaitingBeforeRegister
-        ? "An existing SW is still waiting to install"
-        : "A new version of the App exists. Click to update to the latest version";
+    console.log("[showSkipWaitingPrompt] wasWaitingBeforeRegister", event);
+    // console.log("wasWaitingBeforeRegister", event.wasWaitingBeforeRegister);
+    // const msg = event.wasWaitingBeforeRegister
+    //     ? "An existing SW is still waiting to install"
+    //     : "A new version of the App exists. Click to update to the latest version";
     // if (window.confirm(msg)) {
     //     prompt.onAccept();
     // }
@@ -126,22 +98,23 @@ app.ports.elmToFb.subscribe((msg) =>
     fb.handler(msg, (val) => app.ports.fbToElm.send(val))
 );
 
+// Service worker support
 async function onAccept() {
     console.log("running onAccept");
     // Assuming the user accepted the update, set up a listener
     // that will reload the page as soon as the previously waiting
     // service worker has taken control.
     wb.addEventListener("controlling", (event) => {
-        console.log("controlling");
+        console.log("event controlling => reload screen");
         window.location.reload();
     });
 
     if (registration && registration.waiting) {
         // Send a message to the waiting service worker,
         // instructing it to activate.
-        // Note: for this to work, you have to add a message
-        // listener in your service worker. See below.
+        // See also the message listener in service-worker.js
         console.log("Sending SKIP_WAITING");
-        messageSW(registration.waiting, { type: "SKIP_WAITING" });
+        return messageSW(registration.waiting, { type: "SKIP_WAITING" });
     }
+    return Promise.resolve("No registration");
 }
