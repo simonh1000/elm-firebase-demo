@@ -17,3 +17,11 @@ To test the (un)subscribe functions we can follow https://firebase.google.com/do
 export GOOGLE_APPLICATION_CREDENTIALS="/.../ignore/fbkey.json"
 firebase emulators:start
 ```
+
+
+curl --location --request POST 'https://us-central1-_____.cloudfunctions.net/customNotification' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+	"notification": "This is a custom notification",
+	"password": "abc"
+}'

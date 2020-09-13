@@ -43,7 +43,7 @@ exports.sendNotification = functions.database
             .catch((error) => console.error("Error sending message:", error));
     });
 
-// Enable custom notification
+// http endpoint to send custom notifications
 function customNotification(req, res) {
     const password = req.body.password;
     const notification = req.body.notification;
