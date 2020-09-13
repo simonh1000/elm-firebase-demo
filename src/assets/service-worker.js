@@ -4,9 +4,10 @@ import { CacheFirst, NetworkFirst } from "workbox-strategies";
 
 console.log(`Setting up cache 🎉`);
 
+var cdn = ["https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"];
 // The precache manifest lists the names of the files that were processed by webpack
 // and that end up in your dist folder. Does not include files that were simply copied
-precacheAndRoute(self.__WB_MANIFEST);
+precacheAndRoute(self.__WB_MANIFEST.concat([]));
 
 // TODO check whether this caches the firebase cdn code
 registerRoute(

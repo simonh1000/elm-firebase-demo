@@ -202,8 +202,9 @@ view model =
         spinner txt =
             [ ViewHelpers.simpleHeader
             , div [ class "main loading" ]
-                [ img [ src "images/spinner.svg" ] []
-                , div [] [ text txt ]
+                [ div [ class "logo-container" ] [ img [ src "images/icons/icon-192x192.png" ] [] ]
+                , div [] [ img [ src "images/spinner.svg" ] [] ]
+                , text txt
                 ]
             , userMessage
             ]

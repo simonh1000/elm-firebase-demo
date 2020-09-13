@@ -646,7 +646,7 @@ viewFooter isPhase2 tab =
                 else
                     text ""
             )
-        |> footer [ class "d-flex flex-row align-items-center justify-content-between tabs" ]
+        |> footer [ class "d-flex flex-row align-items-stretch justify-content-between tabs" ]
 
 
 

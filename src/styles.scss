@@ -221,6 +221,7 @@ footer {
         }
     }
 }
+
 // ....
 
 .section {
@@ -235,6 +236,17 @@ footer {
         background-color: #ddd;
     }
 }
+
+// ****************************
+// Loading page
+// ****************************
+.logo-container {
+    max-width: 120px;
+    img {
+        width: 100%;
+    }
+}
+
 h1, h2 {
     margin-bottom: 20px;
 }
