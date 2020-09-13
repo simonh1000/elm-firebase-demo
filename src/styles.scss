@@ -242,19 +242,6 @@ h1, h2, h3, h4 {
     color: $red;
 }
 
-.flex-h {
-    display: flex;
-    align-items: center;
-
-}
-.flex-spread {
-    justify-content: space-between;
-}
-
-.flex-baseline {
-    align-items: baseline;
-}
-
 .success {
     color: $green;
 }

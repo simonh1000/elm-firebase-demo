@@ -8,7 +8,7 @@ import Html.Events exposing (onClick)
 
 simpleHeader : Html msg
 simpleHeader =
-    header [ class "flex-h flex-aligned flex-spread" ] [ xmasHeader ]
+    header [ class "d-flex flex-row align-items-center justify-content-between" ] [ xmasHeader ]
 
 
 xmasHeader : Html msg

@@ -480,7 +480,7 @@ viewPresentEditor isPhase2 editor =
             , editor.buyingAdvice
                 |> Maybe.withDefault ""
                 |> B.inputWithLabel UpdateSuggestionComment "Buying advice (optional)" "new-present-advice"
-            , div [ class "flex-h flex-spread" ]
+            , div [ class "d-flex flex-row justify-content-between" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case editor.uid of
                     Just uid ->
@@ -578,7 +578,7 @@ viewSettings model =
                 |> Maybe.withDefault False
 
         mkPresentTmpl htms =
-            li [ class "present flex-h" ] htms
+            li [ class "present d-flex flex-row" ] htms
     in
     [ div [ class "section settings" ]
         [ h4 [] [ text "Settings" ]
@@ -611,9 +611,9 @@ viewSettings model =
 
 viewNavbar : AppModel -> Html Msg
 viewNavbar model =
-    header [ class "flex-h flex-aligned flex-spread" ]
+    header [ class "d-flex flex-row align-items-center justify-content-between" ]
         [ xmasHeader
-        , div [ class "flex-h flex-aligned" ]
+        , div [ class "d-flex flex-row align-items-center" ]
             [ model.user.displayName
                 |> Maybe.map (text >> L.singleton >> strong [])
                 |> Maybe.withDefault (text "Xmas Present ideas")
@@ -646,7 +646,7 @@ viewFooter isPhase2 tab =
                 else
                     text ""
             )
-        |> footer [ class "flex-h flex-aligned flex-spread tabs" ]
+        |> footer [ class "d-flex flex-row align-items-center justify-content-between tabs" ]
 
 
 
@@ -655,8 +655,8 @@ viewFooter isPhase2 tab =
 
 viewPresent : Html Msg -> Present -> Html Msg
 viewPresent btn p =
-    li [ class "present flex-v" ]
-        [ div [ class "flex-h flex-spread" ]
+    li [ class "present d-flex flex-column" ]
+        [ div [ class "d-flex flex-row justify-content-between" ]
             [ div [ class "description" ]
                 [ text p.title
                 , p.link
