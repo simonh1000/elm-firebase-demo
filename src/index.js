@@ -24,18 +24,15 @@ let registration;
 
 // we want to check periodically whether there is an update to the service worker
 // e.g. for a change in the cache name, indicating an update in the underlying code base
-// const hour = 30 * 60 * 1000;
-// setInterval(() => {
-//     wb.update();
-// }, hour);
 document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") {
+        console.log("[visibilitychange] Checking for new SW");
         wb.update();
     }
 });
 
+// Event handler for waiting/externalwaiting
 const showSkipWaitingPrompt = (event) => {
-    console.log("registration", registration);
     // `event.wasWaitingBeforeRegister` will be false if this is
     // the first time the updated service worker is waiting.
     // When `event.wasWaitingBeforeRegister` is true, a previously
@@ -88,7 +85,6 @@ app.ports.toJs.subscribe((data) => {
             console.error(data.payload);
             break;
         case "SkipWaiting":
-            console.log("SkipWaiting");
             onAccept().catch((err) => console.error(err));
             break;
         default:
@@ -107,12 +103,11 @@ app.ports.elmToFb.subscribe((msg) =>
 
 // Service worker support
 async function onAccept() {
-    console.log("running onAccept");
     // Assuming the user accepted the update, set up a listener
     // that will reload the page as soon as the previously waiting
     // service worker has taken control.
     wb.addEventListener("controlling", (event) => {
-        console.log("event controlling => reload screen");
+        console.log("[onAccept] event controlling => reload screen");
         window.location.reload();
     });
 
@@ -120,7 +115,7 @@ async function onAccept() {
         // Send a message to the waiting service worker,
         // instructing it to activate.
         // See also the message listener in service-worker.js
-        console.log("Sending SKIP_WAITING");
+        console.log("[onAccept] Sending SKIP_WAITING");
         return messageSW(registration.waiting, { type: "SKIP_WAITING" });
     }
     return Promise.resolve("No registration");

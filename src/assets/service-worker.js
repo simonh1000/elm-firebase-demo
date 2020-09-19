@@ -35,8 +35,8 @@ addEventListener("message", (event) => {
     ) {
         return;
     }
-    console.log("[service-worker.js] event.data", event.data);
     if (event.data && event.data.type === "SKIP_WAITING") {
+        console.log("[service-worker.js] about to skipWaiting");
         return skipWaiting();
     }
 });

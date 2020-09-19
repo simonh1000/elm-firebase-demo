@@ -4,7 +4,7 @@ import App
 import Auth
 import Browser
 import Common.CoreHelpers exposing (addCmd)
-import Common.ViewHelpers as ViewHelpers
+import Common.ViewHelpers as ViewHelpers exposing (matIcon)
 import Firebase.Firebase as FB exposing (AuthState(..), FBCommand(..), FBResponse(..), FBUser)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -89,7 +89,7 @@ update message model =
                     ( updateApp (\_ -> m) model, Cmd.map AppMsg c )
 
                 NotificationsRefused ->
-                    ( { model | userMessage = Just "NotificationsRefused" }, Cmd.none )
+                    ( { model | userMessage = Just "Notifications Refused" }, Cmd.none )
 
                 PresentNotification notification ->
                     -- let
@@ -218,7 +218,7 @@ view model =
                         [ class "btn btn-warning update-button"
                         , onClick UpdateApp
                         ]
-                        [ text "Update App" ]
+                        [ matIcon "refresh", text "Update" ]
 
                   else
                     text ""

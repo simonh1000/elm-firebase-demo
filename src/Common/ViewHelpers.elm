@@ -44,11 +44,13 @@ badge cl t =
     span [ class <| "badge badge-" ++ cl ] [ text t ]
 
 
+matIcon : String -> Html msg
+matIcon icon =
+    --    i [ class <| "mdi mdi-" ++ icon ] []
+    span [ class "iconify", attribute "data-icon" <| "mdi-" ++ icon ] []
 
---matIcon : String -> Html msg
---matIcon icon =
---    --    i [ class <| "mdi mdi-" ++ icon ] []
---    span [ class "iconify", attribute "data-icon" <| "mdi-" ++ icon ] []
+
+
 --matIconMsg : msg -> String -> Html msg
 --matIconMsg msg icon =
 --    i

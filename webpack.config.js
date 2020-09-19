@@ -1,6 +1,6 @@
 const path = require("path");
 const webpack = require("webpack");
-const merge = require("webpack-merge");
+const { merge } = require("webpack-merge");
 
 const ClosurePlugin = require("closure-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -44,12 +44,6 @@ var common = {
         new Dotenv(),
         new webpack.DefinePlugin({
             VERSION: JSON.stringify(require("./package.json").version),
-        }),
-        // adds a pre-cache line to my service worker (GenerateSW creates the SW from scratch if preferred),
-        // and saves it to the correct location in dest
-        new WorkboxWebpackPlugin.InjectManifest({
-            swSrc: "./src/assets/service-worker.js",
-            swDest: "service-worker.js",
         }),
     ],
     resolve: {
@@ -110,6 +104,12 @@ if (MODE === "development") {
             new webpack.NamedModulesPlugin(),
             // Prevents compilation errors causing the hot loader to lose state
             new webpack.NoEmitOnErrorsPlugin(),
+            // adds a pre-cache line to my service worker (GenerateSW could create the SW from scratch if preferred),
+            // and saves it to the correct location in dest
+            new WorkboxWebpackPlugin.InjectManifest({
+                swSrc: "./src/assets/service-worker.js",
+                swDest: "service-worker.js",
+            }),
         ],
         module: {
             rules: [
@@ -181,24 +181,32 @@ if (MODE === "production") {
                 dry: false,
             }),
             // Copy specific static assets
-            new CopyWebpackPlugin([
-                "src/assets/manifest.json",
-                "src/assets/firebase-messaging-sw.js",
-                {
-                    from: "config",
-                    to: "config",
-                    context: "src/assets",
-                },
-                {
-                    from: "images",
-                    to: "images",
-                    context: "src/assets",
-                },
-            ]),
+            new CopyWebpackPlugin({
+                patterns: [
+                    { from: "manifest.json", context: "src/assets" },
+                    { from: "firebase-messaging-sw.js", context: "src/assets" },
+                    {
+                        from: "config",
+                        to: "config",
+                        context: "src/assets",
+                    },
+                    {
+                        from: "images",
+                        to: "images",
+                        context: "src/assets",
+                    },
+                ],
+            }),
             new MiniCssExtractPlugin({
                 // Options similar to the same options in webpackOptions.output
                 // both options are optional
                 filename: "[name]-[hash].css",
+            }),
+            // adds a pre-cache line to my service worker (GenerateSW creates the SW from scratch if preferred),
+            // and saves it to the correct location in dest
+            new WorkboxWebpackPlugin.InjectManifest({
+                swSrc: "./src/assets/service-worker.js",
+                swDest: "service-worker.js",
             }),
         ],
         module: {
