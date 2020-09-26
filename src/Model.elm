@@ -133,7 +133,8 @@ setDisplayName displayName model =
 
 
 type AppTab
-    = Family
+    = Update -- for debugging
+    | Family
     | MySuggestions
     | MyClaims
     | Settings
@@ -152,6 +153,9 @@ stringFromTab tab =
             ( MAction.bookmark, "Claims" )
 
         Settings ->
+            ( MAction.settings_application, "" )
+
+        Update ->
             ( MAction.settings_application, "" )
 
 

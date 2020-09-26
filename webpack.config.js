@@ -99,11 +99,11 @@ var common = {
 
 if (MODE === "development") {
     module.exports = merge(common, {
-        plugins: [
-            // Suggested for hot-loading
-            new webpack.NamedModulesPlugin(),
+        optimization: {
             // Prevents compilation errors causing the hot loader to lose state
-            new webpack.NoEmitOnErrorsPlugin(),
+            noEmitOnErrors: true
+        },
+        plugins: [
             // adds a pre-cache line to my service worker (GenerateSW could create the SW from scratch if preferred),
             // and saves it to the correct location in dest
             new WorkboxWebpackPlugin.InjectManifest({

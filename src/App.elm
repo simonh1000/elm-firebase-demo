@@ -74,7 +74,9 @@ update message model =
         ConfirmIsPhase2 isPhase2 ->
             ( { model
                 | isPhase2 = isPhase2
-                , tab = ifThenElse isPhase2 Family MySuggestions
+
+                --, tab = ifThenElse isPhase2 Family MySuggestions
+                , tab = Update
               }
             , Cmd.none
             )
@@ -327,6 +329,11 @@ view model =
 
             Settings ->
                 viewSettings model
+
+            Update ->
+                [ h2 [] [ text "Great news" ]
+                , p [] [ text "If you see this page, that means the update has installed correctly. Please let Simon know that you have seen this" ]
+                ]
     , case model.userMessage of
         NoMessage ->
             viewFooter model.isPhase2 model.tab
@@ -629,23 +636,24 @@ viewNavbar model =
 
 viewFooter : Bool -> AppTab -> Html Msg
 viewFooter isPhase2 tab =
+    let
+        mkItem ( use, t, col ) =
+            if use then
+                let
+                    ( icon, txt ) =
+                        stringFromTab t
+                in
+                ViewHelpers.mkTab (SwitchTab t) (t == tab) ( icon col, txt )
+
+            else
+                text ""
+    in
     [ ( True, Family, appGreen )
     , ( True, MySuggestions, appGreen )
     , ( isPhase2, MyClaims, appGreen )
     , ( True, Settings, appGreen )
     ]
-        |> L.map
-            (\( use, t, col ) ->
-                if use then
-                    let
-                        ( icon, txt ) =
-                            stringFromTab t
-                    in
-                    ViewHelpers.mkTab (SwitchTab t) (t == tab) ( icon col, txt )
-
-                else
-                    text ""
-            )
+        |> L.map mkItem
         |> footer [ class "d-flex flex-row align-items-stretch justify-content-between tabs" ]
 
 
