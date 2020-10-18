@@ -12,6 +12,7 @@ import Html.Events exposing (onClick)
 import Json.Decode exposing (Decoder, Value)
 import Model exposing (..)
 import Ports
+import Url exposing (Url)
 
 
 
@@ -50,6 +51,8 @@ type Msg
     | UpdateApp
     | FirebasePortMsg FB.FBResponse
     | NewPortMsg Ports.IncomingMsg
+    | OnUrlChange Url
+    | OnUrlRequest UrlRequest
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -125,6 +128,12 @@ update message model =
                     --in
                     ( model, Cmd.none )
 
+        OnUrlChange unknown ->
+            ( model, Cmd.none )
+
+        OnUrlRequest urlRequest ->
+            ( model, Cmd.none )
+
 
 {-| the user information is richer for a google login than for an email login
 -}
@@ -151,7 +160,7 @@ handleAuthChange authState model =
                     }
             in
             -- Next, subscribe to the db
-            ( newModel, FB.subscribe "/" )
+            ( newModel, App.subscribe )
 
         NoUser ->
             ( { model

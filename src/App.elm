@@ -1,4 +1,4 @@
-module App exposing (Msg(..), handleToken, initCmd, update, view)
+module App exposing (Msg(..), handleToken, initCmd, subscribe, update, view)
 
 import Color
 import Common.Bootstrap as B
@@ -74,9 +74,7 @@ update message model =
         ConfirmIsPhase2 isPhase2 ->
             ( { model
                 | isPhase2 = isPhase2
-
-                --, tab = ifThenElse isPhase2 Family MySuggestions
-                , tab = Update
+                , tab = ifThenElse isPhase2 Family MySuggestions
               }
             , Cmd.none
             )
@@ -692,6 +690,10 @@ mkPrimaryButton clickMsg cls htms =
 -- CMDs
 
 
+subscribe =
+    FB.subscribe prefix
+
+
 claim : String -> String -> String -> Cmd msg
 claim uid otherRef presentRef =
     FB.set
@@ -713,7 +715,7 @@ unclaim otherRef presentRef =
 
 delete : AppModel -> String -> Cmd Msg
 delete model ref =
-    FB.remove ("/" ++ model.user.uid ++ "/presents/" ++ ref)
+    FB.remove (prefix ++ model.user.uid ++ "/presents/" ++ ref)
 
 
 savePresent : AppModel -> Cmd Msg
@@ -721,20 +723,25 @@ savePresent model =
     case model.editor.uid of
         Just uid_ ->
             -- update existing present
-            FB.update ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
+            FB.update (prefix ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
 
         Nothing ->
-            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
+            FB.push (prefix ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
 
 
 setMeta : String -> String -> Encode.Value -> Cmd msg
 setMeta uid key val =
-    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
+    FB.set (prefix ++ uid ++ "/meta/" ++ key) val
 
 
 makeSetPresentRef : String -> String -> String -> String
 makeSetPresentRef str otherRef presentRef =
     [ otherRef, "presents", presentRef, str ] |> String.join "/"
+
+
+prefix : String
+prefix =
+    "/jona/"
 
 
 

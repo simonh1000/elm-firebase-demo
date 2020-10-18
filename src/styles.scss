@@ -1,8 +1,8 @@
 $border-color: #ddd; // LAYOUT ++ see css for larger screens
-$green: #0a691f;
+$green: #05800b;
 $green-icon: #29a745;
 $green-accent: #d8f1de;
-$red: #880d0d;
+$red: #cd3e3e;
 $bkg-colour: #dedede;
 
 @import "~bootstrap/scss/functions";
@@ -206,7 +206,6 @@ footer {
             }
               -webkit-touch-callout: none; /* iOS Safari */
                 -webkit-user-select: none; /* Safari */
-                 -khtml-user-select: none; /* Konqueror HTML */
                    -moz-user-select: none; /* Old versions of Firefox */
                     -ms-user-select: none; /* Internet Explorer/Edge */
                         user-select: none; /* Non-prefixed version, currently
@@ -260,7 +259,11 @@ h1, h2, h3, h4 {
 .warning {
     color: #ee3333;
 }
-
+.btn-warning {
+    background-color: $red;
+    border-color: $red;
+    color: white;
+}
 .clickable {
     cursor: pointer;
 }

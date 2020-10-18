@@ -101,7 +101,7 @@ if (MODE === "development") {
     module.exports = merge(common, {
         optimization: {
             // Prevents compilation errors causing the hot loader to lose state
-            noEmitOnErrors: true
+            noEmitOnErrors: true,
         },
         plugins: [
             // adds a pre-cache line to my service worker (GenerateSW could create the SW from scratch if preferred),
@@ -133,7 +133,20 @@ if (MODE === "development") {
         },
         devServer: {
             inline: true,
-            stats: "errors-only",
+            stats: {
+                errors: true,
+                errorDetails: true,
+                warnings: true,
+                reasons: true,
+                version: true,
+                hash: false,
+                timings: false,
+                children: false,
+                chunks: false,
+                modules: false,
+                source: false,
+                publicPath: false,
+            },
             contentBase: path.join(__dirname, "src/assets"),
             historyApiFallback: true,
             // feel free to delete this section if you don't need anything like this

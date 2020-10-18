@@ -23,6 +23,7 @@ type alias Model =
     , page : Page
     , userMessage : Maybe String
     , updateWaiting : Bool
+    , prefix : String
     }
 
 
@@ -33,6 +34,7 @@ blank =
     , page = InitAuth
     , userMessage = Nothing
     , updateWaiting = False
+    , prefix = "/jona"
     }
 
 
@@ -133,18 +135,18 @@ setDisplayName displayName model =
 
 
 type AppTab
-    = Update -- for debugging
-    | Family
+    = Family
     | MySuggestions
     | MyClaims
     | Settings
+    | Update -- for debugging
 
 
 stringFromTab : AppTab -> ( Color -> Int -> Svg msg, String )
 stringFromTab tab =
     case tab of
         Family ->
-            ( MSocial.people, "Family" )
+            ( MSocial.people, "Friends" )
 
         MySuggestions ->
             ( MSocial.person, "Suggestions" )

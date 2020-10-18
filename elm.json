@@ -25,7 +25,6 @@
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
-            "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",
             "truqu/elm-base64": "2.0.4"
         }
