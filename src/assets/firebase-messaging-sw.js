@@ -34,7 +34,7 @@ messaging.setBackgroundMessageHandler(function (payload) {
 
 function mkPresent(data) {
     let now = new Date();
-    let title = "Presents update: " + data.person;
+    let title = "Presents update: " + data.person.split(" ")[0];
     let options = {
         body:
             now < endPhase1
