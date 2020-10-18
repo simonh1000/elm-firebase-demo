@@ -50,6 +50,7 @@ decodeIncoming msgConstructor value =
 fbResponseDecoder : Decoder FBResponse
 fbResponseDecoder =
     let
+        mkDec : String -> Decoder a -> (a -> FBResponse) -> Decoder FBResponse
         mkDec tgt dec constructor =
             exactMatchString (Decode.field "message" Decode.string) tgt (Decode.field "payload" dec)
                 |> Decode.map constructor

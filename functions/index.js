@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-
+const env = require("./env");
 const phase2 = new Date("1 nov 2020");
 const customNotificationPassword = "3D#9gxF@";
 
@@ -16,7 +16,8 @@ exports.customNotification = functions.https.onRequest(customNotification);
 // When new present created, inform users
 // Changes to suggestions are not notified
 exports.sendNotification = functions.database
-    .ref("/{userId}/presents/{presentId}")
+    .instance(env.db)
+    .ref(env.prefix + "/{userId}/presents/{presentId}")
     .onCreate((event) => {
         // https://firebase.google.com/docs/reference/admin/node/admin.database.Reference
         return event.ref.parent.parent

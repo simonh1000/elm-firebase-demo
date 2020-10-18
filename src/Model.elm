@@ -22,6 +22,7 @@ type alias Model =
     , app : AppModel
     , page : Page
     , userMessage : Maybe String
+    , supportsNotifications : Bool
     , updateWaiting : Bool
     , prefix : String
     }
@@ -33,6 +34,7 @@ blank =
     , app = blankAppModel
     , page = InitAuth
     , userMessage = Nothing
+    , supportsNotifications = True
     , updateWaiting = False
     , prefix = "/jona"
     }

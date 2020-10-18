@@ -208,7 +208,11 @@ function getMessagingToken(cb) {
     if (firebase.messaging.isSupported() && Notification) {
         getMessagingTokenWithValidBrowser(cb);
     } else {
-        console.warn("[fb.js] Can't do notifications");
+        // console.warn("[fb.js] Can't do notifications");
+        cb({
+            message: "NotificationsRefused",
+            payload: null,
+        });
     }
 }
 function getMessagingTokenWithValidBrowser(cb) {

@@ -12,7 +12,6 @@ import Html.Events exposing (onClick)
 import Json.Decode exposing (Decoder, Value)
 import Model exposing (..)
 import Ports
-import Url exposing (Url)
 
 
 
@@ -51,8 +50,6 @@ type Msg
     | UpdateApp
     | FirebasePortMsg FB.FBResponse
     | NewPortMsg Ports.IncomingMsg
-    | OnUrlChange Url
-    | OnUrlRequest UrlRequest
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -92,7 +89,7 @@ update message model =
                     ( updateApp (\_ -> m) model, Cmd.map AppMsg c )
 
                 NotificationsRefused ->
-                    ( { model | userMessage = Just "Notifications Refused" }, Cmd.none )
+                    ( { model | supportsNotifications = False }, Cmd.none )
 
                 PresentNotification notification ->
                     -- let
@@ -127,12 +124,6 @@ update message model =
                     --        Debug.log " port" taggedPayload
                     --in
                     ( model, Cmd.none )
-
-        OnUrlChange unknown ->
-            ( model, Cmd.none )
-
-        OnUrlRequest urlRequest ->
-            ( model, Cmd.none )
 
 
 {-| the user information is richer for a google login than for an email login
@@ -244,7 +235,7 @@ view model =
             Auth.view model.auth |> wrap AuthMsg
 
         AppPage ->
-            App.view model.app |> wrap AppMsg
+            App.view model.supportsNotifications model.app |> wrap AppMsg
 
 
 

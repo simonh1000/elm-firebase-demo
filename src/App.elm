@@ -304,8 +304,8 @@ handleToken token model =
 -- ---------------------------------------
 
 
-view : AppModel -> List (Html Msg)
-view model =
+view : Bool -> AppModel -> List (Html Msg)
+view supportsNotifications model =
     let
         ( mine, others ) =
             model.userData
@@ -326,7 +326,7 @@ view model =
                 viewClaims others
 
             Settings ->
-                viewSettings model
+                viewSettings supportsNotifications model
 
             Update ->
                 [ h2 [] [ text "Great news" ]
@@ -573,8 +573,8 @@ viewClaims others =
 -- ------------------
 
 
-viewSettings : AppModel -> List (Html Msg)
-viewSettings model =
+viewSettings : Bool -> AppModel -> List (Html Msg)
+viewSettings supportsNotifications model =
     let
         notifications =
             model.userData
@@ -590,9 +590,13 @@ viewSettings model =
         , ul [ class "present-list" ]
             [ mkPresentTmpl
                 [ div [] [ text "Notifications" ]
-                , mkPrimaryButton (ToggleNotifications <| not notifications)
-                    (ifThenElse notifications "btn-success" "btn-danger")
-                    [ span [ class "mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
+                , if supportsNotifications then
+                    mkPrimaryButton (ToggleNotifications <| not notifications)
+                        (ifThenElse notifications "btn-success" "btn-danger")
+                        [ span [ class "mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
+
+                  else
+                    text "Unfortunately your browser does not support notifications"
                 ]
             , mkPresentTmpl
                 [ div [ class "text-danger" ] []
