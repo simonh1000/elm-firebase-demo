@@ -239,11 +239,7 @@ view model =
 
 
 
--- CMDs
---setMeta : String -> String -> Encode.Value -> Cmd msg
---setMeta uid key val =
---    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
---
+-- Program
 
 
 main =

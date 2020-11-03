@@ -307,9 +307,16 @@ handleToken token model =
 view : Bool -> AppModel -> List (Html Msg)
 view supportsNotifications model =
     let
+        filterFn user =
+            if model.user.email == "hotbelgo@gmail.com" then
+                True
+
+            else
+                user.meta.name /= "dev - ignore"
+
         ( mine, others ) =
             model.userData
-                |> Dict.filter (\_ user -> user.meta.name /= "dev - ignore")
+                |> Dict.filter (\_ -> filterFn)
                 |> Dict.toList
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
@@ -360,19 +367,20 @@ viewFamily model others =
             else
                 viewOtherPhase1
 
-        txt =
+        title =
             if model.isPhase2 then
-                "Our present requests "
+                [ h4 [] [ text "Our present requests " ]
+                , p [] [ text "Click claim if you plan to buy - don't worry the recipient won't know you clicked ;-)" ]
+                ]
 
             else
-                "Until " ++ model.phase2 ++ ", only summary details are available"
+                [ h4 [] [ text <| "Until " ++ model.phase2 ++ ", only summary details are available" ] ]
     in
     if List.isEmpty others then
         [ text "Awaiting first present ideas" ]
 
     else
-        h4 [] [ text txt ]
-            :: L.map fn others
+        title ++ L.map fn others
 
 
 viewOtherPhase1 : ( String, UserData ) -> Html Msg
@@ -694,27 +702,35 @@ mkPrimaryButton clickMsg cls htms =
 -- CMDs
 
 
+subscribe : Cmd msg
 subscribe =
     FB.subscribe prefix
 
 
 claim : String -> String -> String -> Cmd msg
-claim uid otherRef presentRef =
+claim uid userRef presentRef =
     FB.set
-        (makeSetPresentRef "takenBy" otherRef presentRef)
+        (makeSetPresentRef userRef presentRef "takenBy")
         (Encode.string uid)
 
 
 purchase : String -> String -> Bool -> Cmd msg
-purchase otherRef presentRef purchased =
+purchase userRef presentRef purchased =
     FB.set
-        (makeSetPresentRef "purchased" otherRef presentRef)
+        (makeSetPresentRef userRef presentRef "purchased")
         (Encode.bool purchased)
 
 
 unclaim : String -> String -> Cmd msg
 unclaim otherRef presentRef =
-    FB.remove <| makeSetPresentRef "takenBy" otherRef presentRef
+    FB.remove <| makeSetPresentRef otherRef presentRef "takenBy"
+
+
+{-| userRef is the user who created the present - i.e. not the one claiming it
+-}
+makeSetPresentRef : String -> String -> String -> String
+makeSetPresentRef userRef presentRef key =
+    [ prefix, userRef, "presents", presentRef, key ] |> String.join "/"
 
 
 delete : AppModel -> String -> Cmd Msg
@@ -736,11 +752,6 @@ savePresent model =
 setMeta : String -> String -> Encode.Value -> Cmd msg
 setMeta uid key val =
     FB.set (prefix ++ uid ++ "/meta/" ++ key) val
-
-
-makeSetPresentRef : String -> String -> String -> String
-makeSetPresentRef str otherRef presentRef =
-    [ otherRef, "presents", presentRef, str ] |> String.join "/"
 
 
 prefix : String
