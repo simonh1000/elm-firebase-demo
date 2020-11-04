@@ -362,7 +362,7 @@ viewFamily model others =
     let
         fn =
             if model.isPhase2 then
-                viewOther
+                viewOtherPhase2
 
             else
                 viewOtherPhase1
@@ -389,8 +389,8 @@ viewOtherPhase1 ( _, { meta, presents } ) =
         [ text <| meta.name ++ ": " ++ formatPluralRegular (Dict.size presents) " suggestion" ]
 
 
-viewOther : ( String, UserData ) -> Html Msg
-viewOther ( userRef, { meta, presents } ) =
+viewOtherPhase2 : ( String, UserData ) -> Html Msg
+viewOtherPhase2 ( userRef, { meta, presents } ) =
     let
         mkButton cls clickMsg title =
             button
@@ -419,7 +419,7 @@ viewOther ( userRef, { meta, presents } ) =
             text ""
 
         ps ->
-            div [ class "shadow-sm bg-white rounded person section" ]
+            div [ class "shadow-lg bg-white rounded person section" ]
                 [ h4 [] [ meta.name |> String.split " " |> L.head |> Maybe.withDefault meta.name |> text ]
                 , ul [ class "present-list" ] ps
                 ]
@@ -674,17 +674,17 @@ viewFooter isPhase2 tab =
 viewPresent : Html Msg -> Present -> Html Msg
 viewPresent btn p =
     li [ class "present d-flex flex-column" ]
-        [ div [ class "d-flex flex-row justify-content-between" ]
-            [ div [ class "description" ]
+        [ div [ class "d-flex flex-row justify-content-between align-items-center" ]
+            [ div [ class "d-flex flex-row align-items-center title" ]
                 [ text p.title
                 , p.link
-                    |> Maybe.map (\link_ -> a [ href link_, target "_blank" ] [ MAction.open_in_new Color.blue 20 ])
+                    |> Maybe.map (\link_ -> a [ href link_, target "_blank", class "ml-1" ] [ MAction.open_in_new Color.blue 20 ])
                     |> Maybe.withDefault (text "")
                 ]
             , btn
             ]
         , p.buyingAdvice
-            |> Maybe.map (\txt -> div [ class "small" ] [ text txt ])
+            |> Maybe.map (\txt -> div [ class "small mt-1" ] [ text txt ])
             |> Maybe.withDefault (text "")
         ]
 

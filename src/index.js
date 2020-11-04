@@ -103,9 +103,9 @@ app.ports.elmToFb.subscribe((msg) =>
 
 // Service worker support
 async function onAccept() {
-    // Assuming the user accepted the update, set up a listener
-    // that will reload the page as soon as the previously waiting
-    // service worker has taken control.
+    // The user accepted the update. We are going to tell the waiting service to worker to "SKIP_WAITING"
+    // This will lead it to take control. We will listen for the "controlling" event, and
+    // when received, we reload the page so that the new SW is used.
     wb.addEventListener("controlling", (event) => {
         console.log("[onAccept] event controlling => reload screen");
         window.location.reload();
