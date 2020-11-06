@@ -7,23 +7,59 @@ import Json.Encode as Encode
 port toJs : TaggedPayload -> Cmd msg
 
 
+port fromJs : (TaggedPayload -> msg) -> Sub msg
+
+
 type alias TaggedPayload =
     { tag : String
     , payload : Value
     }
 
 
+
+-- Outgoing messages
+
+
 type PortMsg
-    = LogRollbar String
+    = LogError String
+    | LogRollbar Value
+    | SkipWaiting
 
 
 sendToJs : PortMsg -> Cmd msg
 sendToJs portMsg =
     case portMsg of
-        LogRollbar str ->
-            toJs <| TaggedPayload "LogRollbar" <| Encode.string str
+        LogError str ->
+            toJs <| TaggedPayload "LogError" <| Encode.string str
+
+        LogRollbar val ->
+            toJs <| TaggedPayload "LogRollbar" val
+
+        SkipWaiting ->
+            toJs <| TaggedPayload "SkipWaiting" Encode.null
 
 
 rollbar : String -> Cmd msg
 rollbar =
-    sendToJs << LogRollbar
+    sendToJs << LogRollbar << Encode.string
+
+
+
+-- Incoming messages
+
+
+type IncomingMsg
+    = NewCode Bool
+    | UnrecognisedPortMsg TaggedPayload
+
+
+decodeIncomingMsg : TaggedPayload -> IncomingMsg
+decodeIncomingMsg msg =
+    case msg.tag of
+        "NewCode" ->
+            msg.payload
+                |> Decode.decodeValue (Decode.map NewCode Decode.bool)
+                |> Result.withDefault (UnrecognisedPortMsg msg)
+
+        _ ->
+            UnrecognisedPortMsg msg

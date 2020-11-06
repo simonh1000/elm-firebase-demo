@@ -1,40 +1,64 @@
 $border-color: #ddd; // LAYOUT ++ see css for larger screens
-$green: #0a691f;
+$green: #05800b;
 $green-icon: #29a745;
 $green-accent: #d8f1de;
-$red: #880d0d;
+$red: #cd3e3e;
 $bkg-colour: #dedede;
+$enable-shadows: true;
 
-@import "~bootstrap/scss/functions";
-@import "~bootstrap/scss/variables";
-@import "~bootstrap/scss/mixins";
-
-@import "~bootstrap/scss/root";
-@import "~bootstrap/scss/reboot";
-@import "~bootstrap/scss/type";
-@import "~bootstrap/scss/forms";
-@import "~bootstrap/scss/buttons";
-@import "~bootstrap/scss/utilities/spacing";
-@import "~bootstrap/scss/badge";
-
-// @import "~bootstrap/scss/bootstrap-grid";
-
-// move elm dev tool to left
-body > div:not(.app) {
-    left: 6px;
-    right: initial !important;
-}
+//@import "~bootstrap/scss/functions";
+//@import "~bootstrap/scss/variables";
+//@import "~bootstrap/scss/mixins";
+//@import "~bootstrap/scss/utilities/display";
+//@import "~bootstrap/scss/utilities/flex";
+//// @import "~bootstrap/scss/bootstrap-grid";
+//@import "~bootstrap/scss/root";
+//@import "~bootstrap/scss/reboot";
+//@import "~bootstrap/scss/type";
+//@import "~bootstrap/scss/forms";
+//@import "~bootstrap/scss/buttons";
+//@import "~bootstrap/scss/utilities/spacing";
+//@import "~bootstrap/scss/badge";
 
 .app {
     background-color: $bkg-colour;
-    // repeat settings inlined
+    flex-grow: 1;
+    width: 100%;
     height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow: hidden;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
+}
+
+.app > div {
+    height: 100%;
+    width: 100%;
+    flex-grow: 1;
+    overflow-y: hidden;
+}
+
+@media (min-width: 576px) {
+    .app {
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.update-button {
+    position: fixed;
+    bottom: 50px;
+    left: 20px;
+}
+// move elm dev tool to left
+body > div:not(.app) {
+    left: 6px;
+    right: initial !important;
+}
+.app {
+    //border-left: 1px solid #ccc;
+    //border-right: 1px solid #ccc;
 
     header {
         width: 100%;
@@ -52,8 +76,7 @@ body > div:not(.app) {
         flex-direction: column;
         align-items: stretch;
         // width up to 400px
-        width: 100%;
-        max-width: 400px;
+        //width: 100%;
         margin-top: 10px;
         margin-bottom: 10px;
         overflow-y: auto;
@@ -135,8 +158,8 @@ ul.present-list {
             color: grey;
         }
     }
-    .description a {
-        margin-left: 5px;
+    .title {
+        font-weight: bold;
     }
 }
 // ****************************
@@ -184,7 +207,6 @@ footer {
             }
               -webkit-touch-callout: none; /* iOS Safari */
                 -webkit-user-select: none; /* Safari */
-                 -khtml-user-select: none; /* Konqueror HTML */
                    -moz-user-select: none; /* Old versions of Firefox */
                     -ms-user-select: none; /* Internet Explorer/Edge */
                         user-select: none; /* Non-prefixed version, currently
@@ -199,6 +221,7 @@ footer {
         }
     }
 }
+
 // ....
 
 .section {
@@ -214,20 +237,15 @@ footer {
     }
 }
 
-@media (min-width: 576px) {
-    body {
-        background-color: white;
-    }
-    .app {
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
+// ****************************
+// Loading page
+// ****************************
+.logo-container {
+    max-width: 120px;
+    img {
+        width: 100%;
     }
 }
-
-
-
-
 
 h1, h2 {
     margin-bottom: 20px;
@@ -236,26 +254,17 @@ h1, h2, h3, h4 {
     color: $red;
 }
 
-.flex-h {
-    display: flex;
-    align-items: center;
-
-}
-.flex-spread {
-    justify-content: space-between;
-}
-
-.flex-baseline {
-    align-items: baseline;
-}
-
 .success {
     color: $green;
 }
 .warning {
     color: #ee3333;
 }
-
+.btn-warning {
+    background-color: $red;
+    border-color: $red;
+    color: white;
+}
 .clickable {
     cursor: pointer;
 }

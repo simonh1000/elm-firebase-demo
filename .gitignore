@@ -33,3 +33,5 @@ tools/*.json
 .firebase
 .firebaserc
 .env
+scripts
+env.json

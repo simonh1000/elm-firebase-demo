@@ -1,4 +1,4 @@
-module App exposing (Msg(..), handleToken, initCmd, update, view)
+module App exposing (Msg(..), handleToken, initCmd, subscribe, update, view)
 
 import Color
 import Common.Bootstrap as B
@@ -24,20 +24,15 @@ import Task
 import Time exposing (Posix)
 
 
-initCmd : Cmd Msg
-initCmd =
+initCmd : String -> Cmd Msg
+initCmd phase2 =
     Cmd.batch
         [ Time.now
-            |> Task.map checkIfPhase2
+            |> Task.map (checkIfPhase2 phase2)
             |> Task.perform ConfirmIsPhase2
         , -- this will return over the Firebase port as MessagingToken
           FB.sendToFirebase FB.GetMessagingToken
         ]
-
-
-phase2 : String
-phase2 =
-    "2019-11-01"
 
 
 
@@ -69,12 +64,12 @@ type Msg
     | HandleSnapshot (Maybe FB.FBUser) Value
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> AppModel -> ( AppModel, Cmd Msg )
 update message model =
     case message of
         -- Registration page
         SwitchTab tab ->
-            ( { model | tab = tab, editor = blank.editor }, Cmd.none )
+            ( { model | tab = tab, editor = blankAppModel.editor }, Cmd.none )
 
         ConfirmIsPhase2 isPhase2 ->
             ( { model
@@ -190,7 +185,7 @@ update message model =
             ( { model | userMessage = NoMessage }, Cmd.none )
 
         SignOut ->
-            ( blank, FB.signout )
+            ( blankAppModel, FB.signout )
 
         HandleSnapshot mbUser value ->
             handleSnapshot mbUser value model
@@ -220,7 +215,7 @@ httpErrorToString err =
 FIXME we are renewing subscriptions every time a subscription comes in
 
 -}
-handleSnapshot : Maybe FB.FBUser -> Value -> Model -> ( Model, Cmd Msg )
+handleSnapshot : Maybe FB.FBUser -> Value -> AppModel -> ( AppModel, Cmd Msg )
 handleSnapshot mbUser snapshot model =
     let
         user =
@@ -265,13 +260,13 @@ handleSnapshot mbUser snapshot model =
 -- Model update helpers
 
 
-updateEditor : (Present -> Present) -> Model -> Model
+updateEditor : (Present -> Present) -> AppModel -> AppModel
 updateEditor fn model =
     { model | editor = fn model.editor }
 
 
-checkIfPhase2 : Posix -> Bool
-checkIfPhase2 now =
+checkIfPhase2 : String -> Posix -> Bool
+checkIfPhase2 phase2 now =
     case Iso8601.toTime phase2 of
         Ok endPhase1 ->
             Time.posixToMillis now > Time.posixToMillis endPhase1
@@ -284,7 +279,7 @@ checkIfPhase2 now =
 --  helper for Port Handler
 
 
-handleToken : String -> Model -> ( Model, Cmd Msg )
+handleToken : String -> AppModel -> ( AppModel, Cmd Msg )
 handleToken token model =
     let
         cmd =
@@ -309,12 +304,19 @@ handleToken token model =
 -- ---------------------------------------
 
 
-view : Model -> List (Html Msg)
-view model =
+view : Bool -> AppModel -> List (Html Msg)
+view supportsNotifications model =
     let
+        filterFn user =
+            if model.user.email == "hotbelgo@gmail.com" then
+                True
+
+            else
+                user.meta.name /= "dev - ignore"
+
         ( mine, others ) =
             model.userData
-                |> Dict.remove "eLXgT6ZB2fWDSmzID4QpEfoXt953"
+                |> Dict.filter (\_ -> filterFn)
                 |> Dict.toList
                 |> L.partition (Tuple.first >> (==) model.user.uid)
     in
@@ -331,16 +333,21 @@ view model =
                 viewClaims others
 
             Settings ->
-                viewSettings model
+                viewSettings supportsNotifications model
+
+            Update ->
+                [ h2 [] [ text "Great news" ]
+                , p [] [ text "If you see this page, that means the update has installed correctly. Please let Simon know that you have seen this" ]
+                ]
     , case model.userMessage of
         NoMessage ->
             viewFooter model.isPhase2 model.tab
 
         SuccessMessage txt ->
-            footer [ class "container success" ] [ text txt ]
+            footer [ class "d-flex justify-content-center align-items-center success" ] [ text txt ]
 
         ErrorMessage txt ->
-            footer [ class "container warning" ] [ text txt ]
+            footer [ class "d-flex justify-content-center align-items-center warning" ] [ text txt ]
     ]
 
 
@@ -350,29 +357,30 @@ view model =
 -- ------------------
 
 
-viewFamily : Model -> List ( String, UserData ) -> List (Html Msg)
+viewFamily : AppModel -> List ( String, UserData ) -> List (Html Msg)
 viewFamily model others =
     let
         fn =
             if model.isPhase2 then
-                viewOther
+                viewOtherPhase2
 
             else
                 viewOtherPhase1
 
-        txt =
+        title =
             if model.isPhase2 then
-                "Our present requests"
+                [ h4 [] [ text "Our present requests " ]
+                , p [] [ text "Click claim if you plan to buy - don't worry the recipient won't know you clicked ;-)" ]
+                ]
 
             else
-                "Until mid-October, only summary details are available"
+                [ h4 [] [ text <| "Until " ++ model.phase2 ++ ", only summary details are available" ] ]
     in
     if List.isEmpty others then
         [ text "Awaiting first present ideas" ]
 
     else
-        h4 [] [ text txt ]
-            :: L.map fn others
+        title ++ L.map fn others
 
 
 viewOtherPhase1 : ( String, UserData ) -> Html Msg
@@ -381,8 +389,8 @@ viewOtherPhase1 ( _, { meta, presents } ) =
         [ text <| meta.name ++ ": " ++ formatPluralRegular (Dict.size presents) " suggestion" ]
 
 
-viewOther : ( String, UserData ) -> Html Msg
-viewOther ( userRef, { meta, presents } ) =
+viewOtherPhase2 : ( String, UserData ) -> Html Msg
+viewOtherPhase2 ( userRef, { meta, presents } ) =
     let
         mkButton cls clickMsg title =
             button
@@ -411,7 +419,7 @@ viewOther ( userRef, { meta, presents } ) =
             text ""
 
         ps ->
-            div [ class "shadow-sm bg-white rounded person section" ]
+            div [ class "shadow-lg bg-white rounded person section" ]
                 [ h4 [] [ meta.name |> String.split " " |> L.head |> Maybe.withDefault meta.name |> text ]
                 , ul [ class "present-list" ] ps
                 ]
@@ -423,7 +431,7 @@ viewOther ( userRef, { meta, presents } ) =
 -- ------------------
 
 
-viewSuggestions : Model -> List ( String, UserData ) -> List (Html Msg)
+viewSuggestions : AppModel -> List ( String, UserData ) -> List (Html Msg)
 viewSuggestions model lst =
     let
         mkButton present =
@@ -478,14 +486,14 @@ viewPresentEditor isPhase2 editor =
                     text "New suggestion"
             ]
         , div [ id "new-present-form" ]
-            [ B.inputWithLabel UpdateSuggestionTitle "Title" "newpresent" editor.title
+            [ B.inputWithLabel UpdateSuggestionTitle "Title" "new-present-title" editor.title
             , editor.link
                 |> Maybe.withDefault ""
-                |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "newpresentlink"
+                |> B.inputWithLabel UpdateSuggestionLink "Link (optional)" "new-present-link"
             , editor.buyingAdvice
                 |> Maybe.withDefault ""
-                |> B.inputWithLabel UpdateSuggestionComment "Buying advice (optional)" "newpresentlink"
-            , div [ class "flex-h flex-spread" ]
+                |> B.inputWithLabel UpdateSuggestionComment "Buying advice (optional)" "new-present-advice"
+            , div [ class "d-flex flex-row justify-content-between" ]
                 [ button [ class "btn btn-warning", onClick CancelEditor ] [ text "Cancel" ]
                 , case editor.uid of
                     Just uid ->
@@ -573,8 +581,8 @@ viewClaims others =
 -- ------------------
 
 
-viewSettings : Model -> List (Html Msg)
-viewSettings model =
+viewSettings : Bool -> AppModel -> List (Html Msg)
+viewSettings supportsNotifications model =
     let
         notifications =
             model.userData
@@ -583,16 +591,20 @@ viewSettings model =
                 |> Maybe.withDefault False
 
         mkPresentTmpl htms =
-            li [ class "present flex-h" ] htms
+            li [ class "present d-flex flex-row" ] htms
     in
     [ div [ class "section settings" ]
         [ h4 [] [ text "Settings" ]
         , ul [ class "present-list" ]
             [ mkPresentTmpl
                 [ div [] [ text "Notifications" ]
-                , mkPrimaryButton (ToggleNotifications <| not notifications)
-                    (ifThenElse notifications "btn-success" "btn-danger")
-                    [ span [ class "mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
+                , if supportsNotifications then
+                    mkPrimaryButton (ToggleNotifications <| not notifications)
+                        (ifThenElse notifications "btn-success" "btn-danger")
+                        [ span [ class "mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
+
+                  else
+                    text "Unfortunately your browser does not support notifications"
                 ]
             , mkPresentTmpl
                 [ div [ class "text-danger" ] []
@@ -614,11 +626,11 @@ viewSettings model =
 -- ------------------
 
 
-viewNavbar : Model -> Html Msg
+viewNavbar : AppModel -> Html Msg
 viewNavbar model =
-    header [ class "flex-h flex-aligned flex-spread" ]
-        [ h4 [] [ text "Xmas 2019" ]
-        , div [ class "flex-h flex-aligned" ]
+    header [ class "d-flex flex-row align-items-center justify-content-between" ]
+        [ xmasHeader
+        , div [ class "d-flex flex-row align-items-center" ]
             [ model.user.displayName
                 |> Maybe.map (text >> L.singleton >> strong [])
                 |> Maybe.withDefault (text "Xmas Present ideas")
@@ -634,10 +646,25 @@ viewNavbar model =
 
 viewFooter : Bool -> AppTab -> Html Msg
 viewFooter isPhase2 tab =
-    [ ( True, Family ), ( True, MySuggestions ), ( isPhase2, MyClaims ), ( True, Settings ) ]
-        |> L.filter Tuple.first
-        |> L.map (\( _, t ) -> ViewHelpers.mkTab SwitchTab t tab <| stringFromTab t)
-        |> footer [ class "flex-h flex-aligned flex-spread tabs" ]
+    let
+        mkItem ( use, t, col ) =
+            if use then
+                let
+                    ( icon, txt ) =
+                        stringFromTab t
+                in
+                ViewHelpers.mkTab (SwitchTab t) (t == tab) ( icon col, txt )
+
+            else
+                text ""
+    in
+    [ ( True, Family, appGreen )
+    , ( True, MySuggestions, appGreen )
+    , ( isPhase2, MyClaims, appGreen )
+    , ( True, Settings, appGreen )
+    ]
+        |> L.map mkItem
+        |> footer [ class "d-flex flex-row align-items-stretch justify-content-between tabs" ]
 
 
 
@@ -646,18 +673,18 @@ viewFooter isPhase2 tab =
 
 viewPresent : Html Msg -> Present -> Html Msg
 viewPresent btn p =
-    li [ class "present flex-v" ]
-        [ div [ class "flex-h flex-spread" ]
-            [ div [ class "description" ]
+    li [ class "present d-flex flex-column" ]
+        [ div [ class "d-flex flex-row justify-content-between align-items-center" ]
+            [ div [ class "d-flex flex-row align-items-center title" ]
                 [ text p.title
                 , p.link
-                    |> Maybe.map (\link_ -> a [ href link_, target "_blank" ] [ MAction.open_in_new Color.blue 20 ])
+                    |> Maybe.map (\link_ -> a [ href link_, target "_blank", class "ml-1" ] [ MAction.open_in_new Color.blue 20 ])
                     |> Maybe.withDefault (text "")
                 ]
             , btn
             ]
         , p.buyingAdvice
-            |> Maybe.map (\txt -> div [ class "small" ] [ text txt ])
+            |> Maybe.map (\txt -> div [ class "small mt-1" ] [ text txt ])
             |> Maybe.withDefault (text "")
         ]
 
@@ -675,49 +702,61 @@ mkPrimaryButton clickMsg cls htms =
 -- CMDs
 
 
+subscribe : Cmd msg
+subscribe =
+    FB.subscribe prefix
+
+
 claim : String -> String -> String -> Cmd msg
-claim uid otherRef presentRef =
+claim uid userRef presentRef =
     FB.set
-        (makeSetPresentRef "takenBy" otherRef presentRef)
+        (makeSetPresentRef userRef presentRef "takenBy")
         (Encode.string uid)
 
 
 purchase : String -> String -> Bool -> Cmd msg
-purchase otherRef presentRef purchased =
+purchase userRef presentRef purchased =
     FB.set
-        (makeSetPresentRef "purchased" otherRef presentRef)
+        (makeSetPresentRef userRef presentRef "purchased")
         (Encode.bool purchased)
 
 
 unclaim : String -> String -> Cmd msg
 unclaim otherRef presentRef =
-    FB.remove <| makeSetPresentRef "takenBy" otherRef presentRef
+    FB.remove <| makeSetPresentRef otherRef presentRef "takenBy"
 
 
-delete : Model -> String -> Cmd Msg
+{-| userRef is the user who created the present - i.e. not the one claiming it
+-}
+makeSetPresentRef : String -> String -> String -> String
+makeSetPresentRef userRef presentRef key =
+    [ prefix, userRef, "presents", presentRef, key ] |> String.join "/"
+
+
+delete : AppModel -> String -> Cmd Msg
 delete model ref =
-    FB.remove ("/" ++ model.user.uid ++ "/presents/" ++ ref)
+    FB.remove (prefix ++ model.user.uid ++ "/presents/" ++ ref)
 
 
-savePresent : Model -> Cmd Msg
+savePresent : AppModel -> Cmd Msg
 savePresent model =
     case model.editor.uid of
         Just uid_ ->
             -- update existing present
-            FB.update ("/" ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
+            FB.update (prefix ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
 
         Nothing ->
-            FB.push ("/" ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
+            FB.push (prefix ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
 
 
 setMeta : String -> String -> Encode.Value -> Cmd msg
 setMeta uid key val =
-    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
+    FB.set (prefix ++ uid ++ "/meta/" ++ key) val
 
 
-makeSetPresentRef : String -> String -> String -> String
-makeSetPresentRef str otherRef presentRef =
-    [ otherRef, "presents", presentRef, str ] |> String.join "/"
+prefix : String
+prefix =
+    "/jona/"
 
 
 

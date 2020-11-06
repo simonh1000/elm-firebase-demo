@@ -34,7 +34,8 @@ type FBResponse
     | Snapshot Value -- this library does not know the structure of your data
     | MessagingToken String -- the token needed to (un)subscribe for notifications
     | NotificationsRefused -- user has blocked use
-    | NewNotification Notification -- will only be received if app is in 'focus'
+    | PresentNotification Notification -- will only be received if app is in 'focus'
+    | CustomNotification String -- will only be received if app is in 'focus'
     | Error String
     | UnhandledResponse String
 
@@ -42,13 +43,14 @@ type FBResponse
 decodeIncoming : (FBResponse -> msg) -> Value -> msg
 decodeIncoming msgConstructor value =
     Decode.decodeValue fbResponseDecoder value
-        |> Result.map msgConstructor
-        |> RE.extract (Decode.errorToString >> Error >> msgConstructor)
+        |> RE.extract (Decode.errorToString >> UnhandledResponse)
+        |> msgConstructor
 
 
 fbResponseDecoder : Decoder FBResponse
 fbResponseDecoder =
     let
+        mkDec : String -> Decoder a -> (a -> FBResponse) -> Decoder FBResponse
         mkDec tgt dec constructor =
             exactMatchString (Decode.field "message" Decode.string) tgt (Decode.field "payload" dec)
                 |> Decode.map constructor
@@ -57,16 +59,11 @@ fbResponseDecoder =
         [ mkDec "authstate" decodeAuthState NewAuthState
         , mkDec "snapshot" Decode.value Snapshot
         , mkDec "MessagingToken" Decode.string MessagingToken
-        , mkDec "NewNotification" decodeNotification NewNotification
+        , mkDec "NewNotification" decodePresentNotification PresentNotification
+        , mkDec "NewNotification" decodeCustomNotification CustomNotification
         , mkDec "NotificationsRefused" (Decode.succeed ()) (\_ -> NotificationsRefused)
-        , mkDec "Error" decoderError Error
-        , Decode.field "message" Decode.string |> Decode.map UnhandledResponse
+        , mkDec "Error" Decode.string Error
         ]
-
-
-decoderError : Decoder String
-decoderError =
-    Decode.field "message" Decode.string
 
 
 
@@ -126,11 +123,16 @@ type alias Notification =
     }
 
 
-decodeNotification : Decoder Notification
-decodeNotification =
+decodePresentNotification : Decoder Notification
+decodePresentNotification =
     Decode.map2 Notification
         (Decode.field "person" Decode.string)
         (Decode.field "present" Decode.string)
+
+
+decodeCustomNotification : Decoder String
+decodeCustomNotification =
+    Decode.field "notification" Decode.string
 
 
 

@@ -4,40 +4,14 @@ import App
 import Auth
 import Browser
 import Common.CoreHelpers exposing (addCmd)
-import Common.ViewHelpers as ViewHelpers
+import Common.ViewHelpers as ViewHelpers exposing (matIcon)
 import Firebase.Firebase as FB exposing (AuthState(..), FBCommand(..), FBResponse(..), FBUser)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Json.Decode exposing (Decoder, Value)
-import Json.Encode as Encode
-import Model as AppM exposing (Page(..))
+import Model exposing (..)
 import Ports
-
-
-
--- Model
-
-
-type alias Model =
-    { auth : Auth.Model
-    , app : AppM.Model
-    , page : Page
-    , userMessage : Maybe String
-    }
-
-
-blank : Model
-blank =
-    { auth = Auth.blank
-    , app = AppM.blank
-    , page = InitAuth
-    , userMessage = Nothing
-    }
-
-
-updateApp : (AppM.Model -> AppM.Model) -> Model -> Model
-updateApp fn model =
-    { model | app = fn model.app }
 
 
 
@@ -47,12 +21,21 @@ updateApp fn model =
 type alias Flags =
     { cloudFunction : String
     , version : String
+    , phase2 : String
     }
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( updateApp (\app -> { app | cloudFunction = flags.cloudFunction, version = flags.version }) blank
+    ( updateApp
+        (\app ->
+            { app
+                | cloudFunction = flags.cloudFunction
+                , version = flags.version
+                , phase2 = flags.phase2
+            }
+        )
+        blank
     , FB.setUpAuthListener
     )
 
@@ -64,7 +47,9 @@ init flags =
 type Msg
     = AuthMsg Auth.Msg
     | AppMsg App.Msg
-    | FBMsgHandler FB.FBResponse
+    | UpdateApp
+    | FirebasePortMsg FB.FBResponse
+    | NewPortMsg Ports.IncomingMsg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -84,7 +69,10 @@ update message model =
             in
             ( { model | app = app }, Cmd.map AppMsg c )
 
-        FBMsgHandler fbResponse ->
+        UpdateApp ->
+            ( { model | updateWaiting = False }, Ports.sendToJs Ports.SkipWaiting )
+
+        FirebasePortMsg fbResponse ->
             case fbResponse of
                 NewAuthState authstate ->
                     handleAuthChange authstate model
@@ -101,13 +89,20 @@ update message model =
                     ( updateApp (\_ -> m) model, Cmd.map AppMsg c )
 
                 NotificationsRefused ->
-                    ( { model | userMessage = Just "NotificationsRefused" }, Cmd.none )
+                    ( { model | supportsNotifications = False }, Cmd.none )
 
-                NewNotification notification ->
-                    --                    let
-                    --                        _ =
-                    --                            Debug.log "!!!!!" notification
-                    --                    in
+                PresentNotification notification ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "!!!!!" notification
+                    -- in
+                    ( model, Cmd.none )
+
+                CustomNotification notification ->
+                    --let
+                    --    _ =
+                    --        Debug.log "**custom**" notification
+                    --in
                     ( model, Cmd.none )
 
                 Error err ->
@@ -115,8 +110,20 @@ update message model =
 
                 UnhandledResponse res ->
                     ( model
-                    , Ports.rollbar <| "Need ports handler for " ++ res
+                    , Ports.rollbar <| "Need port handler for" ++ res
                     )
+
+        NewPortMsg incomingMsg ->
+            case incomingMsg of
+                Ports.NewCode _ ->
+                    ( { model | updateWaiting = True }, Cmd.none )
+
+                Ports.UnrecognisedPortMsg taggedPayload ->
+                    --let
+                    --    _ =
+                    --        Debug.log " port" taggedPayload
+                    --in
+                    ( model, Cmd.none )
 
 
 {-| the user information is richer for a google login than for an email login
@@ -144,7 +151,7 @@ handleAuthChange authState model =
                     }
             in
             -- Next, subscribe to the db
-            ( newModel, FB.subscribe "/" )
+            ( newModel, App.subscribe )
 
         NoUser ->
             ( { model
@@ -170,7 +177,7 @@ handleSnapshot payload model =
     case model.page of
         Subscribing user ->
             update (AppMsg <| App.HandleSnapshot (Just user) payload) newModel
-                |> addCmd (Cmd.map AppMsg App.initCmd)
+                |> addCmd (Cmd.map AppMsg (App.initCmd model.app.phase2))
 
         AppPage ->
             update (AppMsg <| App.HandleSnapshot Nothing payload) newModel
@@ -195,46 +202,55 @@ view model =
         spinner txt =
             [ ViewHelpers.simpleHeader
             , div [ class "main loading" ]
-                [ img [ src "spinner.svg" ] []
-                , div [] [ text txt ]
+                [ div [ class "logo-container" ] [ img [ src "images/icons/icon-192x192.png" ] [] ]
+                , div [] [ img [ src "images/spinner.svg" ] [] ]
+                , text txt
                 ]
             , userMessage
             ]
 
-        wrap htm =
-            div [ class <| "app " ++ String.toLower (AppM.stringFromPage model.page) ] htm
+        wrap mapper htm =
+            div [ class "app d-flex flex-column" ]
+                [ div [ class <| "d-flex flex-column " ++ String.toLower (stringFromPage model.page) ] htm
+                    |> Html.map mapper
+                , if model.updateWaiting then
+                    button
+                        [ class "btn btn-warning update-button"
+                        , onClick UpdateApp
+                        ]
+                        [ matIcon "refresh", text "Update" ]
+
+                  else
+                    text ""
+                ]
     in
     case model.page of
         InitAuth ->
-            spinner "Checking credentials" |> wrap
+            spinner "Checking credentials" |> wrap AuthMsg
 
         Subscribing _ ->
-            spinner "Getting presents data" |> wrap
+            spinner "Getting presents data" |> wrap AuthMsg
 
         AuthPage ->
-            Auth.view model.auth |> wrap |> Html.map AuthMsg
+            Auth.view model.auth |> wrap AuthMsg
 
         AppPage ->
-            App.view model.app |> wrap |> Html.map AppMsg
+            App.view model.supportsNotifications model.app |> wrap AppMsg
 
 
 
--- CMDs
-
-
-setMeta : String -> String -> Encode.Value -> Cmd msg
-setMeta uid key val =
-    FB.set ("/" ++ uid ++ "/meta/" ++ key) val
-
-
-
---
+-- Program
 
 
 main =
     Browser.document
         { init = init
-        , view = \m -> { title = "Xmas 2019", body = [ view m ] }
+        , view = \m -> { title = ViewHelpers.title, body = [ view m ] }
         , update = update
-        , subscriptions = \_ -> FB.subscriptions FBMsgHandler
+        , subscriptions =
+            \_ ->
+                Sub.batch
+                    [ FB.subscriptions FirebasePortMsg
+                    , Ports.fromJs (Ports.decodeIncomingMsg >> NewPortMsg)
+                    ]
         }

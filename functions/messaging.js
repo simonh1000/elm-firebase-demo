@@ -12,7 +12,7 @@ exports.subscribe = function subscribe(req, res) {
     common(true, req, res);
 };
 
-exports.unsubscribe = function(req, res) {
+exports.unsubscribe = function (req, res) {
     common(false, req, res);
 };
 
@@ -27,13 +27,13 @@ function common(isSubscribe, req, res) {
         if (isSubscribe) {
             messaging
                 .subscribeToTopic(token, topic)
-                .then(response => handleSuccess(msg, res, response))
-                .catch(err => handleErr(res, err));
+                .then((response) => handleSuccess(msg, res, response))
+                .catch((err) => handleErr(res, err));
         } else {
             messaging
                 .unsubscribeFromTopic(token, topic)
-                .then(response => handleSuccess(msg, res, response))
-                .catch(err => handleErr(res, err));
+                .then((response) => handleSuccess(msg, res, response))
+                .catch((err) => handleErr(res, err));
         }
     });
 }
@@ -43,7 +43,7 @@ function handleSuccess(msg, res, response) {
     // console.log("UnsubscribeOk", response);
     res.status(200).send({
         message: msg,
-        payload: topic
+        payload: topic,
     });
 }
 
@@ -51,6 +51,6 @@ function handleErr(res, err) {
     console.log("**", err);
     res.status(500).send({
         message: "CFError",
-        payload: err
+        payload: err,
     });
 }

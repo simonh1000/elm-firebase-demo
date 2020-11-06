@@ -1,5 +1,6 @@
 module Model exposing (..)
 
+import Auth
 import Color exposing (Color)
 import Common.CoreHelpers exposing (andMap, foldResult, ifThenElse)
 import Dict exposing (Dict)
@@ -10,6 +11,38 @@ import List as L
 import Material.Icons.Action as MAction
 import Material.Icons.Social as MSocial
 import Svg exposing (Svg)
+
+
+
+-- Model
+
+
+type alias Model =
+    { auth : Auth.Model
+    , app : AppModel
+    , page : Page
+    , userMessage : Maybe String
+    , supportsNotifications : Bool
+    , updateWaiting : Bool
+    , prefix : String
+    }
+
+
+blank : Model
+blank =
+    { auth = Auth.blank
+    , app = blankAppModel
+    , page = InitAuth
+    , userMessage = Nothing
+    , supportsNotifications = True
+    , updateWaiting = False
+    , prefix = "/jona"
+    }
+
+
+updateApp : (AppModel -> AppModel) -> Model -> Model
+updateApp fn model =
+    { model | app = fn model.app }
 
 
 
@@ -59,22 +92,22 @@ type UserMessage
 -- -----------------------
 
 
-type alias Model =
+type alias AppModel =
     { tab : AppTab
     , cloudFunction : String
     , version : String
     , user : FBUser
     , messagingToken : Maybe String
-    , userData : Dict String UserData --
+    , userData : Dict String UserData
     , userMessage : UserMessage
     , editor : Present
-    , editorCollapsed : Bool
+    , phase2 : String
     , isPhase2 : Bool
     }
 
 
-blank : Model
-blank =
+blankAppModel : AppModel
+blankAppModel =
     { tab = Family
     , cloudFunction = ""
     , version = ""
@@ -83,12 +116,12 @@ blank =
     , userData = Dict.empty
     , userMessage = NoMessage
     , editor = blankPresent
-    , editorCollapsed = True
+    , phase2 = "2020-11-01"
     , isPhase2 = False
     }
 
 
-setDisplayName : String -> Model -> Model
+setDisplayName : String -> AppModel -> AppModel
 setDisplayName displayName model =
     let
         user =
@@ -108,13 +141,14 @@ type AppTab
     | MySuggestions
     | MyClaims
     | Settings
+    | Update -- for debugging
 
 
 stringFromTab : AppTab -> ( Color -> Int -> Svg msg, String )
 stringFromTab tab =
     case tab of
         Family ->
-            ( MSocial.people, "Family" )
+            ( MSocial.people, "Friends" )
 
         MySuggestions ->
             ( MSocial.person, "Suggestions" )
@@ -123,6 +157,9 @@ stringFromTab tab =
             ( MAction.bookmark, "Claims" )
 
         Settings ->
+            ( MAction.settings_application, "" )
+
+        Update ->
             ( MAction.settings_application, "" )
 
 
