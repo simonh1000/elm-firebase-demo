@@ -17,7 +17,7 @@ xmasHeader =
 
 
 title =
-    "KAT Secret Santa"
+    "KEVIN"
 
 
 appGreen =
