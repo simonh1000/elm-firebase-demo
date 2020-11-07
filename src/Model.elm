@@ -312,11 +312,11 @@ decoderPresent myId id =
 
 
 encodePresent : String -> Present -> Encode.Value
-encodePresent myId p =
-    [ Just ( "description", Encode.string p.title )
-    , encodePresentStatus myId p.status
-    , p.link |> Maybe.map (\link_ -> ( "link", Encode.string link_ ))
-    , p.buyingAdvice |> Maybe.map (\txt -> ( "buying-advice", Encode.string txt ))
+encodePresent myId updatedPresent =
+    [ Just ( "description", Encode.string updatedPresent.title )
+    , encodePresentStatus myId updatedPresent.status
+    , updatedPresent.link |> Maybe.map (\link_ -> ( "link", Encode.string link_ ))
+    , updatedPresent.buyingAdvice |> Maybe.map (\txt -> ( "buying-advice", Encode.string txt ))
     ]
         |> L.filterMap identity
         |> Encode.object

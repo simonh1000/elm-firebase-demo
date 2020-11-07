@@ -601,7 +601,7 @@ viewSettings supportsNotifications model =
                 , if supportsNotifications then
                     mkPrimaryButton (ToggleNotifications <| not notifications)
                         (ifThenElse notifications "btn-success" "btn-danger")
-                        [ span [ class "mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
+                        [ span [ class "d-flex mr-2" ] [ MAction.power_settings_new Color.white 20 ], text <| ifThenElse notifications "on" "off" ]
 
                   else
                     text "Unfortunately your browser does not support notifications"
@@ -610,7 +610,7 @@ viewSettings supportsNotifications model =
                 [ div [ class "text-danger" ] []
                 , mkPrimaryButton SignOut
                     "btn-danger"
-                    [ span [ class "mr-2" ] [ MAction.exit_to_app Color.white 20 ]
+                    [ span [ class "d-flex mr-2" ] [ MAction.exit_to_app Color.white 20 ]
                     , text "Sign out"
                     ]
                 ]
@@ -693,7 +693,7 @@ mkPrimaryButton : msg -> String -> List (Html msg) -> Html msg
 mkPrimaryButton clickMsg cls htms =
     button
         [ onClick clickMsg
-        , class <| "btn btn-primary " ++ cls
+        , class <| "btn btn-primary d-flex align-items-center " ++ cls
         ]
         htms
 
@@ -742,8 +742,8 @@ savePresent : AppModel -> Cmd Msg
 savePresent model =
     case model.editor.uid of
         Just uid_ ->
-            -- update existing present
-            FB.update (prefix ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
+            -- we MUST `set` here to remove e.g. link and buying advice when they were completely deleted
+            FB.set (prefix ++ model.user.uid ++ "/presents/" ++ uid_) (encodePresent model.user.uid model.editor)
 
         Nothing ->
             FB.push (prefix ++ model.user.uid ++ "/presents") (encodePresent model.user.uid model.editor)
